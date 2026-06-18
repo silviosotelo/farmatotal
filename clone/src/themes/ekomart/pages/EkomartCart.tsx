@@ -29,11 +29,11 @@ export function EkomartCart() {
   const [couponInput, setCouponInput] = useState("");
 
   /* ── Coupon handler ── */
-  function handleApplyCoupon(e: React.FormEvent) {
+  async function handleApplyCoupon(e: React.FormEvent) {
     e.preventDefault();
     const code = couponInput.trim();
     if (!code) return;
-    const result = applyCoupon(code);
+    const result = await applyCoupon(code);
     toast(result.message, result.ok ? "success" : "error");
     if (result.ok) setCouponInput("");
   }

@@ -9,7 +9,7 @@
  * registrarse en el storefront (clone) para el render SSR — ver
  * docs/research/visual-editor-comparison.md.
  */
-import { registerChaiBlock } from '@chaibuilder/sdk/runtime'
+import { registerChaiBlock, registerChaiCollection } from '@chaibuilder/sdk/runtime'
 import useSWR from 'swr'
 import ApiService from '@/services/ApiService'
 
@@ -44,6 +44,35 @@ function useProducts(params: Record<string, string | number | boolean>) {
         revalidateOnFocus: false,
     })
     return data || []
+}
+
+async function fetchSetting<T>(key: string): Promise<T | null> {
+    const res = await ApiService.fetchDataWithAxios<{ key: string; value: T }>({
+        url: `/cms/settings/${key}`,
+        method: 'get',
+    })
+    return (res?.value as T) ?? null
+}
+
+type Slide = { id: string; imageDesktop?: string | null; imageMobile?: string | null; title?: string }
+function useSlides() {
+    const { data } = useSWR('chai-slides', async () => {
+        const res = await ApiService.fetchDataWithAxios<{ data: Slide[] }>({ url: '/slides/today', method: 'get' })
+        return res?.data || []
+    }, { revalidateOnFocus: false })
+    return data || []
+}
+
+type HomeCat = { name: string; image?: string; icon?: string }
+function useHomeCategories() {
+    const { data } = useSWR('chai-home-cats', () => fetchSetting<HomeCat[]>('home_categories'), { revalidateOnFocus: false })
+    return data || []
+}
+
+type PromoBannerData = { image?: string; title?: string; href?: string }
+function usePromoBanner(index: number) {
+    const { data } = useSWR(['chai-promo', index], () => fetchSetting<PromoBannerData[]>('promo_banners'), { revalidateOnFocus: false })
+    return (data || [])[index] || null
 }
 
 // ─────────────────────────── Card reutilizable ───────────────────────────
@@ -269,6 +298,261 @@ function Benefits({ title }: BenefitsProps) {
     )
 }
 
+// ─────────────────────────── HeroSlider (slider del home) ───────────────────────────
+function SliderBlock() {
+    const slides = useSlides()
+    const first = slides[0]
+    const img = first?.imageDesktop || first?.imageMobile
+    return (
+        <section className="overflow-hidden rounded-2xl bg-gray-100">
+            {img ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={img} alt={first?.title || ''} className="w-full object-cover" />
+            ) : (
+                <div className="flex h-56 items-center justify-center text-sm text-gray-400">
+                    Slider del home (banners por día — se editan en “Slider y banners”)
+                </div>
+            )}
+        </section>
+    )
+}
+
+// ─────────────────────────── CategoryCircles (círculos de categorías) ───────────────────────────
+function CirclesBlock() {
+    const cats = useHomeCategories()
+    const cells: (HomeCat | null)[] = cats.length ? cats : Array.from({ length: 8 }).map(() => null)
+    return (
+        <section className="py-4">
+            <div className="grid grid-cols-8 gap-3">
+                {cells.map((c, i) => (
+                    <div key={i} className="flex flex-col items-center gap-2">
+                        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-gray-100">
+                            {c?.image ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={c.image} alt="" className="h-full w-full object-cover" />
+                            ) : null}
+                        </div>
+                        <span className="line-clamp-1 text-center text-[11px] text-gray-500">{c?.name || 'Categoría'}</span>
+                    </div>
+                ))}
+            </div>
+        </section>
+    )
+}
+
+// ─────────────────────────── Featured (selección para vos) ───────────────────────────
+function FeaturedBlock({ title = 'Selección para vos', limit = 8, columns = 4 }: { title?: string; limit?: number; columns?: number }) {
+    const products = useProducts({ perPage: limit, page: 1, featured: true })
+    return (
+        <section className="py-6">
+            {title && <h3 className="mb-4 text-xl font-semibold text-gray-900">{title}</h3>}
+            {products.length ? (
+                <Grid products={products.slice(0, limit)} cols={columns} />
+            ) : (
+                <div className="rounded-xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400">
+                    Sin productos destacados
+                </div>
+            )}
+        </section>
+    )
+}
+
+// ─────────────────────────── PromoBanner (banner promocional CMS) ───────────────────────────
+function PromoBlock({ index = 0 }: { index?: number }) {
+    const banner = usePromoBanner(index)
+    return banner?.image ? (
+        <section className="overflow-hidden rounded-2xl">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={banner.image} alt={banner.title || ''} className="w-full object-cover" />
+        </section>
+    ) : (
+        <section className="flex h-32 items-center justify-center rounded-2xl bg-gray-100 text-sm text-gray-400">
+            Banner promocional (slot #{index} — se edita en “Slider y banners”)
+        </section>
+    )
+}
+
+// ─────────────────────────── SiteHeader / SiteFooter (chrome) ───────────────────────────
+function SiteHeaderPv() {
+    return (
+        <header>
+            <div className="flex items-center justify-between bg-gray-50 px-6 py-1.5 text-[11px] text-gray-400">
+                <span>Sucursales · Trabajá con nosotros · ¿Dónde está mi pedido?</span>
+                <span>Sucursal más cercana</span>
+            </div>
+            <div className="flex items-center gap-4 bg-gradient-to-r from-orange-500 to-amber-400 px-6 py-4 text-white">
+                <span className="text-xl font-bold">logo</span>
+                <span className="rounded-md bg-white/20 px-3 py-1.5 text-sm">≡ Categorías</span>
+                <div className="h-10 flex-1 rounded-full bg-white/90" />
+                <span className="text-sm">cuenta · carrito</span>
+            </div>
+        </header>
+    )
+}
+
+function SiteFooterPv() {
+    return (
+        <footer className="mt-6 border-t border-gray-100 px-6 py-8 text-sm text-gray-400">
+            <div className="grid grid-cols-4 gap-6">
+                {['Información', 'Comprar', 'Atención', 'Newsletter'].map((c) => (
+                    <div key={c}>
+                        <div className="mb-2 font-semibold text-gray-600">{c}</div>
+                        <div className="space-y-1.5">{[1, 2, 3].map((i) => <div key={i} className="h-2.5 w-24 rounded bg-gray-100" />)}</div>
+                    </div>
+                ))}
+            </div>
+            <div className="mt-6 border-t border-gray-100 pt-4 text-xs">© Copyright — pie de página</div>
+        </footer>
+    )
+}
+
+// ─────────────────────────── Bloques de Header (chrome construible) ───────────────────────────
+function HdTopBarPv() {
+    return (
+        <div className="flex items-center justify-between bg-gray-50 px-4 py-1.5 text-[11px] text-gray-400">
+            <span>Sucursales · Trabajá con nosotros · ¿Dónde está mi pedido?</span>
+            <span>Sucursal más cercana</span>
+        </div>
+    )
+}
+function HdLogoPv({ brandName = 'Farmatotal' }: { brandName?: string }) {
+    return <span className="text-xl font-bold text-white">{brandName}</span>
+}
+function HdSearchPv() {
+    return <div className="h-10 w-full min-w-[200px] rounded-full bg-white/90" />
+}
+function HdCategoriesPv() {
+    return <span className="rounded-md bg-white/20 px-3 py-1.5 text-sm text-white">≡ Categorías ▾</span>
+}
+function HdAccountPv() {
+    return <span className="rounded-full bg-white/20 px-3 py-1.5 text-xs text-white">Cuenta</span>
+}
+function HdCartPv() {
+    return <span className="rounded-full bg-white/20 px-3 py-1.5 text-xs text-white">Carrito</span>
+}
+function HdSucursalPv() {
+    return <span className="text-sm text-white">Sucursal: <b>elegir</b></span>
+}
+
+// ─────────────────────────── Cart (carrito funcional) ───────────────────────────
+function CartPv() {
+    return (
+        <section className="py-8">
+            <h2 className="mb-6 text-2xl font-bold text-gray-900">Carrito</h2>
+            <div className="flex flex-col gap-8 lg:flex-row">
+                <div className="flex-1">
+                    <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 border-b border-gray-100 pb-3 text-xs font-semibold uppercase text-gray-400">
+                        <span>Producto</span><span className="text-right">Precio</span><span className="text-center">Cantidad</span><span className="text-right">Subtotal</span><span />
+                    </div>
+                    {[1, 2].map((i) => (
+                        <div key={i} className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] items-center gap-4 border-b border-gray-100 py-5">
+                            <div className="flex items-center gap-3"><div className="h-16 w-16 rounded-lg bg-gray-100" /><div className="h-3 w-32 rounded bg-gray-100" /></div>
+                            <div className="ml-auto h-3 w-16 rounded bg-gray-100" /><div className="mx-auto h-8 w-24 rounded-full bg-gray-100" /><div className="ml-auto h-3 w-16 rounded bg-gray-100" /><div className="h-5 w-5 rounded-full bg-gray-100" />
+                        </div>
+                    ))}
+                </div>
+                <aside className="w-80 flex-none">
+                    <div className="rounded-xl border border-gray-100 p-6">
+                        <h3 className="mb-5 text-lg font-bold text-gray-900">Total del carrito</h3>
+                        <div className="mb-4 h-px bg-gray-100" />
+                        <div className="h-11 rounded-full bg-gray-900" />
+                        <div className="mt-2 text-center text-xs text-gray-400">(carrito funcional — cantidades, cupón, totales)</div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+    )
+}
+
+// ─────────────────────────── Checkout (checkout funcional) ───────────────────────────
+function CheckoutPv() {
+    return (
+        <section className="py-8">
+            <h2 className="mb-6 text-2xl font-bold text-gray-900">Finalizar compra</h2>
+            <div className="flex flex-col gap-8 lg:flex-row">
+                <div className="flex flex-1 flex-col gap-6">
+                    {['Datos de facturación', 'Entrega', 'Método de pago'].map((t) => (
+                        <div key={t} className="rounded-xl border border-gray-100 p-6">
+                            <h3 className="mb-4 text-lg font-bold text-gray-900">{t}</h3>
+                            <div className="grid grid-cols-2 gap-4">{[1, 2, 3, 4].map((i) => <div key={i} className="h-11 rounded-md bg-gray-50" />)}</div>
+                        </div>
+                    ))}
+                </div>
+                <aside className="w-80 flex-none">
+                    <div className="rounded-xl border border-gray-100 p-6">
+                        <h3 className="mb-5 text-lg font-bold text-gray-900">Resumen del pedido</h3>
+                        <div className="mb-4 h-20 rounded bg-gray-50" />
+                        <div className="h-11 rounded-full bg-gray-900" />
+                        <div className="mt-2 text-center text-xs text-gray-400">(checkout funcional — orden + pago Bancard)</div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+    )
+}
+
+// ─────────────────────────── ProductDetail (ficha de producto data-bound) ───────────────────────────
+function ProductDetailPv({ showRelated = true }: { showRelated?: boolean }) {
+    const products = useProducts({ perPage: 5, page: 1 })
+    const p = products[0]
+    const related = products.slice(1, 5)
+    return (
+        <section className="py-8">
+            <div className="grid items-start gap-10 lg:grid-cols-2">
+                <div className="flex aspect-square items-center justify-center rounded-2xl border border-gray-100 bg-gray-50">
+                    {p && imgOf(p) ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={imgOf(p)} alt={p.title} className="max-h-full max-w-full object-contain" />
+                    ) : (
+                        <span className="text-sm text-gray-300">galería del producto</span>
+                    )}
+                </div>
+                <div className="flex flex-col gap-3">
+                    <h1 className="text-2xl font-bold text-gray-900">{p?.title || 'Nombre del producto'}</h1>
+                    <div className="text-sm text-gray-400">SKU: {p ? '—' : '—'}</div>
+                    <div className="text-3xl font-bold text-gray-900">{p ? money(p.priceWeb) : '₲ 0'}</div>
+                    <button className="mt-2 w-fit rounded-lg bg-gray-900 px-6 py-3 text-sm font-semibold text-white">Agregar al carrito</button>
+                    <div className="mt-4 text-xs text-gray-400">(galería · precio · variantes · stock por sucursal · add-to-cart — bloque funcional)</div>
+                </div>
+            </div>
+            <div className="mt-10 border-t border-gray-100 pt-6">
+                <div className="mb-4 flex gap-4 text-sm font-medium text-gray-500">
+                    <span className="text-gray-900">Descripción</span><span>Información</span><span>Valoraciones</span>
+                </div>
+                <div className="h-16 rounded-lg bg-gray-50" />
+            </div>
+            {showRelated && (
+                <div className="mt-10">
+                    <h2 className="mb-4 text-xl font-bold text-gray-900">Productos relacionados</h2>
+                    {related.length ? <Grid products={related} cols={4} /> : <div className="h-32 rounded-lg bg-gray-50" />}
+                </div>
+            )}
+        </section>
+    )
+}
+
+// ─────────────────────────── Catalog (página de catálogo data-bound) ───────────────────────────
+function CatalogPv({ perPage = 10, title, categorySlug }: { perPage?: number; title?: string; categorySlug?: string }) {
+    const params: Record<string, string | number | boolean> = { perPage, page: 1 }
+    if (categorySlug) params.category = categorySlug
+    const products = useProducts(params)
+    return (
+        <section className="py-6">
+            <h2 className="mb-4 text-xl font-bold text-gray-900">{title || 'Catálogo'}</h2>
+            {products.length ? (
+                <Grid products={products} cols={5} />
+            ) : (
+                <div className="rounded-xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400">Catálogo (grilla paginada de todos los productos)</div>
+            )}
+            <div className="mt-6 flex items-center justify-center gap-2">
+                {[1, 2, 3, 4].map((n) => (
+                    <span key={n} className={`flex h-9 min-w-9 items-center justify-center rounded-full px-3 text-sm ${n === 1 ? 'bg-gray-900 text-white' : 'border border-gray-200 text-gray-600'}`}>{n}</span>
+                ))}
+            </div>
+        </section>
+    )
+}
+
 // ─────────────────────────── Título (encabezado) ───────────────────────────
 type TituloProps = { text?: string; level?: 'h2' | 'h3' | 'h4'; align?: 'left' | 'center' }
 
@@ -303,6 +587,31 @@ export function registerCommerceBlocks() {
     registered = true
 
     /* eslint-disable @typescript-eslint/no-explicit-any */
+
+    // Colecciones data-bound para el bloque Repeater (tarjeta-template editable).
+    // El editor lista estas colecciones en el binding del Repeater; los hijos
+    // atan con {{$index.campo}} (title/image/priceWeb/slug…).
+    registerChaiCollection('products', {
+        name: 'Productos',
+        filters: [{ id: 'category', name: 'Categoría' }],
+        sort: [{ id: 'priceWeb', name: 'Precio' }],
+        fetch: async ({ block }: any) => {
+            const limit = block?.limit ?? 12
+            const res = await fetchProducts({ perPage: limit, page: 1 })
+            return { items: res, totalItems: res.length }
+        },
+    } as any)
+    registerChaiCollection('categories', {
+        name: 'Categorías',
+        fetch: async () => {
+            const res = await ApiService.fetchDataWithAxios<{ data: any[]; total: number }>({
+                url: '/catalog/categories',
+                method: 'get',
+                params: { perPage: 2000 },
+            })
+            return { items: res.data || [], totalItems: res.total ?? (res.data?.length ?? 0) }
+        },
+    } as any)
     registerChaiBlock(Hero as any, {
         type: 'Hero',
         label: 'Hero / Banner',
@@ -425,6 +734,171 @@ export function registerCommerceBlocks() {
             schema: {
                 properties: {
                     title: { type: 'string', title: 'Título', default: '' },
+                },
+            },
+            uiSchema: {},
+        },
+        i18nProps: ['title'],
+    } as any)
+
+    registerChaiBlock(SliderBlock as any, {
+        type: 'HeroSlider',
+        label: 'Slider del home',
+        group: 'Comercio',
+        description: 'Carrusel principal con los banners del home (filtrados por día). Se editan en “Slider y banners”.',
+        props: {
+            schema: {
+                properties: {
+                    autoplayDelay: { type: 'number', title: 'Autoplay (ms, 0 = off)', default: 4000 },
+                    showArrows: { type: 'boolean', title: 'Mostrar flechas', default: true },
+                    showDots: { type: 'boolean', title: 'Mostrar puntos', default: true },
+                    loop: { type: 'boolean', title: 'Loop infinito', default: true },
+                    fade: { type: 'boolean', title: 'Transición fade', default: true },
+                },
+            },
+            uiSchema: {},
+        },
+    } as any)
+
+    registerChaiBlock(CirclesBlock as any, {
+        type: 'CategoryCircles',
+        label: 'Círculos de categorías',
+        group: 'Comercio',
+        description: 'Categorías destacadas en círculos (setting home_categories).',
+        props: {
+            schema: {
+                properties: {
+                    title: { type: 'string', title: 'Título (opcional)', default: '' },
+                    limit: { type: 'number', title: 'Máx. categorías (0 = todas)', default: 0 },
+                },
+            },
+            uiSchema: {},
+        },
+        i18nProps: ['title'],
+    } as any)
+
+    registerChaiBlock(FeaturedBlock as any, {
+        type: 'Featured',
+        label: 'Selección para vos (destacados)',
+        group: 'Comercio',
+        description: 'Productos destacados (featured) en grilla.',
+        props: {
+            schema: {
+                properties: {
+                    title: { type: 'string', title: 'Título', default: 'Selección para vos' },
+                    limit: { type: 'number', title: 'Cantidad', default: 8 },
+                    columns: { type: 'number', title: 'Columnas', default: 4 },
+                },
+            },
+            uiSchema: {},
+        },
+        i18nProps: ['title'],
+    } as any)
+
+    registerChaiBlock(PromoBlock as any, {
+        type: 'PromoBanner',
+        label: 'Banner promocional (CMS)',
+        group: 'Comercio',
+        description: 'Banner promocional desde el setting promo_banners (por índice).',
+        props: {
+            schema: {
+                properties: {
+                    index: { type: 'number', title: 'Índice del banner', default: 0 },
+                },
+            },
+            uiSchema: {},
+        },
+    } as any)
+
+    registerChaiBlock(SiteHeaderPv as any, {
+        type: 'SiteHeader',
+        label: 'Encabezado del sitio',
+        group: 'Chrome',
+        description: 'Header del sitio: barra superior, logo, menú de categorías, buscador, cuenta, carrito y sucursal. Bloque funcional.',
+        props: {
+            schema: {
+                properties: {
+                    showTopBar: { type: 'boolean', title: 'Mostrar barra superior', default: true },
+                },
+            },
+            uiSchema: {},
+        },
+    } as any)
+
+    registerChaiBlock(SiteFooterPv as any, {
+        type: 'SiteFooter',
+        label: 'Pie del sitio',
+        group: 'Chrome',
+        description: 'Footer del sitio: columnas de enlaces, copyright y zona editable previa. Bloque funcional.',
+        props: { schema: { properties: {} }, uiSchema: {} },
+    } as any)
+
+    const chrome = (type: string, label: string, description: string, Pv: any, props: any = { schema: { properties: {} }, uiSchema: {} }) =>
+        registerChaiBlock(Pv as any, { type, label, group: 'Header', description, props } as any)
+    chrome('HeaderTopBar', 'Header · Barra superior', 'Barra de avisos/links + sucursal más cercana.', HdTopBarPv)
+    chrome('HeaderLogo', 'Header · Logo', 'Logo enlazado al inicio.', HdLogoPv, {
+        schema: { properties: { logo: { type: 'string', title: 'Logo (URL)', default: '' }, brandName: { type: 'string', title: 'Marca', default: 'Farmatotal' } } },
+        uiSchema: {},
+    })
+    chrome('HeaderSearch', 'Header · Buscador', 'Buscador de productos con sugerencias.', HdSearchPv)
+    chrome('HeaderCategories', 'Header · Menú categorías', 'Botón Categorías + mega-menú.', HdCategoriesPv)
+    chrome('HeaderAccount', 'Header · Cuenta', 'Acceso a mi cuenta.', HdAccountPv)
+    chrome('HeaderCart', 'Header · Carrito', 'Botón de carrito con contador.', HdCartPv)
+    chrome('HeaderSucursal', 'Header · Sucursal', 'Selector de sucursal.', HdSucursalPv)
+
+    registerChaiBlock(CartPv as any, {
+        type: 'Cart',
+        label: 'Carrito',
+        group: 'Comercio',
+        description: 'Carrito funcional: ítems, cantidades, cupón y totales. Bloque funcional (como el widget de carrito de Woo).',
+        props: {
+            schema: {
+                properties: {
+                    showCoupon: { type: 'boolean', title: 'Mostrar cupón de descuento', default: true },
+                },
+            },
+            uiSchema: {},
+        },
+    } as any)
+
+    registerChaiBlock(CheckoutPv as any, {
+        type: 'Checkout',
+        label: 'Checkout',
+        group: 'Comercio',
+        description: 'Checkout funcional: facturación, entrega, pago y resumen. Crea la orden e inicia el pago (Bancard).',
+        props: { schema: { properties: {} }, uiSchema: {} },
+    } as any)
+
+    registerChaiBlock(ProductDetailPv as any, {
+        type: 'ProductDetail',
+        label: 'Ficha de producto',
+        group: 'Comercio',
+        description: 'Ficha del producto consultado (galería, precio, variantes, add-to-cart, tabs, relacionados). Data-bound a la ruta.',
+        props: {
+            schema: {
+                properties: {
+                    showTabs: { type: 'boolean', title: 'Mostrar pestañas (desc./valoraciones)', default: true },
+                    showRelated: { type: 'boolean', title: 'Mostrar relacionados', default: true },
+                    relatedTitle: { type: 'string', title: 'Título de relacionados', default: 'Productos relacionados' },
+                },
+            },
+            uiSchema: {},
+        },
+        i18nProps: ['relatedTitle'],
+    } as any)
+
+    registerChaiBlock(CatalogPv as any, {
+        type: 'Catalog',
+        label: 'Catálogo (grilla + paginación)',
+        group: 'Comercio',
+        description: 'Página de catálogo: grilla paginada de productos (lee ?page de la URL). Filtrable por categoría.',
+        props: {
+            schema: {
+                properties: {
+                    title: { type: 'string', title: 'Título', default: 'Catálogo' },
+                    perPage: { type: 'number', title: 'Por página', default: 48 },
+                    columns: { type: 'number', title: 'Columnas (desktop)', default: 5 },
+                    categorySlug: { type: 'string', title: 'Categoría (slug, opcional)', default: '' },
                 },
             },
             uiSchema: {},

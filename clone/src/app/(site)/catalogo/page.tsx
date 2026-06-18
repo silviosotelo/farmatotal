@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { listProducts } from "@/lib/api";
+import { listProducts, getPage } from "@/lib/api";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ProductGrid } from "@/components/shop/ProductGrid";
 import CmsZone from "@/components/cms/CmsZone";
@@ -7,6 +7,7 @@ import { getActiveTheme } from "@/themes/registry";
 import { EkomartCatalog } from "@/themes/ekomart/pages/EkomartCatalog";
 import { AnvogueCatalog } from "@/themes/anvogue/pages/AnvogueCatalog";
 import { CatalogStockProvider } from "@/themes/CatalogStock";
+import ChaiRender, { type ChaiBlock } from "@/components/cms/ChaiRender";
 
 export const metadata: Metadata = { title: "Catálogo - Farmatotal" };
 
@@ -32,6 +33,19 @@ export default async function CatalogoPage({ searchParams }: Args) {
       <CatalogStockProvider skus={skus}>
         <AnvogueCatalog products={products} total={total} page={page} title={title} />
       </CatalogStockProvider>
+    );
+  }
+
+  // Farmatotal: el catálogo es un documento del builder (slug `catalogo`).
+  // El CatalogBlock se auto-pagina leyendo ?page. Editable desde el admin.
+  const doc = await getPage("catalogo").catch(() => null);
+  if (doc?.published && Array.isArray(doc.blocks) && doc.blocks.length > 0) {
+    return (
+      <main className="flex-1">
+        <Breadcrumbs items={[{ label: doc.title || "Catálogo" }]} />
+        <h1 className="sr-only">Catálogo</h1>
+        <ChaiRender blocks={doc.blocks as ChaiBlock[]} />
+      </main>
     );
   }
 

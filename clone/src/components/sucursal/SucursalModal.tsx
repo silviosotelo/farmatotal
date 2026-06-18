@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SUCURSALES, ZONAS, nearestSucursal, type Sucursal } from "@/lib/sucursales";
+import { type Sucursal } from "@/lib/sucursales";
 import { useSucursal } from "./SucursalContext";
 import { LocationIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,7 @@ import { useTheme, themeAccentVars } from "@/themes/ThemeProvider";
 type GeoState = { status: "idle" | "locating" | "ok" | "error"; nearestId?: string; message?: string };
 
 export function SucursalModal() {
-  const { isOpen, close, select, selected, mandatory } = useSucursal();
+  const { isOpen, close, select, selected, mandatory, sucursales, zonas, nearest } = useSucursal();
   const theme = useTheme();
   const [zona, setZona] = useState<string>("Todas");
   const [geo, setGeo] = useState<GeoState>({ status: "idle" });
@@ -63,8 +63,8 @@ export function SucursalModal() {
   }, [isOpen, close, mandatory]);
 
   const list = useMemo(
-    () => (zona === "Todas" ? SUCURSALES : SUCURSALES.filter((s) => s.zona === zona)),
-    [zona],
+    () => (zona === "Todas" ? sucursales : sucursales.filter((s) => s.zona === zona)),
+    [zona, sucursales],
   );
 
   const useMyLocation = () => {
@@ -75,9 +75,13 @@ export function SucursalModal() {
     setGeo({ status: "locating" });
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const n = nearestSucursal(pos.coords.latitude, pos.coords.longitude);
-        setGeo({ status: "ok", nearestId: n.id, message: `Tienda más cercana: ${n.name}` });
-        setZona("Todas");
+        const n = nearest(pos.coords.latitude, pos.coords.longitude);
+        if (n) {
+          setGeo({ status: "ok", nearestId: n.id, message: `Tienda más cercana: ${n.name}` });
+          setZona("Todas");
+        } else {
+          setGeo({ status: "error", message: "No se encontró una sucursal cercana" });
+        }
       },
       () => setGeo({ status: "error", message: "No se pudo obtener su posición" }),
       { enableHighAccuracy: true, timeout: 8000 },
@@ -154,7 +158,7 @@ export function SucursalModal() {
 
         {/* zona filter */}
         <div className="flex flex-wrap gap-2 border-b border-[#ededf1] px-6 py-3">
-          {["Todas", ...ZONAS].map((z) => (
+          {["Todas", ...zonas].map((z) => (
             <button
               key={z}
               type="button"

@@ -56,10 +56,10 @@ export function AnvogueCart() {
   }
 
   /* ── Coupon handler ── */
-  function handleApplyCoupon() {
+  async function handleApplyCoupon() {
     const code = couponInput.trim();
     if (!code) return;
-    const result = applyCoupon(code);
+    const result = await applyCoupon(code);
     toast(result.message, result.ok ? "success" : "error");
     if (result.ok) setCouponInput("");
   }

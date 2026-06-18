@@ -1,8 +1,30 @@
 import React from "react";
 import { Truck, RotateCcw, ShieldCheck, Headphones } from "lucide-react";
-import { HomeDealsBlock } from "./sectionBlocks";
+import {
+  HomeDealsBlock,
+  HomeCategoriesBlock,
+  HomeFeaturedBlock,
+  HomePromoBannerBlock,
+} from "./sectionBlocks";
+import { HeroSlider } from "@/components/sections/HeroSlider";
+import { CatalogBlock } from "./CatalogBlock";
+import { ProductDetailBlock } from "./ProductDetailBlock";
+import { CartBlock } from "./CartBlock";
+import { CheckoutBlock } from "./CheckoutBlock";
+import { SiteHeaderBlock, SiteFooterBlock } from "./SiteChromeBlocks";
+import {
+  HeaderTopBarBlock,
+  HeaderLogoBlock,
+  HeaderSearchBlock,
+  HeaderCategoriesBlock,
+  HeaderAccountBlock,
+  HeaderCartBlock,
+  HeaderSucursalBlock,
+} from "./HeaderBlocks";
+import { TailwindRuntime } from "./TailwindRuntime";
 import { ChaiProductGrid, ChaiCategoryShowcase } from "./chaiBlocks";
 import { getActiveTheme, themeAccentVars, type ThemeKey } from "@/themes/registry";
+import { listProducts, listCategories } from "@/lib/api";
 
 /**
  * Render SSR de páginas creadas con el editor visual (Chai Builder).
@@ -43,6 +65,42 @@ function str(v: unknown, fallback = ""): string {
 }
 function num(v: unknown, fallback: number): number {
   return typeof v === "number" ? v : fallback;
+}
+
+/** lodash.get acotado: resuelve "a.b.c" sobre un objeto. */
+function getPath(obj: unknown, path: string): unknown {
+  return path.split(".").reduce<unknown>((o, k) => (o == null ? undefined : (o as Record<string, unknown>)[k]), obj);
+}
+
+/** Resuelve un binding de repeater `{{$index.campo}}` contra el item actual.
+ * Si el valor es exactamente un binding → devuelve el valor crudo; si es texto
+ * mezclado → reemplaza cada binding por su string. */
+function resolveBinding(value: unknown, item: Record<string, unknown>): unknown {
+  if (typeof value !== "string" || !value.includes("{{")) return value;
+  const exact = value.match(/^\{\{\s*\$index\.([\w.]+)\s*\}\}$/);
+  if (exact) return getPath(item, exact[1]);
+  return value.replace(/\{\{\s*\$index\.([\w.]+)\s*\}\}/g, (_m, p) => {
+    const v = getPath(item, p);
+    return v == null ? "" : String(v);
+  });
+}
+
+/** Clona un bloque resolviendo sus props string contra el item del repeater. */
+function bindBlock(block: ChaiBlock, item: Record<string, unknown> | null): ChaiBlock {
+  if (!item) return block;
+  const out: ChaiBlock = { ...block };
+  for (const [k, v] of Object.entries(block)) {
+    if (k.startsWith("_") || k === "styles") continue;
+    out[k] = resolveBinding(v, item) as never;
+  }
+  return out;
+}
+
+/** "{{#products}}" / "{{products}}" → "products" (id de colección). */
+function parseCollectionId(binding: unknown): string {
+  const s = str(binding).trim();
+  const m = s.match(/^\{\{\s*#?([\w-]+).*\}\}$/);
+  return m ? m[1] : "";
 }
 
 function childrenOf(all: ChaiBlock[], parentId: string | null): ChaiBlock[] {
@@ -163,21 +221,58 @@ function BenefitsBlock({ b }: { b: ChaiBlock }) {
 }
 
 function RenderBlock({
-  block,
+  block: rawBlock,
   all,
   theme,
+  item = null,
+  repeaterData = {},
 }: {
   block: ChaiBlock;
   all: ChaiBlock[];
   theme: ThemeKey;
+  item?: Record<string, unknown> | null;
+  repeaterData?: Record<string, unknown[]>;
 }): React.ReactNode {
-  const kids = childrenOf(all, block._id);
+  // Dentro de un Repeater, resolvemos los bindings {{$index.x}} contra el item.
+  const block = bindBlock(rawBlock, item);
+  const kids = childrenOf(all, rawBlock._id);
   const renderKids = () =>
-    kids.map((k) => <RenderBlock key={k._id} block={k} all={all} theme={theme} />);
+    kids.map((k) => (
+      <RenderBlock key={k._id} block={k} all={all} theme={theme} item={item} repeaterData={repeaterData} />
+    ));
   const className = cls(block.styles);
   const html = str(block.content);
 
   switch (block._type) {
+    // ── Repeater (grilla data-bound con template editable) ──
+    case "Repeater": {
+      const items = (repeaterData[rawBlock._id] as Record<string, unknown>[]) || [];
+      const tmpl = childrenOf(all, rawBlock._id); // [RepeaterItem]
+      const tag = str(block.tag, "div");
+      const Tag = (["div", "ul", "ol"].includes(tag) ? tag : "div") as React.ElementType;
+      if (items.length === 0) return null;
+      return (
+        <Tag className={className || "grid gap-4 md:grid-cols-3 xl:grid-cols-4"}>
+          {items.map((it, i) =>
+            tmpl.map((t) => (
+              <RenderBlock
+                key={`${t._id}_${i}`}
+                block={t}
+                all={all}
+                theme={theme}
+                item={it}
+                repeaterData={repeaterData}
+              />
+            )),
+          )}
+        </Tag>
+      );
+    }
+    case "RepeaterItem": {
+      const tag = str(block.parentTag) === "ul" || str(block.parentTag) === "ol" ? "li" : "div";
+      const Tag = tag as React.ElementType;
+      return <Tag className={className}>{renderKids()}</Tag>;
+    }
     // ── Bloques de comercio (data-bound) ──
     case "Hero":
       return <HeroBlock b={block} />;
@@ -192,6 +287,72 @@ function RenderBlock({
       );
     case "HomeDeals":
       return <HomeDealsBlock limit={num(block.limit, 6)} theme={theme} />;
+    case "HeroSlider":
+      return (
+        <HeroSlider
+          autoplayDelay={num(block.autoplayDelay, 4000)}
+          showArrows={block.showArrows !== false}
+          showDots={block.showDots !== false}
+          loop={block.loop !== false}
+          fade={block.fade !== false}
+        />
+      );
+    case "CategoryCircles":
+      return (
+        <HomeCategoriesBlock
+          title={str(block.title) || undefined}
+          limit={block.limit ? num(block.limit, 0) : undefined}
+        />
+      );
+    case "Featured":
+      return (
+        <HomeFeaturedBlock
+          title={str(block.title) || undefined}
+          limit={num(block.limit, 8)}
+        />
+      );
+    case "PromoBanner":
+      return <HomePromoBannerBlock index={num(block.index, 0)} />;
+    case "Catalog":
+      return (
+        <CatalogBlock
+          perPage={num(block.perPage, 48)}
+          title={str(block.title) || undefined}
+          categorySlug={str(block.categorySlug) || undefined}
+          columns={num(block.columns, 5)}
+        />
+      );
+    case "ProductDetail":
+      return (
+        <ProductDetailBlock
+          showRelated={block.showRelated !== false}
+          showTabs={block.showTabs !== false}
+          relatedTitle={str(block.relatedTitle) || undefined}
+        />
+      );
+    case "Cart":
+      return <CartBlock showCoupon={block.showCoupon !== false} />;
+    case "Checkout":
+      return <CheckoutBlock />;
+    case "SiteHeader":
+      return <SiteHeaderBlock showTopBar={block.showTopBar !== false} />;
+    case "SiteFooter":
+      return <SiteFooterBlock />;
+    // ── Header descompuesto (bloques de chrome construibles) ──
+    case "HeaderTopBar":
+      return <HeaderTopBarBlock />;
+    case "HeaderLogo":
+      return <HeaderLogoBlock logo={str(block.logo) || undefined} brandName={str(block.brandName) || undefined} />;
+    case "HeaderSearch":
+      return <HeaderSearchBlock />;
+    case "HeaderCategories":
+      return <HeaderCategoriesBlock />;
+    case "HeaderAccount":
+      return <HeaderAccountBlock />;
+    case "HeaderCart":
+      return <HeaderCartBlock />;
+    case "HeaderSucursal":
+      return <HeaderSucursalBlock />;
     case "Banner":
       return <BannerBlock b={block} />;
     case "CategoryShowcase":
@@ -269,16 +430,43 @@ function RenderBlock({
   }
 }
 
+/** Data sources de los bloques Repeater. Por ahora la colección "products" (y
+ * cualquier id) mapea al catálogo; el id se lee del binding `repeaterItems`. */
+async function fetchRepeaterData(blocks: ChaiBlock[]): Promise<Record<string, unknown[]>> {
+  const repeaters = blocks.filter((b) => b._type === "Repeater");
+  if (repeaters.length === 0) return {};
+  const out: Record<string, unknown[]> = {};
+  await Promise.all(
+    repeaters.map(async (b) => {
+      const colId = parseCollectionId(b.repeaterItems);
+      const limit = num(b.limit, 12);
+      try {
+        if (colId === "categories") {
+          const cats = await listCategories();
+          out[b._id] = cats.slice(0, limit);
+        } else {
+          const { products } = await listProducts({ perPage: limit });
+          out[b._id] = products;
+        }
+      } catch {
+        out[b._id] = [];
+      }
+    }),
+  );
+  return out;
+}
+
 export default async function ChaiRender({ blocks }: { blocks: ChaiBlock[] }) {
   if (!Array.isArray(blocks) || blocks.length === 0) return null;
   const roots = childrenOf(blocks, null);
   // Tema activo: re-tinta los bloques de comercio (Hero/precios via brand-*) para
   // que las páginas del builder matcheen el storefront.
-  const theme = await getActiveTheme();
+  const [theme, repeaterData] = await Promise.all([getActiveTheme(), fetchRepeaterData(blocks)]);
   return (
     <div className="flex flex-col gap-6" style={themeAccentVars(theme) as React.CSSProperties}>
+      <TailwindRuntime />
       {roots.map((b) => (
-        <RenderBlock key={b._id} block={b} all={blocks} theme={theme} />
+        <RenderBlock key={b._id} block={b} all={blocks} theme={theme} repeaterData={repeaterData} />
       ))}
     </div>
   );

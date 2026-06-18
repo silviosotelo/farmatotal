@@ -3,29 +3,31 @@
 import { useMemo, useState } from "react";
 import { LocationIcon } from "@/components/icons";
 import { useToast } from "@/components/providers/ToastContext";
-import { SUCURSALES, ZONAS, nearestSucursal } from "@/lib/sucursales";
+import { useSucursal } from "@/components/sucursal/SucursalContext";
 import { cn } from "@/lib/utils";
 
 /**
  * Widget funcional de sucursales: filtro por zona + geolocalización + listado.
- * Se usa en la ruta /sucursales debajo del contenido editable (CMS).
+ * Consume las sucursales reales del backend vía SucursalContext (/branches).
  */
 export function SucursalesList() {
   const { toast } = useToast();
+  const { sucursales, zonas, nearest } = useSucursal();
   const [zona, setZona] = useState<string>("Todas");
   const [nearestId, setNearestId] = useState<string | null>(null);
 
   const list = useMemo(() => {
-    const base = zona === "Todas" ? SUCURSALES : SUCURSALES.filter((s) => s.zona === zona);
+    const base = zona === "Todas" ? sucursales : sucursales.filter((s) => s.zona === zona);
     if (!nearestId) return base;
     return [...base].sort((a, b) => (a.id === nearestId ? -1 : b.id === nearestId ? 1 : 0));
-  }, [zona, nearestId]);
+  }, [zona, nearestId, sucursales]);
 
   const locate = () => {
     if (!("geolocation" in navigator)) return toast("Tu navegador no permite geolocalización", "error");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const n = nearestSucursal(pos.coords.latitude, pos.coords.longitude);
+        const n = nearest(pos.coords.latitude, pos.coords.longitude);
+        if (!n) return toast("No se encontró una sucursal cercana", "error");
         setNearestId(n.id);
         setZona("Todas");
         toast(`Sucursal más cercana: ${n.name}`);
@@ -49,7 +51,7 @@ export function SucursalesList() {
       </div>
 
       <div className="mb-6 flex flex-wrap gap-2">
-        {["Todas", ...ZONAS].map((z) => (
+        {["Todas", ...zonas].map((z) => (
           <button
             key={z}
             type="button"

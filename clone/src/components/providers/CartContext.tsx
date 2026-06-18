@@ -20,7 +20,7 @@ interface CartCtx {
   setQty: (productId: string, qty: number) => void;
   removeItem: (productId: string) => void;
   clear: () => void;
-  applyCoupon: (code: string) => { ok: boolean; message: string };
+  applyCoupon: (code: string) => Promise<{ ok: boolean; message: string }>;
   removeCoupon: () => void;
 }
 
@@ -94,13 +94,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCoupon(null);
   }, []);
 
-  const applyCoupon = useCallback((code: string) => {
-    // Validate against the API (synchronous check — we store the code and validate at checkout)
-    const normalizedCode = code.toUpperCase().trim();
-    if (!normalizedCode) return { ok: false, message: "Ingresá un código" };
-    setCoupon({ code: normalizedCode, percent: 0, description: "Se validará al finalizar" });
-    return { ok: true, message: `Cupón ${normalizedCode} aplicado` };
-  }, []);
+  const applyCoupon = useCallback(
+    async (code: string) => {
+      const normalizedCode = code.toUpperCase().trim();
+      if (!normalizedCode) return { ok: false, message: "Ingresá un código" };
+      const sub = lines.reduce((s, l) => s + l.product.priceWeb * l.quantity, 0);
+      try {
+        const r = await fetch("/api/coupons/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: normalizedCode, subtotal: sub }),
+        });
+        const d = await r.json();
+        if (!r.ok) return { ok: false, message: d.error || "Cupón inválido" };
+        setCoupon({
+          code: normalizedCode,
+          percent: Number(d.percent) || 0,
+          amount: Number(d.amount) || 0,
+          description: d.description || "",
+        });
+        return { ok: true, message: `Cupón ${normalizedCode} aplicado` };
+      } catch {
+        return { ok: false, message: "No se pudo validar el cupón" };
+      }
+    },
+    [lines],
+  );
 
   const removeCoupon = useCallback(() => setCoupon(null), []);
 
@@ -108,8 +127,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const count = useMemo(() => lines.reduce((s, l) => s + l.quantity, 0), [lines]);
   const discount = useMemo(() => {
     if (!coupon) return 0;
-    if (coupon.percent > 0) return Math.round((subtotal * coupon.percent) / 100);
-    return 0; // Real discount calculated at checkout via API
+    const d = coupon.percent > 0 ? Math.round((subtotal * coupon.percent) / 100) : coupon.amount || 0;
+    return Math.min(d, subtotal);
   }, [subtotal, coupon]);
   const total = Math.max(0, subtotal - discount);
 

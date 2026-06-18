@@ -133,6 +133,45 @@ export async function authRoutes(app: FastifyInstance) {
     },
   );
 
+  // Registro público de CLIENTES (rol customer). Crea credenciales reales y deja
+  // sesión iniciada (igual que login): accessToken + cookie de refresh.
+  app.post(
+    "/auth/register",
+    { schema: { body: registerInput, response: { 200: sessionUser } } },
+    async (req, reply) => {
+      const email = req.body.email.toLowerCase().trim();
+      const existing = await findUserByEmail(email);
+      if (existing) return reply.conflict("Ya existe una cuenta con ese email");
+
+      const u = await createUser({ ...req.body, email, role: "customer" });
+      const access = await reply.jwtSign({ sub: u.id, role: u.role }, { expiresIn: env.JWT_ACCESS_TTL });
+      const refresh = await reply.jwtSign(
+        { sub: u.id, typ: "refresh" },
+        { key: env.JWT_REFRESH_SECRET, expiresIn: env.JWT_REFRESH_TTL },
+      );
+      await persistRefreshToken({
+        userId: u.id,
+        token: refresh,
+        ttlMs: refreshTtlMs(env.JWT_REFRESH_TTL),
+        userAgent: req.headers["user-agent"] ?? undefined,
+        ip: req.ip,
+      });
+      reply
+        .setCookie(REFRESH_COOKIE, refresh, {
+          httpOnly: true,
+          secure: env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/auth",
+          domain: env.COOKIE_DOMAIN,
+          maxAge: refreshTtlMs(env.JWT_REFRESH_TTL) / 1000,
+        })
+        .send({
+          accessToken: access,
+          user: { id: u.id, email: u.email, name: u.name, role: u.role },
+        });
+    },
+  );
+
   // Usuario actual (a partir del access JWT). Para restaurar sesión y guards en el admin.
   app.get(
     "/auth/me",

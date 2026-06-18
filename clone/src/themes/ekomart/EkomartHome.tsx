@@ -111,6 +111,8 @@ function FeatureRow() {
 function DiscountSection({ deals }: { deals: Product[] }) {
   if (!deals.length) return null;
   const grid = deals.slice(0, 4);
+  // Precio real "desde": el menor priceWeb de las ofertas vigentes (sin precio falso).
+  const fromPrice = formatGs(Math.min(...deals.map((p) => p.priceWeb)));
   return (
     <div className="rts-grocery-feature-area rts-section-gapBottom">
       <div className="container">
@@ -142,7 +144,7 @@ function DiscountSection({ deals }: { deals: Product[] }) {
                       </h4>
                       <div className="price-area">
                         <span>Desde</span>
-                        <h4 className="title">Gs 15.000</h4>
+                        <h4 className="title">{fromPrice}</h4>
                       </div>
                     </div>
                   </Link>
@@ -162,7 +164,7 @@ function DiscountSection({ deals }: { deals: Product[] }) {
                       </h4>
                       <div className="price-area">
                         <span>Desde</span>
-                        <h4 className="title">Gs 15.000</h4>
+                        <h4 className="title">{fromPrice}</h4>
                       </div>
                     </div>
                   </Link>

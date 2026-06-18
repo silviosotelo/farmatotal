@@ -107,7 +107,7 @@ export function AnvogueCheckout() {
           couponCode: coupon?.code,
           paymentMethod,
           shippingMethod,
-          branchId: shippingMethod === "pickup" ? selected?.id : undefined,
+          branchId: shippingMethod === "pickup" ? selected?.branchId : undefined,
           billing: {
             name: `${nombre} ${apellido}`.trim(),
             phone: telefono,
@@ -126,24 +126,7 @@ export function AnvogueCheckout() {
 
       const order = await res.json();
 
-      // 2. If online payment, initiate Bancard
-      if (paymentMethod === "online") {
-        const payRes = await fetch("/api/payments/bancard/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId: order.id }),
-        });
-
-        if (payRes.ok) {
-          const payData = await payRes.json();
-          // Redirect to Bancard checkout
-          window.location.href = payData.checkoutUrl;
-          return;
-        }
-        // If Bancard fails, order is still created as PENDING
-      }
-
-      // 3. Save to localStorage for "pedido-recibido" page
+      // 2. Persistir resumen para "pedido-recibido" (ambos caminos).
       try {
         localStorage.setItem(
           "ft_last_order_v1",
@@ -168,6 +151,12 @@ export function AnvogueCheckout() {
       }
 
       clear();
+
+      // 3. Pago online → página interna del iframe Bancard; si no, confirmación directa.
+      if (paymentMethod === "online") {
+        window.location.href = `/pago/${order.id}`;
+        return;
+      }
       router.push("/pedido-recibido");
     } catch {
       toast("Error de conexión. Intentá de nuevo.", "error");

@@ -10,6 +10,7 @@ export * from "./coupons";
 export * from "./customers";
 export * from "./slides";
 export * from "./reviews";
+export * from "./wishlist";
 export * from "./variants";
 export * from "./media";
 export * from "./mailer";

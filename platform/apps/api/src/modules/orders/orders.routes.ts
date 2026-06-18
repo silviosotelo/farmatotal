@@ -161,6 +161,18 @@ export async function orderRoutes(app: FastifyInstance) {
     return { data: rows, page, perPage, total: count, totalPages: Math.ceil(count / perPage) };
   });
 
+  // Rastreo público de pedido por número (GET abierto).
+  app.get(
+    "/orders/by-number/:number",
+    { schema: { params: z.object({ number: z.string() }) } },
+    async (req, reply) => {
+      const [o] = await db.select().from(orders).where(eq(orders.number, req.params.number)).limit(1);
+      if (!o) return reply.notFound();
+      const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, o.id));
+      return reply.send({ ...o, lines });
+    },
+  );
+
   app.get("/orders/:id", { schema: { params: idParam } }, async (req, reply) => {
     const [o] = await db.select().from(orders).where(eq(orders.id, req.params.id)).limit(1);
     if (!o) return reply.notFound();

@@ -65,6 +65,8 @@ export interface Coupon {
   code: string;
   /** percent off (0–100) */
   percent: number;
+  /** fixed amount off (₲) — usado cuando percent = 0 */
+  amount?: number;
   description: string;
 }
 

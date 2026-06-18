@@ -33,7 +33,7 @@ function adapt(p: Record<string, unknown>): Product {
 }
 
 /** Bloque: círculos de categorías (lee setting home_categories). */
-export function HomeCategoriesBlock() {
+export function HomeCategoriesBlock({ title, limit }: { title?: string; limit?: number } = {}) {
   const [cats, setCats] = useState<Category[]>([]);
   useEffect(() => {
     fetch(`${API}/cms/settings/home_categories`)
@@ -42,7 +42,7 @@ export function HomeCategoriesBlock() {
       .catch(() => setCats([]));
   }, []);
   if (cats.length === 0) return null;
-  return <CategoryCircles categories={cats} />;
+  return <CategoryCircles categories={cats} title={title} limit={limit} />;
 }
 
 /** Bloque: ofertas del día (productos onPromo). Theme-aware: Ekomart/Anvogue
@@ -68,7 +68,7 @@ export function HomeDealsBlock({
 }
 
 /** Bloque: selección destacada (featured). */
-export function HomeFeaturedBlock({ limit = 8 }: { limit?: number }) {
+export function HomeFeaturedBlock({ limit = 8, title }: { limit?: number; title?: string }) {
   const [items, setItems] = useState<Product[]>([]);
   useEffect(() => {
     fetch(`${API}/catalog/products?featured=true&status=published&perPage=${limit}`)
@@ -77,7 +77,7 @@ export function HomeFeaturedBlock({ limit = 8 }: { limit?: number }) {
       .catch(() => setItems([]));
   }, [limit]);
   if (items.length === 0) return null;
-  return <SeleccionParaVos products={items} />;
+  return <SeleccionParaVos products={items} title={title} />;
 }
 
 /** Bloque: banner promocional (lee setting promo_banners[index]). */

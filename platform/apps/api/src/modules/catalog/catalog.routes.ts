@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import {
   brandDTO,
   brandInput,
@@ -19,11 +19,25 @@ const idParam = z.object({ id: z.string().uuid() });
 
 export async function catalogRoutes(app: FastifyInstance) {
   // ============ CATEGORIES ============
+  // Lista plana. Filtros: ?parentId=null → solo departamentos top-level;
+  // ?parentId=<uuid> → subcategorías de ese departamento; sin filtro → todas.
   app.get(
     "/catalog/categories",
-    { schema: { response: { 200: paginated(categoryDTO) } } },
-    async () => {
-      const rows = await db.select().from(categories).orderBy(asc(categories.position), asc(categories.name));
+    {
+      schema: {
+        querystring: z.object({ parentId: z.string().optional() }),
+        response: { 200: paginated(categoryDTO) },
+      },
+    },
+    async (req) => {
+      const { parentId } = req.query as { parentId?: string };
+      const where =
+        parentId === "null" ? isNull(categories.parentId) : parentId ? eq(categories.parentId, parentId) : undefined;
+      const rows = await db
+        .select()
+        .from(categories)
+        .where(where)
+        .orderBy(asc(categories.position), asc(categories.name));
       return {
         data: rows.map(toCategoryDTO),
         page: 1,
@@ -33,6 +47,20 @@ export async function catalogRoutes(app: FastifyInstance) {
       };
     },
   );
+
+  // Árbol jerárquico de categorías (departamentos → subcategorías).
+  app.get("/catalog/categories/tree", async () => {
+    const rows = await db.select().from(categories).orderBy(asc(categories.position), asc(categories.name));
+    type Node = ReturnType<typeof toCategoryDTO> & { children: Node[] };
+    const byId = new Map<string, Node>(rows.map((r) => [r.id, { ...toCategoryDTO(r), children: [] }]));
+    const roots: Node[] = [];
+    for (const node of byId.values()) {
+      const parent = node.parentId ? byId.get(node.parentId) : undefined;
+      if (parent) parent.children.push(node);
+      else roots.push(node);
+    }
+    return { data: roots, total: roots.length };
+  });
 
   app.post(
     "/catalog/categories",

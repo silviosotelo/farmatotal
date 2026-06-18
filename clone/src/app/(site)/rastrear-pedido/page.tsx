@@ -3,24 +3,67 @@
 import { useState } from "react";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { useToast } from "@/components/providers/ToastContext";
+import { formatGs } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
-const STEPS = ["Recibido", "En preparación", "Listo para retiro", "Entregado"];
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const STEPS = ["Recibido", "En preparación", "Listo / En camino", "Entregado"];
+// Estado del backend → índice del stepper.
+const STATUS_STEP: Record<string, number> = {
+  pending: 0,
+  paid: 1,
+  processing: 1,
+  fulfilled: 2,
+  delivered: 3,
+};
 const inputClass =
   "w-full bg-search-bg rounded-md h-11 px-3 text-sm outline-none border border-transparent focus-visible:ring-2 focus-visible:ring-brand-orange/40";
+
+type TrackedOrder = {
+  number: string;
+  status: string;
+  total: number;
+  customerEmail?: string | null;
+  createdAt?: string;
+  lines?: { title: string; quantity: number }[];
+};
 
 export default function RastrearPedidoPage() {
   const { toast } = useToast();
   const [nro, setNro] = useState("");
   const [email, setEmail] = useState("");
-  const [result, setResult] = useState<string | null>(null);
-  const activeStep = 1; // mock: "En preparación"
+  const [order, setOrder] = useState<TrackedOrder | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!nro.trim()) return toast("Ingresá el número de pedido", "error");
-    setResult(nro.trim().toUpperCase());
-  };
+    const n = nro.trim().toUpperCase();
+    if (!n) return toast("Ingresá el número de pedido", "error");
+    setLoading(true);
+    setOrder(null);
+    try {
+      const r = await fetch(`${API}/orders/by-number/${encodeURIComponent(n)}`);
+      if (!r.ok) {
+        toast("No encontramos un pedido con ese número", "error");
+        setLoading(false);
+        return;
+      }
+      const o = (await r.json()) as TrackedOrder;
+      // Privacidad: si ingresó correo, debe coincidir con el del pedido.
+      if (email.trim() && o.customerEmail && o.customerEmail.toLowerCase() !== email.trim().toLowerCase()) {
+        toast("El correo no coincide con el pedido", "error");
+        setLoading(false);
+        return;
+      }
+      setOrder(o);
+    } catch {
+      toast("Error de conexión. Intentá de nuevo.", "error");
+    }
+    setLoading(false);
+  }
+
+  const cancelled = order ? order.status === "cancelled" || order.status === "refunded" : false;
+  const activeStep = order ? (STATUS_STEP[order.status] ?? 0) : 0;
 
   return (
     <main className="flex-1">
@@ -32,43 +75,68 @@ export default function RastrearPedidoPage() {
         <form onSubmit={submit} className="flex flex-col gap-4 sm:flex-row sm:items-end">
           <div className="flex-1">
             <label htmlFor="t-nro" className="mb-1 block text-sm text-brand-text">N° de pedido *</label>
-            <input id="t-nro" placeholder="FT-10432" value={nro} onChange={(e) => setNro(e.target.value)} className={inputClass} />
+            <input id="t-nro" placeholder="FT-XXXXXX" value={nro} onChange={(e) => setNro(e.target.value)} className={inputClass} />
           </div>
           <div className="flex-1">
             <label htmlFor="t-email" className="mb-1 block text-sm text-brand-text">Correo</label>
             <input id="t-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
           </div>
-          <button type="submit" className="brand-gradient focus-ring h-[44px] shrink-0 rounded-[30px] px-8 text-sm font-semibold text-white">
-            Rastrear
+          <button type="submit" disabled={loading} className="brand-gradient focus-ring h-[44px] shrink-0 rounded-[30px] px-8 text-sm font-semibold text-white disabled:opacity-60">
+            {loading ? "Buscando…" : "Rastrear"}
           </button>
         </form>
 
-        {result && (
+        {order && (
           <div className="mt-8 rounded-[10px] border border-[#ededf1] p-6">
-            <p className="mb-6 text-sm">
-              Pedido <span className="font-bold text-brand-text">{result}</span> —{" "}
-              <span className="font-medium text-brand-orange-ink">{STEPS[activeStep]}</span>
-            </p>
-            <ol className="flex items-center">
-              {STEPS.map((s, i) => (
-                <li key={s} className="flex flex-1 flex-col items-center text-center last:flex-none">
-                  <div className="flex w-full items-center">
-                    <span
-                      className={cn(
-                        "z-10 flex size-8 items-center justify-center rounded-full text-xs font-bold",
-                        i <= activeStep ? "bg-brand-orange text-white" : "bg-search-bg text-brand-muted",
+            <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
+              <p className="text-sm">
+                Pedido <span className="font-bold text-brand-text">{order.number}</span>
+                {!cancelled && (
+                  <>
+                    {" — "}
+                    <span className="font-medium text-brand-orange-ink">{STEPS[activeStep]}</span>
+                  </>
+                )}
+              </p>
+              <span className="font-price text-sm font-semibold text-brand-text">{formatGs(order.total)}</span>
+            </div>
+
+            {cancelled ? (
+              <p className="rounded-md bg-[#fdecea] px-4 py-3 text-sm font-medium text-[#c0392b]">
+                Este pedido figura como {order.status === "refunded" ? "reembolsado" : "cancelado"}.
+              </p>
+            ) : (
+              <ol className="flex items-center">
+                {STEPS.map((s, i) => (
+                  <li key={s} className="flex flex-1 flex-col items-center text-center last:flex-none">
+                    <div className="flex w-full items-center">
+                      <span
+                        className={cn(
+                          "z-10 flex size-8 items-center justify-center rounded-full text-xs font-bold",
+                          i <= activeStep ? "bg-brand-orange text-white" : "bg-search-bg text-brand-muted",
+                        )}
+                      >
+                        {i < activeStep ? "✓" : i + 1}
+                      </span>
+                      {i < STEPS.length - 1 && (
+                        <span className={cn("h-1 flex-1", i < activeStep ? "bg-brand-orange" : "bg-[#ededf1]")} />
                       )}
-                    >
-                      {i < activeStep ? "✓" : i + 1}
-                    </span>
-                    {i < STEPS.length - 1 && (
-                      <span className={cn("h-1 flex-1", i < activeStep ? "bg-brand-orange" : "bg-[#ededf1]")} />
-                    )}
-                  </div>
-                  <span className={cn("mt-2 text-xs", i <= activeStep ? "text-brand-text" : "text-brand-muted")}>{s}</span>
-                </li>
-              ))}
-            </ol>
+                    </div>
+                    <span className={cn("mt-2 text-xs", i <= activeStep ? "text-brand-text" : "text-brand-muted")}>{s}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+
+            {order.lines && order.lines.length > 0 && (
+              <ul className="mt-6 space-y-1 border-t border-[#ededf1] pt-4 text-sm text-brand-muted">
+                {order.lines.map((l, i) => (
+                  <li key={i}>
+                    {l.quantity}× {l.title}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
       </div>

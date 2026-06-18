@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { SUCURSALES, type Sucursal } from "@/lib/sucursales";
+import { fetchSucursales, zonasOf, nearestSucursal, type Sucursal } from "@/lib/sucursales";
 
 const STORAGE_KEY = "ft_sucursal";
 
@@ -10,9 +10,13 @@ interface SucursalCtx {
   isOpen: boolean;
   /** true cuando todavía no hay sucursal elegida → el modal es obligatorio (sin cierre). */
   mandatory: boolean;
+  /** Lista de sucursales (del backend /branches). */
+  sucursales: Sucursal[];
+  zonas: string[];
   open: () => void;
   close: () => void;
   select: (s: Sucursal) => void;
+  nearest: (lat: number, lng: number) => Sucursal | null;
 }
 
 const Ctx = createContext<SucursalCtx | null>(null);
@@ -20,21 +24,28 @@ const Ctx = createContext<SucursalCtx | null>(null);
 export function SucursalProvider({ children }: { children: ReactNode }) {
   const [selected, setSelected] = useState<Sucursal | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [sucursales, setSucursales] = useState<Sucursal[]>([]);
 
-  // hydrate from localStorage on mount; si no hay sucursal guardada, abrir el
-  // modal de forma obligatoria (la tienda exige elegir tienda como en Farmatotal).
+  // Trae las sucursales del backend y resuelve la guardada en localStorage.
+  // Si no hay sucursal elegida, abre el modal obligatorio (como Farmatotal).
   useEffect(() => {
-    try {
-      const id = localStorage.getItem(STORAGE_KEY);
-      const found = id ? SUCURSALES.find((s) => s.id === id) : undefined;
-      if (found) {
-        setSelected(found);
-      } else {
-        setIsOpen(true);
+    let cancelled = false;
+    fetchSucursales().then((list) => {
+      if (cancelled) return;
+      setSucursales(list);
+      let storedId: string | null = null;
+      try {
+        storedId = localStorage.getItem(STORAGE_KEY);
+      } catch {
+        /* ignore */
       }
-    } catch {
-      setIsOpen(true);
-    }
+      const found = storedId ? list.find((s) => s.id === storedId) : undefined;
+      if (found) setSelected(found);
+      else setIsOpen(true);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const open = useCallback(() => setIsOpen(true), []);
@@ -55,9 +66,12 @@ export function SucursalProvider({ children }: { children: ReactNode }) {
     setIsOpen(false);
   }, []);
 
+  const zonas = useMemo(() => zonasOf(sucursales), [sucursales]);
+  const nearest = useCallback((lat: number, lng: number) => nearestSucursal(sucursales, lat, lng), [sucursales]);
+
   const value = useMemo(
-    () => ({ selected, isOpen, mandatory: !selected, open, close, select }),
-    [selected, isOpen, open, close, select],
+    () => ({ selected, isOpen, mandatory: !selected, sucursales, zonas, open, close, select, nearest }),
+    [selected, isOpen, sucursales, zonas, open, close, select, nearest],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
 import { z } from "zod";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Shape que arma el storefront (CheckoutBlock.tsx).
 const lineSchema = z.object({
-  productId: z.string(),
+  productId: z.string().optional(),
   sku: z.string(),
   title: z.string(),
   quantity: z.number().int().min(1),
@@ -19,6 +21,7 @@ const checkoutSchema = z.object({
   branchId: z.string().optional(),
   billing: z.object({
     name: z.string().min(1),
+    email: z.string().email().optional(),
     doc: z.string().optional(),
     docType: z.string().optional(),
     phone: z.string().optional(),
@@ -27,107 +30,95 @@ const checkoutSchema = z.object({
   }),
 });
 
-function generateOrderNumber(): string {
-  return `FT-${Date.now().toString(36).toUpperCase()}`;
-}
-
+/**
+ * Proxy del checkout del storefront hacia el backend de la plataforma.
+ * El backend (POST :4000/orders/checkout) es público (whitelist, sin JWT),
+ * persiste la orden y dispara el push al ERP. Acá sólo transformamos el body
+ * del front al contrato del backend y devolvemos el shape que el front espera.
+ */
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
-    const body = await req.json();
-    const data = checkoutSchema.parse(body);
+    const data = checkoutSchema.parse(await req.json());
 
-    // Validate stock
-    for (const line of data.lines) {
-      const product = await db.product.findUnique({ where: { id: line.productId } });
-      if (!product) {
-        return NextResponse.json({ error: `Producto no encontrado: ${line.sku}` }, { status: 400 });
-      }
-      if (product.stock < line.quantity) {
-        return NextResponse.json({
-          error: `Stock insuficiente para ${product.title}. Disponible: ${product.stock}`,
-        }, { status: 400 });
-      }
-    }
+    // online -> online · contraentrega (efectivo/transferencia) -> cash
+    const paymentMethod = data.paymentMethod === "online" ? "online" : "cash";
 
-    // Calculate totals
-    const subtotal = data.lines.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
-    let discount = 0;
+    // El backend exige branchId uuid|null; si la sucursal no es uuid, va null.
+    const branchId =
+      data.shippingMethod === "pickup" && data.branchId && UUID_RE.test(data.branchId)
+        ? data.branchId
+        : null;
 
-    // Apply coupon
-    if (data.couponCode) {
-      const coupon = await db.coupon.findUnique({ where: { code: data.couponCode.toUpperCase() } });
-      if (coupon && coupon.active) {
-        if (coupon.type === "PERCENT") {
-          discount = Math.round(subtotal * (coupon.value / 100));
-        } else {
-          discount = coupon.value;
-        }
-        await db.coupon.update({
-          where: { id: coupon.id },
-          data: { usedCount: { increment: 1 } },
-        });
-      }
-    }
+    const docType =
+      data.billing.docType === "RUC" ? "RUC" : data.billing.docType === "CI" ? "CI" : undefined;
 
-    const total = Math.max(0, subtotal - discount);
+    const payload = {
+      customerName: data.billing.name,
+      // El backend valida email; si el front no lo manda usamos un placeholder.
+      customerEmail: data.billing.email || "sin-correo@farmatotal.com.py",
+      customerPhone: data.billing.phone || undefined,
+      customerDoc: data.billing.doc || undefined,
+      docType,
+      docNumber: docType ? data.billing.doc : undefined,
+      shippingMethod: data.shippingMethod,
+      branchId,
+      shippingAddress:
+        data.shippingMethod === "delivery"
+          ? { address: data.billing.address ?? "", city: data.billing.city ?? "" }
+          : undefined,
+      paymentMethod,
+      couponCode: data.couponCode || undefined,
+      lines: data.lines.map((l) => ({
+        // productId sólo si es uuid real del backend; si no, se omite.
+        productId: l.productId && UUID_RE.test(l.productId) ? l.productId : undefined,
+        sku: l.sku,
+        title: l.title,
+        unitPrice: l.unitPrice,
+        quantity: l.quantity,
+      })),
+    };
 
-    // Create order
-    const order = await db.order.create({
-      data: {
-        number: generateOrderNumber(),
-        userId: user?.id ?? null,
-        status: data.paymentMethod === "contraentrega" ? "PENDING" : "PENDING",
-        subtotal,
-        discount,
-        total,
-        couponCode: data.couponCode?.toUpperCase(),
-        paymentMethod: data.paymentMethod,
-        shippingMethod: data.shippingMethod,
-        branchId: data.shippingMethod === "pickup" ? data.branchId : null,
-        billingName: data.billing.name,
-        billingDoc: data.billing.doc,
-        billingDocType: data.billing.docType,
-        billingPhone: data.billing.phone,
-        billingAddress: data.billing.address,
-        billingCity: data.billing.city,
-        lines: {
-          create: data.lines.map((l) => ({
-            productId: l.productId,
-            sku: l.sku,
-            title: l.title,
-            quantity: l.quantity,
-            unitPrice: l.unitPrice,
-            subtotal: l.unitPrice * l.quantity,
-          })),
-        },
-      },
-      include: { lines: true },
+    const res = await fetch(`${API_URL}/orders/checkout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      cache: "no-store",
     });
 
-    // Decrement stock
-    for (const line of data.lines) {
-      await db.product.update({
-        where: { id: line.productId },
-        data: { stock: { decrement: line.quantity } },
-      });
+    if (!res.ok) {
+      let msg = "Error al crear el pedido";
+      try {
+        const e = await res.json();
+        msg = e.message || e.error || msg;
+      } catch {
+        /* respuesta no-JSON */
+      }
+      return NextResponse.json({ error: msg }, { status: res.status === 400 ? 400 : 502 });
     }
+
+    // Backend devuelve { id, number, total, status }
+    const order = (await res.json()) as {
+      id: string;
+      number: string;
+      total: number;
+      status: string;
+    };
 
     return NextResponse.json({
       id: order.id,
       number: order.number,
       total: order.total,
       status: order.status,
-      paymentMethod: order.paymentMethod,
+      paymentMethod,
     });
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues[0].message }, { status: 400 });
     }
-    if (err instanceof Error && err.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Inicia sesión para continuar" }, { status: 401 });
-    }
-    console.error("Checkout error:", err);
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    console.error("Checkout proxy error:", err);
+    return NextResponse.json(
+      { error: "Error de conexión con el servidor" },
+      { status: 502 },
+    );
   }
 }

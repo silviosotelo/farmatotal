@@ -19,7 +19,19 @@ type Slide = {
  * edita en el admin → "Banners del Home". Filtra por día y dispositivo igual
  * que el WordPress original (endpoint /slides/today). Mismo diseño/Carousel.
  */
-export function HeroSlider() {
+export function HeroSlider({
+  autoplayDelay = 4000,
+  showArrows = true,
+  showDots = true,
+  loop = true,
+  fade = true,
+}: {
+  autoplayDelay?: number;
+  showArrows?: boolean;
+  showDots?: boolean;
+  loop?: boolean;
+  fade?: boolean;
+} = {}) {
   const [items, setItems] = useState<Slide[]>([]);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -46,11 +58,11 @@ export function HeroSlider() {
   return (
     <div className="relative w-full overflow-hidden">
       <Carousel
-        fade
-        autoplayDelay={4000}
-        showArrows
-        showDots
-        options={{ loop: true }}
+        fade={fade}
+        autoplayDelay={autoplayDelay}
+        showArrows={showArrows}
+        showDots={showDots}
+        options={{ loop }}
         slideClassName="basis-full"
         arrowClassName="size-11"
       >

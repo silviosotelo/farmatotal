@@ -78,42 +78,11 @@ export function CatalogStockProvider({
 
     (async () => {
       try {
-        // 1) Resolver la branch del backend que mejor matchea la sucursal elegida.
-        const bres = await fetch(`${API}/branches`);
-        const bjson = await bres.json();
-        const branches: BranchRow[] = Array.isArray(bjson)
-          ? bjson
-          : (bjson?.data as BranchRow[]) || [];
+        // La sucursal elegida YA es una branch del backend (selected.id = code).
+        const matchCode = selected.id;
+        const matchName = selected.name;
 
-        const want = new Set([
-          ...tokens(selected.name),
-          ...tokens(selected.address),
-        ]);
-        let best = 0;
-        let matchCode: string | null = null;
-        let matchName: string | null = null;
-        for (const b of branches) {
-          const bName = b.name ?? b.branchName ?? "";
-          const bCode = b.code ?? b.branchCode ?? "";
-          const have = tokens(bName);
-          const score = have.reduce((n, t) => n + (want.has(t) ? 1 : 0), 0);
-          if (score > best) {
-            best = score;
-            matchCode = bCode || null;
-            matchName = bName || null;
-          }
-        }
-        // JAMÁS fallback: sin match confiable (>=2 tokens) → sin badges.
-        if (best < 2 || !matchCode) {
-          if (alive) {
-            setStockBySku({});
-            setBranchName(null);
-            setReady(true);
-          }
-          return;
-        }
-
-        // 2) Stock batch de todos los SKUs en UNA sola llamada.
+        // Stock batch de todos los SKUs en UNA sola llamada.
         const list = skus.filter(Boolean);
         let map: Record<string, number> = {};
         if (list.length) {

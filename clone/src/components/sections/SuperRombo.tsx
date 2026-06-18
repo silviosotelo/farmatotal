@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Carousel } from "@/components/ui/Carousel";
 import { ProductCard } from "@/components/ProductCard";
-import { SUPER_ROMBO_PRODUCTS } from "@/lib/data";
 import type { Product } from "@/types";
 
 function getSecondsUntilEndOfDay(): number {
@@ -36,6 +35,8 @@ export function SuperRombo({ products }: { products?: Product[] } = {}) {
   const hours = Math.floor((seconds ?? 0) / 3600);
   const minutes = Math.floor(((seconds ?? 0) % 3600) / 60);
   const secs = (seconds ?? 0) % 60;
+
+  if (!products || products.length === 0) return null;
 
   return (
     <div className="ft-container mt-6">
@@ -86,7 +87,7 @@ export function SuperRombo({ products }: { products?: Product[] } = {}) {
             options={{ loop: true }}
             slideClassName="basis-1/2 lg:basis-1/3 px-2"
           >
-            {(products ?? SUPER_ROMBO_PRODUCTS).map((p) => (
+            {(products ?? []).map((p) => (
               <ProductCard key={p.slug} product={p} />
             ))}
           </Carousel>

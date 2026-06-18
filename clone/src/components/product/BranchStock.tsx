@@ -8,23 +8,10 @@ const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 type InvRow = { branchId: string; branchName: string; branchCode: string; stock: number; reserved: number };
 
-/** normaliza para matchear sucursal del clone ↔ branch del backend. */
-function norm(s: string): string {
-  return (s || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-function tokens(s: string): string[] {
-  return norm(s).split(" ").filter((t) => t.length > 3);
-}
-
 /**
- * Stock del producto en la sucursal elegida (#74). Mapea la sucursal del store
- * (lista estática con dirección) a la branch del backend por solapamiento de
- * tokens del nombre/dirección, y muestra el stock del inventario real.
+ * Stock del producto en la sucursal elegida (#74). La sucursal del store YA es
+ * una branch del backend (selected.id = branchCode), así que el match es directo
+ * contra el inventario real.
  */
 export function BranchStock({ productId }: { productId: string }) {
   const { selected, open } = useSucursal();
@@ -43,21 +30,9 @@ export function BranchStock({ productId }: { productId: string }) {
 
   if (!selected) return null;
 
-  // match sucursal ↔ branch por overlap de tokens (nombre + dirección)
-  let match: InvRow | undefined;
-  if (rows && rows.length) {
-    const want = new Set([...tokens(selected.name), ...tokens(selected.address)]);
-    let best = 0;
-    for (const row of rows) {
-      const have = tokens(row.branchName);
-      const score = have.reduce((n, t) => n + (want.has(t) ? 1 : 0), 0);
-      if (score > best) {
-        best = score;
-        match = row;
-      }
-    }
-    if (best < 2) match = undefined; // overlap insuficiente → no afirmar stock
-  }
+  // match directo: la sucursal elegida es una branch del backend (id = code).
+  const match: InvRow | undefined =
+    rows?.find((r) => r.branchCode === selected.id || r.branchId === selected.id);
 
   const loading = rows === null;
   const available = match ? Math.max(0, match.stock - match.reserved) : null;

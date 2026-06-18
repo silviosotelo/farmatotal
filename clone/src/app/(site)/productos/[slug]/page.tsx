@@ -7,10 +7,12 @@ import { ProductActions } from "@/components/product/ProductActions";
 import { ProductTabs } from "@/components/product/ProductTabs";
 import { BranchStock } from "@/components/product/BranchStock";
 import { formatGs } from "@/lib/format";
-import { getProductBySlug, getDeals, listReviews, listVariants } from "@/lib/api";
+import { getProductBySlug, getDeals, listReviews, listVariants, getPage } from "@/lib/api";
 import { getActiveTheme } from "@/themes/registry";
 import { EkomartProductDetail } from "@/themes/ekomart/pages/EkomartProductDetail";
 import { AnvogueProductDetail } from "@/themes/anvogue/pages/AnvogueProductDetail";
+import ChaiRender, { type ChaiBlock } from "@/components/cms/ChaiRender";
+import { ProductDataProvider } from "@/components/cms/ProductDataContext";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -36,6 +38,20 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   }
   if (theme === "anvogue") {
     return <AnvogueProductDetail product={product} related={related} reviews={reviews} variants={variants} />;
+  }
+
+  // Farmatotal: la ficha es un documento del builder (slug `producto`). La ruta
+  // provee el producto por contexto y el bloque ProductDetail lo consume.
+  const doc = await getPage("producto").catch(() => null);
+  if (doc?.published && Array.isArray(doc.blocks) && doc.blocks.length > 0) {
+    return (
+      <ProductDataProvider value={{ product, related, reviews, variants }}>
+        <main className="flex-1 pb-12">
+          <Breadcrumbs items={[{ label: "Ofertas", href: `/categorias/ofertas/` }, { label: product.title }]} />
+          <ChaiRender blocks={doc.blocks as ChaiBlock[]} />
+        </main>
+      </ProductDataProvider>
+    );
   }
 
   return (

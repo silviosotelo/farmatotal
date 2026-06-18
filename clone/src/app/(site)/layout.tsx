@@ -12,7 +12,8 @@ import { WishlistProvider } from "@/components/providers/WishlistContext";
 import { CartProvider } from "@/components/providers/CartContext";
 import { MiniCart } from "@/components/sections/MiniCart";
 import CmsZone from "@/components/cms/CmsZone";
-import { getHeaderConfig, getFooterConfig, getStoreConfig, brandColorVars } from "@/lib/api";
+import ChaiRender, { type ChaiBlock } from "@/components/cms/ChaiRender";
+import { getHeaderConfig, getFooterConfig, getStoreConfig, getPage, brandColorVars } from "@/lib/api";
 import { getActiveTheme } from "@/themes/registry";
 import { ThemeProvider } from "@/themes/ThemeProvider";
 import { EkomartChrome } from "@/themes/ekomart/EkomartChrome";
@@ -59,13 +60,23 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [header, footer, store, theme] = await Promise.all([
+  const [header, footer, store, theme, headerDoc, footerDoc] = await Promise.all([
     getHeaderConfig().catch(() => null),
     getFooterConfig().catch(() => null),
     getStoreConfig().catch(() => null),
     getActiveTheme(),
+    getPage("header").catch(() => null),
+    getPage("footer").catch(() => null),
   ]);
   const brandCss = store ? brandColorVars(store.colors) : "";
+  const headerBlocks =
+    headerDoc?.published && Array.isArray(headerDoc.blocks) && headerDoc.blocks.length > 0
+      ? (headerDoc.blocks as ChaiBlock[])
+      : null;
+  const footerBlocks =
+    footerDoc?.published && Array.isArray(footerDoc.blocks) && footerDoc.blocks.length > 0
+      ? (footerDoc.blocks as ChaiBlock[])
+      : null;
   return (
     <html
       lang="es"
@@ -92,18 +103,30 @@ export default async function RootLayout({
                     <AnvogueChrome store={store}>{children}</AnvogueChrome>
                   ) : (
                     <>
-                      <Header
-                        topNav={header?.topNav}
-                        categories={header?.categories}
-                        logo={store?.logoUrl}
-                        brandName={store?.brandName}
-                      />
+                      {/* Header: documento editable del builder (slug `header`) si existe;
+                          si no, el Header nativo con su config. */}
+                      {headerBlocks ? (
+                        <ChaiRender blocks={headerBlocks} />
+                      ) : (
+                        <Header
+                          topNav={header?.topNav}
+                          categories={header?.categories}
+                          logo={store?.logoUrl}
+                          brandName={store?.brandName}
+                        />
+                      )}
                       <div id="contenido" className="flex flex-1 flex-col">
                         {children}
                       </div>
-                      {/* Zona editable global antes del footer (estilo widget-area WP) */}
-                      <CmsZone zone="footer-top" />
-                      <Footer copyright={footer?.copyright} partner={footer?.partner} />
+                      {/* Footer: documento editable del builder (slug `footer`) si existe. */}
+                      {footerBlocks ? (
+                        <ChaiRender blocks={footerBlocks} />
+                      ) : (
+                        <>
+                          <CmsZone zone="footer-top" />
+                          <Footer copyright={footer?.copyright} partner={footer?.partner} />
+                        </>
+                      )}
                     </>
                   )}
                   <FloatingButtons />

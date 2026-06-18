@@ -1,68 +1,63 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
-import { createBancardCheckout } from "@/lib/bancard";
 import { z } from "zod";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 const schema = z.object({
   orderId: z.string().min(1),
 });
 
+/**
+ * BFF → proxy a POST {API_BASE}/payments/bancard/create.
+ * El backend crea el pago vPOS contra la orden y devuelve { processId, jsUrl, shopProcessId }.
+ * Estos valores alimentan el SDK iframe de Bancard (Bancard.Checkout.createForm) en /pago/[id].
+ * Es escritura pública (checkout de invitado) — no exige sesión.
+ */
 export async function POST(req: NextRequest) {
+  let body: unknown;
   try {
-    const user = await getCurrentUser();
-    if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-
-    const body = await req.json();
-    const { orderId } = schema.parse(body);
-
-    // Buscar la orden
-    const order = await db.order.findFirst({
-      where: { id: orderId, userId: user.id },
-      include: { lines: true },
-    });
-    if (!order) return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
-    if (order.status !== "PENDING") {
-      return NextResponse.json({ error: "La orden ya fue procesada" }, { status: 400 });
-    }
-
-    // Crear registro de pago
-    const payment = await db.payment.create({
-      data: {
-        orderId: order.id,
-        provider: "bancard",
-        amount: order.total,
-        status: "REDIRECTED",
-      },
-    });
-
-    // Llamar a Bancard
-    const { processId, token } = await createBancardCheckout({
-      orderId: order.id,
-      amount: order.total,
-      description: `Pedido ${order.number} - Farmatotal`,
-    });
-
-    // Actualizar pago con datos de Bancard
-    await db.payment.update({
-      where: { id: payment.id },
-      data: {
-        processId: processId.toString(),
-        rawPayload: JSON.stringify({ processId, token }),
-      },
-    });
-
-    return NextResponse.json({
-      paymentId: payment.id,
-      processId,
-      token,
-      checkoutUrl: `https://vpos.infonet.com.py/vpos/embedded/${token}`,
-    });
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json({ error: err.issues[0].message }, { status: 400 });
-    }
-    console.error("Bancard create error:", err);
-    return NextResponse.json({ error: "Error al iniciar pago" }, { status: 500 });
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/payments/bancard/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId: parsed.data.orderId }),
+    });
+  } catch {
+    return NextResponse.json({ error: "No se pudo conectar con el servidor" }, { status: 502 });
+  }
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    // 503 = pasarela no configurada (sin claves). El front lo maneja como "no disponible".
+    return NextResponse.json(
+      {
+        error:
+          (data as { message?: string; error?: string })?.message ??
+          (data as { error?: string })?.error ??
+          "Error al iniciar pago",
+      },
+      { status: res.status },
+    );
+  }
+
+  const { processId, jsUrl, shopProcessId } = data as {
+    processId?: string;
+    jsUrl?: string;
+    shopProcessId?: number;
+  };
+  if (!processId || !jsUrl) {
+    return NextResponse.json({ error: "Respuesta de pago inválida" }, { status: 502 });
+  }
+
+  return NextResponse.json({ processId, jsUrl, shopProcessId });
 }

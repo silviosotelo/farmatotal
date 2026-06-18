@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { TOP_NAV, MENU_CATEGORIES } from "@/lib/data";
+import { TOP_NAV } from "@/lib/data";
 import { formatGs } from "@/lib/format";
 import type { NavItem } from "@/lib/api";
 import {
@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/components/providers/CartContext";
 
 /* ─── TopBar (desktop only) ──────────────────────────────────────────────── */
-function TopBar({ topNav }: { topNav: NavItem[] }) {
+export function TopBar({ topNav }: { topNav: NavItem[] }) {
   return (
     <div
       className="hidden lg:flex w-full"
@@ -56,7 +56,7 @@ function TopBar({ topNav }: { topNav: NavItem[] }) {
 }
 
 /* ─── Mega-menu dropdown ─────────────────────────────────────────────────── */
-function MegaMenu({ onClose, categories }: { onClose: () => void; categories: NavItem[] }) {
+export function MegaMenu({ onClose, categories }: { onClose: () => void; categories: NavItem[] }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -240,7 +240,7 @@ function MobileDrawer({
 /* ─── Search bar (shared) — live autocomplete tipo Amazon ────────────────── */
 type Suggestion = { id: string; slug: string; title: string; price: number; priceNormal: number; image: string };
 
-function SearchBar({ className }: { className?: string }) {
+export function SearchBar({ className }: { className?: string }) {
   const searchId = useId();
   const router = useRouter();
   const boxRef = useRef<HTMLDivElement>(null);
@@ -521,14 +521,16 @@ function MainHeaderContent({
 /* ─── Root Header ─────────────────────────────────────────────────────────── */
 export default function Header({
   topNav = TOP_NAV,
-  categories = MENU_CATEGORIES,
+  categories = [],
   logo = "/brand/logo-farmatotal.svg",
   brandName = "Farmatotal",
+  showTopBar = true,
 }: {
   topNav?: NavItem[];
   categories?: NavItem[];
   logo?: string;
   brandName?: string;
+  showTopBar?: boolean;
 }) {
   const [scrolled, setScrolled] = useState(false);
 
@@ -544,7 +546,7 @@ export default function Header({
     <>
       <header className="w-full z-40">
         {/* Row 1 — TopBar */}
-        <TopBar topNav={topNav} />
+        {showTopBar && <TopBar topNav={topNav} />}
 
         {/* Row 2 — Main header (always in normal flow; acts as spacer) */}
         <div className="brand-gradient" style={{ height: "87px" }}>

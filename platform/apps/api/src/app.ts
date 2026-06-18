@@ -23,6 +23,7 @@ import { couponRoutes } from "./modules/coupons/coupons.routes.js";
 import { customerRoutes } from "./modules/customers/customers.routes.js";
 import { paymentRoutes } from "./modules/payments/payments.routes.js";
 import { reviewRoutes } from "./modules/reviews/reviews.routes.js";
+import { wishlistRoutes } from "./modules/wishlist/wishlist.routes.js";
 import { variantRoutes } from "./modules/variants/variants.routes.js";
 import { mediaRoutes } from "./modules/media/media.routes.js";
 import { notificationRoutes } from "./modules/notifications/notifications.routes.js";
@@ -76,6 +77,7 @@ export async function buildApp() {
   // Las lecturas (GET) quedan abiertas para el storefront.
   const PUBLIC_WRITES = new Set([
     "POST /auth/login",
+    "POST /auth/register",
     "POST /auth/refresh",
     "POST /auth/logout",
     "POST /auth/bootstrap",
@@ -115,6 +117,7 @@ export async function buildApp() {
   await app.register(customerRoutes);
   await app.register(paymentRoutes);
   await app.register(reviewRoutes);
+  await app.register(wishlistRoutes);
   await app.register(variantRoutes);
   await app.register(mediaRoutes);
   await app.register(notificationRoutes);

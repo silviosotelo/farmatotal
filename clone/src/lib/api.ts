@@ -292,11 +292,41 @@ export function brandColorVars(colors: BrandColors): string {
   return lines.length ? `:root{${lines.join("")}}` : "";
 }
 
+/**
+ * Departamentos para el menú del header — REALES y ESTRUCTURADOS del backend:
+ * top-level con hijos (departamentos verdaderos), del árbol de categorías.
+ * Filtra el ruido (hojas que en Woo quedaron sin padre, 0 subcategorías).
+ */
+export async function getMenuCategories(): Promise<NavItem[]> {
+  try {
+    const res = await api<{ data: { name: string; slug: string; children?: unknown[] }[] }>(
+      "/catalog/categories/tree",
+      { revalidate: 300 },
+    );
+    return (res.data || [])
+      .filter((c) => Array.isArray(c.children) && c.children.length > 0)
+      .map((c) => ({ label: c.name, href: `/categorias/${c.slug}/` }));
+  } catch {
+    return [];
+  }
+}
+
 export async function getHeaderConfig(): Promise<HeaderConfig> {
-  const cfg = await getSetting<Partial<HeaderConfig>>("header_config");
+  const [cfg, menuCats] = await Promise.all([
+    getSetting<Partial<HeaderConfig>>("header_config"),
+    getMenuCategories(),
+  ]);
+  // Menú = departamentos reales del backend (top-level con subcategorías).
+  // Admin config si existe; si no, los departamentos del catálogo; curados
+  // solo como último recurso si el backend no responde.
+  const categories = cfg?.categories?.length
+    ? cfg.categories
+    : menuCats.length
+      ? menuCats
+      : HEADER_DEFAULTS.categories;
   return {
     topNav: cfg?.topNav?.length ? cfg.topNav : HEADER_DEFAULTS.topNav,
-    categories: cfg?.categories?.length ? cfg.categories : HEADER_DEFAULTS.categories,
+    categories,
   };
 }
 

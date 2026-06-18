@@ -18,7 +18,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@ft/shared-types": ["../../packages/shared-types/src/index.ts"],
-      "@chaibuilder/sdk/runtime": ["./node_modules/@chaibuilder/sdk/dist/runtime.d.ts"]
+      "@chaibuilder/sdk/runtime": ["./node_modules/@chaibuilder/sdk/dist/runtime.d.ts"],
+      "@chaibuilder/sdk/web-blocks": ["./node_modules/@chaibuilder/sdk/dist/web-blocks.d.ts"]
     }
   },
   "include": ["src"],

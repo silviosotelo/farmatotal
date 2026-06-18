@@ -4,10 +4,13 @@ import Link from "next/link";
 import { Carousel } from "@/components/ui/Carousel";
 import { ProductCard } from "@/components/ProductCard";
 import { ArrowRightIcon } from "@/components/icons";
-import { SELECCION_PRODUCTS } from "@/lib/data";
 import type { Product } from "@/types";
 
-export default function SeleccionParaVos({ products }: { products?: Product[] } = {}) {
+export default function SeleccionParaVos({
+  products,
+  title = "Nuestra selección para vos",
+}: { products?: Product[]; title?: string } = {}) {
+  if (!products || products.length === 0) return null;
   return (
     <section className="ft-container mt-8">
       <div className="flex items-center justify-between mb-4">
@@ -15,7 +18,7 @@ export default function SeleccionParaVos({ products }: { products?: Product[] } 
           className="font-heading font-bold text-2xl"
           style={{ color: "#7a7a7a" }}
         >
-          Nuestra selección para vos
+          {title}
         </h2>
         <Link
           href="/catalogo"
@@ -31,7 +34,7 @@ export default function SeleccionParaVos({ products }: { products?: Product[] } 
         options={{ loop: true }}
         slideClassName="basis-1/2 md:basis-1/3 lg:basis-1/4 px-2"
       >
-        {(products ?? SELECCION_PRODUCTS).map((p) => (
+        {(products ?? []).map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
       </Carousel>

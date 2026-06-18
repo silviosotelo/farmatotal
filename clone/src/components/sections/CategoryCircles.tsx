@@ -3,13 +3,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Carousel } from "@/components/ui/Carousel";
-import { CATEGORY_CIRCLES } from "@/lib/data";
 import type { Category } from "@/types";
 
-export function CategoryCircles({ categories }: { categories?: Category[] } = {}) {
-  const items = categories ?? CATEGORY_CIRCLES;
+export function CategoryCircles({
+  categories,
+  title,
+  limit,
+}: { categories?: Category[]; title?: string; limit?: number } = {}) {
+  const all = categories ?? [];
+  const items = typeof limit === "number" && limit > 0 ? all.slice(0, limit) : all;
+  if (items.length === 0) return null;
   return (
     <div className="ft-container mt-6">
+      {title && <h2 className="mb-4 font-heading text-2xl font-bold text-brand-text">{title}</h2>}
       <div className="rounded-[10px] border border-[#ededf1] bg-white py-6 px-4">
         <Carousel
           showArrows
