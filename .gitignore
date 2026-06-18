@@ -1,0 +1,42 @@
+# ── Dependencias / build ──────────────────────────────────────────────
+**/node_modules/
+**/.next/
+**/.turbo/
+**/.vite/
+**/dist/
+**/build/
+**/coverage/
+**/.pnpm-store/
+*.tsbuildinfo
+next-env.d.ts
+
+# ── Secretos / entorno ────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# ── Bases de datos / uploads / logs ───────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+**/uploads/
+*.log
+
+# ── Material SENSIBLE (server comprometido, no versionar) ─────────────
+_recon/
+_ftp_mirror/
+_backups/
+functions.php
+
+# ── Pesado / licenciado / abandonado ─────────────────────────────────
+_themes_src/
+evershop/
+
+# ── Tooling local / SO ────────────────────────────────────────────────
+.claude/
+.playwright-mcp/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,167 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  /* headings (h1-h6, section titles) = Inter, matching prod --font-primary */
+  --font-heading: var(--font-sans);
+  --font-price: var(--font-price);
+
+  /* Farmatotal brand tokens */
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-orange-ink: var(--brand-orange-ink);
+  --color-brand-yellow: var(--brand-yellow);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-text: var(--brand-text);
+  --color-brand-muted: var(--brand-muted);
+  --color-price-muted: var(--price-muted);
+  --color-search-bg: var(--search-bg);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+}
+
+:root {
+  --radius: 0.625rem;
+
+  /* ---- Farmatotal brand ---- */
+  --brand-orange: #f16522;
+  /* darker orange for small text/links on light bg (WCAG AA ~4.7:1) */
+  --brand-orange-ink: #c2410c;
+  --brand-yellow: #ffca05;
+  --brand-blue: #1ca0e3;
+  --brand-text: #202435;
+  /* darkened for AA contrast on small text */
+  --brand-muted: #6b6b72;
+  --price-muted: #6f6f7e;
+  --search-bg: #f3f4f7;
+  --brand-gradient: linear-gradient(100deg, #f16522 0%, #ffca05 100%);
+
+  /* shadcn tokens mapped to brand where relevant */
+  --background: #ffffff;
+  --foreground: #202435;
+  --card: #ffffff;
+  --card-foreground: #202435;
+  --popover: #ffffff;
+  --popover-foreground: #202435;
+  --primary: #f16522;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f4f7;
+  --secondary-foreground: #202435;
+  --muted: #f3f4f7;
+  --muted-foreground: #7a7a7a;
+  --accent: #fff4e6;
+  --accent-foreground: #f16522;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: #ededf1;
+  --input: #ededf1;
+  --ring: #f16522;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #202435;
+  --sidebar-primary: #f16522;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3f4f7;
+  --sidebar-accent-foreground: #202435;
+  --sidebar-border: #ededf1;
+  --sidebar-ring: #f16522;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans), system-ui, sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading), var(--font-sans), sans-serif;
+  }
+}
+
+@layer utilities {
+  .brand-gradient {
+    background-image: var(--brand-gradient);
+  }
+  .font-price {
+    font-family: var(--font-price), var(--font-sans), sans-serif;
+  }
+  /* visible keyboard focus (a11y) — orange ring with offset */
+  .focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-[#f16522]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+  }
+  /* depth tokens */
+  .card-shadow {
+    box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  }
+  .card-shadow-hover {
+    box-shadow: 0 14px 34px rgba(241, 101, 34, 0.14), 0 6px 14px rgba(16, 24, 40, 0.08);
+  }
+  /* hide scrollbars on carousels */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* container width matching Bacola (~1200px) */
+.ft-container {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: 15px;
+}
+
+@keyframes ft-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Respect users who prefer reduced motion (a11y) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

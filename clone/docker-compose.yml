@@ -1,0 +1,25 @@
+# PoC Payload 3 + PostgreSQL — Farmatotal clone
+# Levanta:  docker compose up -d
+# Conexion: postgres://farmatotal:farmatotal@localhost:5433/farmatotal_cms
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: farmatotal_cms_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: farmatotal
+      POSTGRES_PASSWORD: farmatotal
+      POSTGRES_DB: farmatotal_cms
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U farmatotal -d farmatotal_cms"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

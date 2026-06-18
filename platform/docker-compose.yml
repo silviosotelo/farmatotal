@@ -1,0 +1,53 @@
+# Solo levantar lo que NO esta corriendo en otro lado.
+# Postgres podes usar el del 192.168.41.34:5433 (DB farmatotal_cms ya creada
+# en la sesion anterior con user farmatotal_cms). Si preferis local:
+#   docker compose up -d postgres
+# Redis local lo necesitamos si o si para BullMQ:
+#   docker compose up -d redis
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ft_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: farmatotal
+      POSTGRES_PASSWORD: farmatotal
+      POSTGRES_DB: farmatotal_app
+    ports:
+      - "5434:5432"
+    volumes:
+      - ft_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U farmatotal -d farmatotal_app"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: ft_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ft_redisdata:/data
+
+  minio:
+    image: minio/minio:latest
+    container_name: ft_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: farmatotal
+      MINIO_ROOT_PASSWORD: farmatotal_minio_dev
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ft_miniodata:/data
+
+volumes:
+  ft_pgdata:
+  ft_redisdata:
+  ft_miniodata:

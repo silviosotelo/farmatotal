@@ -1,0 +1,336 @@
+// Farmatotal — Prisma Schema
+// Basado en BACKEND-PLAN.md + ADMIN-PLAN.md + PLATFORM-VISION.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ============================================================
+// CATÁLOGO (origen: ERP sync)
+// ============================================================
+
+model Category {
+  id             String    @id @default(cuid())
+  slug           String    @unique
+  name           String
+  fliaCodigo     String?   @unique
+  icon           String?
+  position       Int       @default(0)
+  nameOverride   String?
+  seoTitle       String?
+  seoDescription String?
+  products       Product[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Product {
+  id                  String         @id @default(cuid())
+  sku                 String         @unique
+  codInterno          String?        @unique
+  slug                String         @unique
+  title               String
+  description         String?
+  brand               String?
+  priceNormal         Int
+  priceWeb            Int
+  onPromo             Boolean        @default(false)
+  promoCode           String?
+  controlled          Boolean        @default(false)
+  featured            Boolean        @default(false)
+  published           Boolean        @default(true)
+  stock               Int            @default(0)
+  titleOverride       String?
+  descriptionOverride String?
+  slugOverride        String?
+  seoTitle            String?
+  seoDescription      String?
+  erpSourced          Boolean        @default(true)
+  categoryId          String?
+  category            Category?      @relation(fields: [categoryId], references: [id])
+  images              ProductImage[]
+  inventory           Inventory[]
+  reviews             Review[]
+  orderLines          OrderLine[]
+  syncedAt            DateTime       @updatedAt
+  createdAt           DateTime       @default(now())
+
+  @@index([categoryId])
+  @@index([featured])
+  @@index([published])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String?
+  position  Int     @default(0)
+
+  @@index([productId])
+}
+
+// ============================================================
+// SUCURSALES + STOCK
+// ============================================================
+
+model Branch {
+  id        String      @id @default(cuid())
+  erpId     String      @unique
+  name      String
+  address   String?
+  city      String?
+  zone      String?
+  lat       Float?
+  lng       Float?
+  phone     String?
+  hours     String?
+  active    Boolean     @default(true)
+  inventory Inventory[]
+  orders    Order[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Inventory {
+  productId String
+  branchId  String
+  quantity  Int     @default(0)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  branch    Branch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@id([productId, branchId])
+}
+
+// ============================================================
+// USUARIOS
+// ============================================================
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  role         String    @default("CUSTOMER")
+  legacyWpId   Int?      @unique
+  active       Boolean   @default(true)
+  addresses    Address[]
+  orders       Order[]
+  reviews      Review[]
+  sessions     Session[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+
+  @@index([token])
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String?
+  line1     String
+  line2     String?
+  city      String
+  phone     String?
+  lat       Float?
+  lng       Float?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ============================================================
+// PEDIDOS
+// ============================================================
+
+model Order {
+  id              String      @id @default(cuid())
+  number          String      @unique
+  userId          String?
+  user            User?       @relation(fields: [userId], references: [id])
+  status          String      @default("PENDING")
+  subtotal        Int
+  discount        Int         @default(0)
+  total           Int
+  couponCode      String?
+  paymentMethod   String?
+  branchId        String?
+  branch          Branch?     @relation(fields: [branchId], references: [id])
+  billingName     String?
+  billingDoc      String?
+  billingDocType  String?
+  billingPhone    String?
+  billingAddress  String?
+  billingCity     String?
+  billingLat      Float?
+  billingLng      Float?
+  shippingMethod  String?
+  shippingAddress String?
+  legacyWpId      Int?        @unique
+  erpSent         Boolean     @default(false)
+  erpSentAt       DateTime?
+  erpAttempts     Int         @default(0)
+  erpLastError    String?
+  lines           OrderLine[]
+  payment         Payment?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model OrderLine {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+  sku       String
+  title     String
+  quantity  Int
+  unitPrice Int
+  subtotal  Int
+
+  @@index([orderId])
+}
+
+// ============================================================
+// CUPONES
+// ============================================================
+
+model Coupon {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  type        String    @default("PERCENT")
+  value       Int
+  description String?
+  active      Boolean   @default(true)
+  minTotal    Int?
+  maxUses     Int?
+  usedCount   Int       @default(0)
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+// ============================================================
+// RESEÑAS
+// ============================================================
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  author    String
+  rating    Int
+  body      String
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+}
+
+// ============================================================
+// PAGOS
+// ============================================================
+
+model Payment {
+  id            String   @id @default(cuid())
+  orderId       String   @unique
+  order         Order    @relation(fields: [orderId], references: [id])
+  provider      String   @default("bancard")
+  amount        Int
+  status        String   @default("PENDING")
+  transactionId String?  @unique
+  processId     String?
+  rawPayload    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ============================================================
+// SYNC ENGINE
+// ============================================================
+
+model ErpSyncLog {
+  id         String   @id @default(cuid())
+  type       String
+  ok         Boolean
+  itemsCount Int      @default(0)
+  message    String?
+  ranAt      DateTime @default(now())
+}
+
+model SyncMapping {
+  id          String   @id @default(cuid())
+  connectorId String
+  entity      String
+  businessKey String
+  fields      String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ============================================================
+// PAGE BUILDER
+// ============================================================
+
+model Page {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  title          String
+  blocks         String   @default("[]")
+  status         String   @default("DRAFT")
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ============================================================
+// CONFIGURACIÓN DEL SITIO
+// ============================================================
+
+model SiteSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================================
+// CUSTOM FIELDS
+// ============================================================
+
+model CustomFieldDefinition {
+  id         String   @id @default(cuid())
+  entity     String
+  key        String
+  label      String
+  type       String
+  options    String?
+  required   Boolean  @default(false)
+  filterable Boolean  @default(false)
+  categoryId String?
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@unique([entity, key, categoryId])
+}

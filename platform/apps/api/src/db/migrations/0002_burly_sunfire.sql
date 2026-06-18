@@ -1,0 +1,1 @@
+ALTER TABLE "farmatotal_app"."branches" ADD COLUMN "erp_code" varchar(20);
