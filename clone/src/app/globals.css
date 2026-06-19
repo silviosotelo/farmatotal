@@ -53,6 +53,23 @@
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
+
+  /* ---- Puente de tokens Ecme (@ft/ui) ----
+   * Emite las utilidades de color que usan los componentes Ecme y que el store
+   * no tenía. NO se redefine --color-primary: los componentes adoptan la marca
+   * del host (naranja). Solo se agregan las variantes/estados que faltaban. */
+  --color-primary-deep: var(--primary-deep);
+  --color-primary-mild: var(--primary-mild);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-error: var(--error);
+  --color-error-subtle: var(--error-subtle);
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-info: var(--info);
+  --color-info-subtle: var(--info-subtle);
+  --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-neutral: var(--neutral);
 }
 
 :root {
@@ -98,6 +115,20 @@
   --sidebar-accent-foreground: #202435;
   --sidebar-border: #ededf1;
   --sidebar-ring: #f16522;
+
+  /* ---- Tokens Ecme (@ft/ui) — primary-* en tonos de marca, estados semánticos ---- */
+  --primary-deep: #c2410c;
+  --primary-mild: #f59055;
+  --primary-subtle: #f165221a;
+  --error: #ff6a55;
+  --error-subtle: #ff6a551a;
+  --success: #10b981;
+  --success-subtle: #05eb7624;
+  --info: #2a85ff;
+  --info-subtle: #2a85ff1a;
+  --warning: #f59e0b;
+  --warning-subtle: #ffd40045;
+  --neutral: #1f2937;
 }
 
 @layer base {
