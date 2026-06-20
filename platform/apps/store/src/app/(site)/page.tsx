@@ -24,9 +24,15 @@ function hasChaiBlocks(blocks: unknown): blocks is ChaiBlock[] {
 export default async function Home() {
   const theme = await getActiveTheme();
 
-  // Override por contenido: si el admin armó una página "home" en el builder
-  // (bloques Chai), esa composición manda y se renderiza con el estilo del tema
-  // activo (ChaiRender es theme-aware). Aplica a cualquier tema.
+  // Home nativo, system-driven (consume datos del backend). Ya NO usamos el page
+  // builder para el home: cada tema renderiza su propia composición nativa.
+  if (theme === "ekomart") {
+    return <EkomartHome />;
+  }
+  if (theme === "anvogue") {
+    return <AnvogueHome />;
+  }
+  // farmatotal (default): home builder interino hasta migrar a home nativo.
   const page = await getPage("home").catch(() => null);
   if (page?.published && hasChaiBlocks(page.blocks)) {
     return (
@@ -35,14 +41,6 @@ export default async function Home() {
         <ChaiRender blocks={page.blocks as ChaiBlock[]} />
       </main>
     );
-  }
-
-  // Sin página "home" del builder: home por defecto del tema.
-  if (theme === "ekomart") {
-    return <EkomartHome />;
-  }
-  if (theme === "anvogue") {
-    return <AnvogueHome />;
   }
   return (
     <main className="flex-1 pb-14">

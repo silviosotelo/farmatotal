@@ -3,7 +3,6 @@ import { Headset, RotateCcw, ShieldCheck, Truck } from "lucide-react";
 import type { Product, Category } from "@/types";
 import { getDeals, getFeatured, listProducts, listCategories } from "@/lib/api";
 import { AnvogueProductCard } from "./AnvogueProductCard";
-import { AnvogueSlider } from "./sections/AnvogueSlider";
 import { AnvogueCollections, type CollectionItem } from "./sections/AnvogueCollections";
 import { AnvogueProductTabs } from "./sections/AnvogueProductTabs";
 import { AnvogueBrands } from "./sections/AnvogueBrands";
@@ -65,9 +64,6 @@ export async function AnvogueHome() {
 
   return (
     <div className="anvogue-home bg-white" style={{ color: C.black }}>
-      {/* HERO SLIDER */}
-      <AnvogueSlider />
-
       {/* WHAT'S NEW -> Productos destacados (grid) */}
       {featuredGrid.length > 0 && (
         <div className="whate-new-block md:pt-20 pt-10">

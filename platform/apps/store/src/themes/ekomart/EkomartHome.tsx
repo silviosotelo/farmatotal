@@ -3,7 +3,6 @@ import type { Product, Category } from "@/types";
 import { getDeals, getFeatured, listProducts, listCategories } from "@/lib/api";
 import { formatGs } from "@/lib/format";
 import { EkomartProductCard } from "./EkomartProductCard";
-import EkomartBanner from "./sections/EkomartBanner";
 import EkomartProductCarousel from "./sections/EkomartProductCarousel";
 import EkomartWeeklyTabs, { type WeeklyTab } from "./sections/EkomartWeeklyTabs";
 
@@ -330,7 +329,6 @@ export async function EkomartHome() {
 
   return (
     <div className="demo-one">
-      <EkomartBanner categories={categories} />
       <FeatureRow />
       <EkomartProductCarousel title="Destacados" products={featured} />
       <DiscountSection deals={deals} />
