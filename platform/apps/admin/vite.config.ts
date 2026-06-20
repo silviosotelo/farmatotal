@@ -15,9 +15,26 @@ export default defineConfig({
     ],
   },
   resolve: {
-    alias: {
-      '@': path.join(__dirname, 'src'),
-    },
+    // Orden: específicos ANTES de '@' (el primero que matchea gana).
+    // @ft/ui extraído a packages/ui; los @/components/ui|shared, @/utils y los
+    // archivos de theme/store/configs/locales movidos se redirigen al paquete.
+    alias: [
+      { find: '@ft/ui', replacement: path.join(__dirname, '../../packages/ui/src') },
+      { find: '@/components/ui', replacement: path.join(__dirname, '../../packages/ui/src/ui') },
+      { find: '@/components/shared', replacement: path.join(__dirname, '../../packages/ui/src/shared') },
+      { find: '@/utils', replacement: path.join(__dirname, '../../packages/ui/src/utils') },
+      { find: '@/@types/common', replacement: path.join(__dirname, '../../packages/ui/src/@types/common') },
+      { find: '@/@types/theme', replacement: path.join(__dirname, '../../packages/ui/src/@types/theme') },
+      { find: '@/@types/navigation', replacement: path.join(__dirname, '../../packages/ui/src/@types/navigation') },
+      { find: '@/@types/routes', replacement: path.join(__dirname, '../../packages/ui/src/@types/routes') },
+      { find: '@/store/themeStore', replacement: path.join(__dirname, '../../packages/ui/src/store/themeStore') },
+      { find: '@/store/localeStore', replacement: path.join(__dirname, '../../packages/ui/src/store/localeStore') },
+      { find: '@/configs/theme.config', replacement: path.join(__dirname, '../../packages/ui/src/configs/theme.config') },
+      { find: '@/configs/preset-theme-schema.config', replacement: path.join(__dirname, '../../packages/ui/src/configs/preset-theme-schema.config') },
+      { find: '@/configs/app.config', replacement: path.join(__dirname, '../../packages/ui/src/configs/app.config') },
+      { find: '@/locales', replacement: path.join(__dirname, '../../packages/ui/src/locales') },
+      { find: '@', replacement: path.join(__dirname, 'src') },
+    ],
   },
   server: {
     host: '0.0.0.0',
