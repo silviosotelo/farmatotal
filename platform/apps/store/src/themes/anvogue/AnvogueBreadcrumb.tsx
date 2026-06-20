@@ -25,7 +25,7 @@ export function AnvogueBreadcrumb({
             {heading}
           </h1>
           <div className={`mt-3 flex items-center justify-center gap-1.5 ${caption1}`}>
-            <Link href="/" className="transition-colors hover:text-[#DB4444]">
+            <Link href="/" className="transition-colors hover:text-[var(--brand-orange)]">
               Inicio
             </Link>
             <ChevronRight size={14} style={{ color: C.secondary2 }} />

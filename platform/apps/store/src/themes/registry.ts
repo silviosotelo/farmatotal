@@ -37,21 +37,11 @@ export function normalizeTheme(t?: string | null): ThemeKey {
  * Devuelve un map de CSS custom properties (usable como `style`). farmatotal =
  * sin override (usa los tokens globales / white-label del store).
  */
-export function themeAccentVars(theme: ThemeKey): Record<string, string> {
-  if (theme === "ekomart") {
-    return {
-      "--brand-orange": "#629d23",
-      "--brand-orange-ink": "#4e7d1c",
-      "--brand-gradient": "linear-gradient(100deg,#7ab51d 0%,#629d23 100%)",
-    };
-  }
-  if (theme === "anvogue") {
-    return {
-      "--brand-orange": "#db4444",
-      "--brand-orange-ink": "#b91c1c",
-      "--brand-gradient": "linear-gradient(100deg,#1f1f1f 0%,#db4444 100%)",
-    };
-  }
+export function themeAccentVars(_theme: ThemeKey): Record<string, string> {
+  // White-label: el color de marca lo define el admin (store_config.colors) y se
+  // inyecta en :root vía brandColorVars. Ya NO hay override de acento por tema, así
+  // los 3 temas reflejan el color elegido en Admin → Apariencia. (Se conserva la
+  // firma para los wrappers que la aplican como style.)
   return {};
 }
 

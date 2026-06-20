@@ -16,7 +16,7 @@ export function AnvogueProductCard({ product }: { product: Product }) {
     <div className="group">
       <div className="relative aspect-square overflow-hidden rounded-2xl bg-[#F7F7F7]">
         {hasDiscount && (
-          <span className="absolute left-3 top-3 z-[1] rounded-full bg-[#DB4444] px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+          <span className="absolute left-3 top-3 z-[1] rounded-full bg-[var(--brand-orange)] px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white">
             -{product.discount}%
           </span>
         )}
@@ -39,7 +39,7 @@ export function AnvogueProductCard({ product }: { product: Product }) {
 
       <div className="mt-3">
         <Link href={href}>
-          <h3 className="line-clamp-2 text-sm font-medium text-[#1F1F1F] transition-colors hover:text-[#DB4444]">
+          <h3 className="line-clamp-2 text-sm font-medium text-[#1F1F1F] transition-colors hover:text-[var(--brand-orange)]">
             {product.title}
           </h3>
         </Link>

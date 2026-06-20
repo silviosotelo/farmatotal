@@ -36,7 +36,7 @@ export function AnvogueCart() {
               <ShoppingBag size={36} className="text-[#1F1F1F]" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#DB4444]">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--brand-orange)]">
                 Tu carrito
               </p>
               <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[#1F1F1F] md:text-3xl">
@@ -100,7 +100,7 @@ export function AnvogueCart() {
                       </div>
                       <Link
                         href={`/productos/${product.slug}/`}
-                        className="line-clamp-2 text-sm font-medium text-[#1F1F1F] transition-colors hover:text-[#DB4444]"
+                        className="line-clamp-2 text-sm font-medium text-[#1F1F1F] transition-colors hover:text-[var(--brand-orange)]"
                       >
                         {product.title}
                       </Link>
@@ -116,7 +116,7 @@ export function AnvogueCart() {
                       <div className="inline-flex items-center rounded-full border border-[#E9E9E9]">
                         <button
                           onClick={() => setQty(product.id, quantity - 1)}
-                          className="flex size-9 items-center justify-center rounded-full text-[#1F1F1F] transition-colors hover:text-[#DB4444]"
+                          className="flex size-9 items-center justify-center rounded-full text-[#1F1F1F] transition-colors hover:text-[var(--brand-orange)]"
                           aria-label="Disminuir cantidad"
                         >
                           <Minus size={15} />
@@ -126,7 +126,7 @@ export function AnvogueCart() {
                         </span>
                         <button
                           onClick={() => setQty(product.id, quantity + 1)}
-                          className="flex size-9 items-center justify-center rounded-full text-[#1F1F1F] transition-colors hover:text-[#DB4444]"
+                          className="flex size-9 items-center justify-center rounded-full text-[#1F1F1F] transition-colors hover:text-[var(--brand-orange)]"
                           aria-label="Aumentar cantidad"
                         >
                           <Plus size={15} />
@@ -142,7 +142,7 @@ export function AnvogueCart() {
                     {/* Remove */}
                     <button
                       onClick={() => removeItem(product.id)}
-                      className="flex size-9 items-center justify-center rounded-full text-[#696C70] transition-colors hover:bg-[#F7F7F7] hover:text-[#DB4444]"
+                      className="flex size-9 items-center justify-center rounded-full text-[#696C70] transition-colors hover:bg-[#F7F7F7] hover:text-[var(--brand-orange)]"
                       aria-label={`Quitar ${product.title}`}
                     >
                       <X size={18} />
@@ -163,13 +163,13 @@ export function AnvogueCart() {
                       <div className="flex items-start justify-between gap-2">
                         <Link
                           href={`/productos/${product.slug}/`}
-                          className="line-clamp-2 text-sm font-medium text-[#1F1F1F] transition-colors hover:text-[#DB4444]"
+                          className="line-clamp-2 text-sm font-medium text-[#1F1F1F] transition-colors hover:text-[var(--brand-orange)]"
                         >
                           {product.title}
                         </Link>
                         <button
                           onClick={() => removeItem(product.id)}
-                          className="-mr-1 flex size-8 flex-none items-center justify-center rounded-full text-[#696C70] transition-colors hover:text-[#DB4444]"
+                          className="-mr-1 flex size-8 flex-none items-center justify-center rounded-full text-[#696C70] transition-colors hover:text-[var(--brand-orange)]"
                           aria-label={`Quitar ${product.title}`}
                         >
                           <X size={18} />
@@ -183,7 +183,7 @@ export function AnvogueCart() {
                         <div className="inline-flex items-center rounded-full border border-[#E9E9E9]">
                           <button
                             onClick={() => setQty(product.id, quantity - 1)}
-                            className="flex size-8 items-center justify-center rounded-full text-[#1F1F1F] transition-colors hover:text-[#DB4444]"
+                            className="flex size-8 items-center justify-center rounded-full text-[#1F1F1F] transition-colors hover:text-[var(--brand-orange)]"
                             aria-label="Disminuir cantidad"
                           >
                             <Minus size={14} />
@@ -193,7 +193,7 @@ export function AnvogueCart() {
                           </span>
                           <button
                             onClick={() => setQty(product.id, quantity + 1)}
-                            className="flex size-8 items-center justify-center rounded-full text-[#1F1F1F] transition-colors hover:text-[#DB4444]"
+                            className="flex size-8 items-center justify-center rounded-full text-[#1F1F1F] transition-colors hover:text-[var(--brand-orange)]"
                             aria-label="Aumentar cantidad"
                           >
                             <Plus size={14} />
@@ -213,7 +213,7 @@ export function AnvogueCart() {
             <div className="mt-6 flex items-center justify-end border-t border-[#E9E9E9] pt-6">
               <button
                 onClick={clear}
-                className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.1em] text-[#696C70] transition-colors hover:text-[#DB4444]"
+                className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.1em] text-[#696C70] transition-colors hover:text-[var(--brand-orange)]"
               >
                 <Trash2 size={15} />
                 Vaciar carrito
@@ -235,12 +235,12 @@ export function AnvogueCart() {
                 {coupon ? (
                   <div className="flex items-center justify-between rounded-2xl border border-[#1F1F1F] bg-white px-4 py-3">
                     <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#1F1F1F]">
-                      <Tag size={15} className="text-[#DB4444]" />
+                      <Tag size={15} className="text-[var(--brand-orange)]" />
                       {coupon.code}
                     </span>
                     <button
                       onClick={removeCoupon}
-                      className="text-xs font-semibold uppercase tracking-[0.08em] text-[#696C70] transition-colors hover:text-[#DB4444]"
+                      className="text-xs font-semibold uppercase tracking-[0.08em] text-[#696C70] transition-colors hover:text-[var(--brand-orange)]"
                     >
                       Quitar
                     </button>
@@ -273,7 +273,7 @@ export function AnvogueCart() {
                 </div>
 
                 {coupon && (
-                  <div className="flex justify-between text-[#DB4444]">
+                  <div className="flex justify-between text-[var(--brand-orange)]">
                     <dt>Descuento ({coupon.code})</dt>
                     <dd className="font-medium">−{formatGs(discount)}</dd>
                   </div>

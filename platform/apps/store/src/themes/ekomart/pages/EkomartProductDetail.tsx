@@ -76,7 +76,7 @@ export function EkomartProductDetail({ product, related, reviews, variants }: Th
 
                   <span
                     className="product-price mb--15 d-block"
-                    style={{ color: "#629d23", fontWeight: 600 }}
+                    style={{ color: "var(--brand-orange)", fontWeight: 600 }}
                   >
                     {formatGs(product.priceWeb)}
                     {hasDiscount && (

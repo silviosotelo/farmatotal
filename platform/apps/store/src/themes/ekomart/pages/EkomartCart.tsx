@@ -62,7 +62,7 @@ export function EkomartCart() {
               <div className="col-12 text-center py-5">
                 <i
                   className="fa-light fa-cart-shopping"
-                  style={{ fontSize: "64px", color: "#629d23" }}
+                  style={{ fontSize: "64px", color: "var(--brand-orange)" }}
                 />
                 <h3 className="mt--30 mb--10">Tu carrito está vacío</h3>
                 <p className="mb--30">Aún no agregaste productos a tu carrito.</p>

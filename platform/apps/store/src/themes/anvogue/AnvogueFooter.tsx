@@ -79,7 +79,7 @@ export function AnvogueFooter({ brandName }: { brandName?: string }) {
                 <button
                   type="submit"
                   aria-label="Suscribirse"
-                  className="absolute right-1 top-1 flex h-[44px] w-[44px] items-center justify-center rounded-xl bg-[#1F1F1F] text-white transition-colors hover:bg-[#DB4444]"
+                  className="absolute right-1 top-1 flex h-[44px] w-[44px] items-center justify-center rounded-xl bg-[#1F1F1F] text-white transition-colors hover:bg-[var(--brand-orange)]"
                 >
                   <ArrowRight size={22} />
                 </button>

@@ -28,7 +28,7 @@ export default function FloatingButtons() {
         <button
           aria-label="Escanear código de barras"
           className="flex items-center gap-1.5 px-3 py-2 rounded-l-full text-white text-[13px] font-medium shadow-md"
-          style={{ backgroundColor: "#2d9cdb" }}
+          style={{ backgroundColor: "var(--brand-blue)" }}
         >
           <BarcodeIcon className="w-4 h-4 shrink-0" />
           <span>Escanear</span>

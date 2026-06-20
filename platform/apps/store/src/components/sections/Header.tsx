@@ -34,7 +34,7 @@ export function TopBar({ topNav }: { topNav: NavItem[] }) {
             <Link
               key={link.href}
               href={link.href}
-              className="text-[12px] text-[#3e445a] hover:text-[#f16522] transition-colors"
+              className="text-[12px] text-[#3e445a] hover:text-[var(--brand-orange)] transition-colors"
             >
               {link.label}
             </Link>
@@ -87,7 +87,7 @@ export function MegaMenu({ onClose, categories }: { onClose: () => void; categor
             <Link
               href={cat.href}
               onClick={onClose}
-              className="block px-4 py-2.5 text-sm text-[#202435] hover:bg-[#f3f4f7] hover:text-[#f16522] transition-colors"
+              className="block px-4 py-2.5 text-sm text-[#202435] hover:bg-[#f3f4f7] hover:text-[var(--brand-orange)] transition-colors"
             >
               {cat.label}
             </Link>
@@ -204,7 +204,7 @@ function MobileDrawer({
                 <Link
                   href={cat.href}
                   onClick={onClose}
-                  className="block py-2.5 text-sm text-[#202435] hover:text-[#f16522] border-b border-[#ededf1] transition-colors"
+                  className="block py-2.5 text-sm text-[#202435] hover:text-[var(--brand-orange)] border-b border-[#ededf1] transition-colors"
                 >
                   {cat.label}
                 </Link>
@@ -224,7 +224,7 @@ function MobileDrawer({
                 <Link
                   href={link.href}
                   onClick={onClose}
-                  className="block py-2.5 text-sm text-[#202435] hover:text-[#f16522] border-b border-[#ededf1] transition-colors"
+                  className="block py-2.5 text-sm text-[#202435] hover:text-[var(--brand-orange)] border-b border-[#ededf1] transition-colors"
                 >
                   {link.label}
                 </Link>
@@ -443,7 +443,7 @@ function MainHeaderContent({
         >
           <CartIcon width={24} height={24} />
           {count > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 h-5 min-w-5 px-1 rounded-full bg-white text-[#f16522] text-[10px] font-bold flex items-center justify-center">
+            <span className="absolute -top-0.5 -right-0.5 h-5 min-w-5 px-1 rounded-full bg-white text-[var(--brand-orange)] text-[10px] font-bold flex items-center justify-center">
               {count}
             </span>
           )}
@@ -497,7 +497,7 @@ function MainHeaderContent({
           >
             <CartIcon width={22} height={22} />
             {count > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-white text-[#f16522] text-[9px] font-bold flex items-center justify-center">
+              <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-white text-[var(--brand-orange)] text-[9px] font-bold flex items-center justify-center">
                 {count}
               </span>
             )}

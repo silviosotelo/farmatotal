@@ -64,7 +64,7 @@ export function EkomartCheckout() {
               <div className="col-12 text-center py-5">
                 <i
                   className="fa-light fa-cart-shopping"
-                  style={{ fontSize: "64px", color: "#629d23" }}
+                  style={{ fontSize: "64px", color: "var(--brand-orange)" }}
                 />
                 <h3 className="mt--30 mb--10">Tu carrito está vacío</h3>
                 <p className="mb--30">Aún no agregaste productos a tu carrito.</p>
@@ -305,7 +305,7 @@ export function EkomartCheckout() {
                             checked={delivery === opt}
                             onChange={() => setDelivery(opt)}
                             style={{
-                              accentColor: "#629d23",
+                              accentColor: "var(--brand-orange)",
                               width: 18,
                               height: 18,
                               margin: 0,
@@ -392,7 +392,7 @@ export function EkomartCheckout() {
                             checked={payment === opt}
                             onChange={() => setPayment(opt)}
                             style={{
-                              accentColor: "#629d23",
+                              accentColor: "var(--brand-orange)",
                               width: 18,
                               height: 18,
                               margin: 0,
@@ -470,7 +470,7 @@ export function EkomartCheckout() {
                     </div>
                     <span
                       className="price"
-                      style={{ color: "#629D23", fontWeight: 700 }}
+                      style={{ color: "var(--brand-orange)", fontWeight: 700 }}
                     >
                       {formatGs(total)}
                     </span>

@@ -34,7 +34,7 @@ export function AnvogueSearch({ className = "" }: { className?: string }) {
       <button
         type="submit"
         aria-label="Buscar"
-        className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full bg-[#1F1F1F] text-white transition-colors hover:bg-[#DB4444]"
+        className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full bg-[#1F1F1F] text-white transition-colors hover:bg-[var(--brand-orange)]"
       >
         <Search size={18} />
       </button>

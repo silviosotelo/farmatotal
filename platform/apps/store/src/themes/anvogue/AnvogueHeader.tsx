@@ -40,17 +40,17 @@ export function AnvogueHeader({ brandName, logo }: { brandName?: string; logo?: 
           <nav className="hidden lg:block">
             <ul className="flex items-center gap-8 text-sm font-semibold uppercase tracking-[0.06em] text-[#1F1F1F]">
               <li>
-                <Link href="/" className="transition-colors hover:text-[#DB4444]">
+                <Link href="/" className="transition-colors hover:text-[var(--brand-orange)]">
                   Inicio
                 </Link>
               </li>
               <li>
-                <Link href="/productos" className="transition-colors hover:text-[#DB4444]">
+                <Link href="/productos" className="transition-colors hover:text-[var(--brand-orange)]">
                   Productos
                 </Link>
               </li>
               <li>
-                <Link href="/categorias/" className="transition-colors hover:text-[#DB4444]">
+                <Link href="/categorias/" className="transition-colors hover:text-[var(--brand-orange)]">
                   Categorías
                 </Link>
               </li>
@@ -67,21 +67,21 @@ export function AnvogueHeader({ brandName, logo }: { brandName?: string; logo?: 
             <Link
               href="/cuenta"
               aria-label="Mi cuenta"
-              className="transition-colors hover:text-[#DB4444]"
+              className="transition-colors hover:text-[var(--brand-orange)]"
             >
               <User size={22} />
             </Link>
             <Link
               href="/productos"
               aria-label="Favoritos"
-              className="hidden transition-colors hover:text-[#DB4444] sm:block"
+              className="hidden transition-colors hover:text-[var(--brand-orange)] sm:block"
             >
               <Heart size={22} />
             </Link>
             <Link
               href="/carrito"
               aria-label="Carrito"
-              className="relative transition-colors hover:text-[#DB4444]"
+              className="relative transition-colors hover:text-[var(--brand-orange)]"
             >
               <ShoppingBag size={22} />
             </Link>

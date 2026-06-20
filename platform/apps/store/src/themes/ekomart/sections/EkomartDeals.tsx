@@ -7,7 +7,7 @@ import "swiper/css/bundle";
 import type { Product } from "@/types";
 import { EkomartProductCard } from "../EkomartProductCard";
 
-const GREEN = "#629d23";
+const GREEN = "var(--brand-orange)";
 
 function secsToEndOfDay(): number {
   const now = new Date();

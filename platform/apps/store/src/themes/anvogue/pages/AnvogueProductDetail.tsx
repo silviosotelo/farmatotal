@@ -29,13 +29,13 @@ export function AnvogueProductDetail({ product, related, reviews, variants }: Th
             aria-label="Migas de pan"
             className="flex flex-wrap items-center gap-1.5 text-xs font-medium uppercase tracking-[0.06em] text-[#696C70]"
           >
-            <Link href="/" className="transition-colors hover:text-[#DB4444]">
+            <Link href="/" className="transition-colors hover:text-[var(--brand-orange)]">
               Inicio
             </Link>
             <ChevronRight size={14} className="text-[#A0A0A0]" />
             {product.category ? (
               <>
-                <Link href={categoryHref} className="transition-colors hover:text-[#DB4444]">
+                <Link href={categoryHref} className="transition-colors hover:text-[var(--brand-orange)]">
                   {product.category.replace(/-/g, " ")}
                 </Link>
                 <ChevronRight size={14} className="text-[#A0A0A0]" />
@@ -61,7 +61,7 @@ export function AnvogueProductDetail({ product, related, reviews, variants }: Th
           {/* resumen */}
           <div className="flex flex-col">
             {product.brand ? (
-              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#DB4444]">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--brand-orange)]">
                 {product.brand}
               </span>
             ) : null}
@@ -75,7 +75,7 @@ export function AnvogueProductDetail({ product, related, reviews, variants }: Th
               <span
                 className={
                   outOfStock
-                    ? "rounded-full bg-[#F7F7F7] px-3 py-1 font-semibold text-[#DB4444]"
+                    ? "rounded-full bg-[#F7F7F7] px-3 py-1 font-semibold text-[var(--brand-orange)]"
                     : "rounded-full bg-[#F7F7F7] px-3 py-1 font-semibold text-[#1F8A4C]"
                 }
               >
@@ -144,7 +144,7 @@ export function AnvogueProductDetail({ product, related, reviews, variants }: Th
         {related.length > 0 ? (
           <section className="mt-14 lg:mt-20">
             <div className="mb-7 flex flex-col items-center text-center">
-              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#DB4444]">
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-orange)]">
                 Descubrí más
               </span>
               <h2 className="mt-2 text-2xl font-semibold text-[#1F1F1F] lg:text-3xl">

@@ -13,7 +13,7 @@ export const C = {
   secondary: "#696C70",
   secondary2: "#A0A0A0",
   surface: "#F7F7F7",
-  red: "#DB4444",
+  red: "var(--brand-orange)",
   line: "#E9E9E9",
   green: "#D2EF9A",
 } as const;

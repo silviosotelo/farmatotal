@@ -58,7 +58,7 @@ export function AnvogueCheckout() {
               <ShoppingBag size={36} className="text-[#1F1F1F]" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#DB4444]">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--brand-orange)]">
                 Finalizar compra
               </p>
               <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[#1F1F1F] md:text-3xl">
@@ -193,7 +193,7 @@ export function AnvogueCheckout() {
                 <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
                   <div>
                     <label htmlFor="nombre" className={LABEL_CLS}>
-                      Nombre <span className="text-[#DB4444]">*</span>
+                      Nombre <span className="text-[var(--brand-orange)]">*</span>
                     </label>
                     <input
                       id="nombre"
@@ -220,7 +220,7 @@ export function AnvogueCheckout() {
                   </div>
                   <div>
                     <label htmlFor="email" className={LABEL_CLS}>
-                      Email <span className="text-[#DB4444]">*</span>
+                      Email <span className="text-[var(--brand-orange)]">*</span>
                     </label>
                     <input
                       id="email"
@@ -299,7 +299,7 @@ export function AnvogueCheckout() {
                         value={value}
                         checked={delivery === value}
                         onChange={() => setDelivery(value)}
-                        className="size-4 accent-[#DB4444]"
+                        className="size-4 accent-[var(--brand-orange)]"
                       />
                       <Icon size={20} className="flex-none text-[#1F1F1F]" strokeWidth={1.5} />
                       <span className="min-w-0">
@@ -314,7 +314,7 @@ export function AnvogueCheckout() {
 
                 {delivery === "retiro" && (
                   <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl bg-[#F7F7F7] p-5">
-                    <MapPin size={18} className="flex-none text-[#DB4444]" strokeWidth={1.75} />
+                    <MapPin size={18} className="flex-none text-[var(--brand-orange)]" strokeWidth={1.75} />
                     {selected ? (
                       <>
                         <span className="text-sm text-[#1F1F1F]">
@@ -326,7 +326,7 @@ export function AnvogueCheckout() {
                         <button
                           type="button"
                           onClick={open}
-                          className="text-xs font-semibold uppercase tracking-[0.08em] text-[#DB4444] underline-offset-2 transition-opacity hover:opacity-80"
+                          className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--brand-orange)] underline-offset-2 transition-opacity hover:opacity-80"
                         >
                           Cambiar
                         </button>
@@ -364,7 +364,7 @@ export function AnvogueCheckout() {
                         value={value}
                         checked={payment === value}
                         onChange={() => setPayment(value)}
-                        className="size-4 accent-[#DB4444]"
+                        className="size-4 accent-[var(--brand-orange)]"
                       />
                       <Icon size={20} className="flex-none text-[#1F1F1F]" strokeWidth={1.5} />
                       <span className="text-sm font-semibold text-[#1F1F1F]">{value}</span>
@@ -410,7 +410,7 @@ export function AnvogueCheckout() {
                   </div>
 
                   {coupon && discount > 0 && (
-                    <div className="flex justify-between text-[#DB4444]">
+                    <div className="flex justify-between text-[var(--brand-orange)]">
                       <dt>Descuento ({coupon.code})</dt>
                       <dd className="font-medium">−{formatGs(discount)}</dd>
                     </div>

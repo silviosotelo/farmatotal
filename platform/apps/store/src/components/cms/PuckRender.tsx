@@ -77,7 +77,7 @@ function StoreHeroSlider() {
                 borderRadius: "50%",
                 border: "none",
                 cursor: "pointer",
-                background: i === idx % visible.length ? "#f16522" : "rgba(255,255,255,.7)",
+                background: i === idx % visible.length ? "var(--brand-orange)" : "rgba(255,255,255,.7)",
               }}
             />
           ))}
@@ -164,7 +164,7 @@ function StoreProductGrid({ heading, limit, source }: { heading: string; limit: 
               <img src={p.image} alt={p.title} style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
             </div>
             <div style={{ fontSize: 13, marginTop: 8, lineHeight: 1.3 }}>{p.title}</div>
-            <div style={{ color: "#f16522", fontWeight: 700, marginTop: 4 }}>{gs(p.priceWeb)}</div>
+            <div style={{ color: "var(--brand-orange)", fontWeight: 700, marginTop: 4 }}>{gs(p.priceWeb)}</div>
           </a>
         ))}
         {!loaded && <p style={{ color: "#9ca3af" }}>Cargando productos…</p>}
@@ -190,7 +190,7 @@ const config: Config = {
             overflow: "hidden",
             background: image
               ? `linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)), url(${image}) center/cover`
-              : "linear-gradient(135deg,#f16522,#ff8a4c)",
+              : "linear-gradient(135deg,var(--brand-orange),#ff8a4c)",
             color: "#fff",
             textAlign: (align as "left" | "center") ?? "center",
           }}
@@ -204,7 +204,7 @@ const config: Config = {
                 display: "inline-block",
                 marginTop: 20,
                 background: "#fff",
-                color: "#f16522",
+                color: "var(--brand-orange)",
                 padding: "12px 28px",
                 borderRadius: 30,
                 fontWeight: 700,
@@ -253,9 +253,9 @@ const config: Config = {
             borderRadius: 30,
             fontWeight: 600,
             textDecoration: "none",
-            background: variant === "solid" ? "#f16522" : "transparent",
-            color: variant === "solid" ? "#fff" : "#f16522",
-            border: "2px solid #f16522",
+            background: variant === "solid" ? "var(--brand-orange)" : "transparent",
+            color: variant === "solid" ? "#fff" : "var(--brand-orange)",
+            border: "2px solid var(--brand-orange)",
           }}
         >
           {label as string}
