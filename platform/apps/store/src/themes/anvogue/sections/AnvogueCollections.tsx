@@ -48,12 +48,19 @@ export function AnvogueCollections({ title, items }: { title: string; items: Col
                 className="collection-item group block relative rounded-2xl overflow-hidden cursor-pointer"
               >
                 <div className="bg-img aspect-[5/3] overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={c.image}
-                    alt={c.name}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
+                  {c.image ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={c.image}
+                      alt={c.name}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div
+                      className="h-full w-full transition-transform duration-500 group-hover:scale-105"
+                      style={{ background: "var(--brand-gradient)" }}
+                    />
+                  )}
                 </div>
                 <div
                   className={`collection-name ${heading5} text-center absolute left-1/2 -translate-x-1/2 sm:bottom-8 bottom-4 lg:w-[200px] md:w-[160px] w-[110px] md:py-3 py-1.5 bg-white rounded-xl duration-500 group-hover:bg-[#1F1F1F] group-hover:text-white`}

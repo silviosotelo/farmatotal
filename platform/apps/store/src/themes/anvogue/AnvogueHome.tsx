@@ -5,11 +5,8 @@ import { getDeals, getFeatured, listProducts, listCategories } from "@/lib/api";
 import { AnvogueProductCard } from "./AnvogueProductCard";
 import { AnvogueCollections, type CollectionItem } from "./sections/AnvogueCollections";
 import { AnvogueProductTabs } from "./sections/AnvogueProductTabs";
-import { AnvogueBrands } from "./sections/AnvogueBrands";
-import { AnvogueInstagram } from "./sections/AnvogueInstagram";
 import {
   C,
-  IMG,
   container,
   heading2,
   heading3,
@@ -17,18 +14,6 @@ import {
   caption1,
   textButton,
 } from "./sections/anvogueClasses";
-
-/** Pool de imágenes reales para las tarjetas de categoría. */
-const COLLECTION_IMAGES = [
-  `${IMG}/collection/pharmacy.png`,
-  `${IMG}/collection/skin.png`,
-  `${IMG}/collection/hair.png`,
-  `${IMG}/collection/body.png`,
-  `${IMG}/collection/supplements.png`,
-  `${IMG}/collection/food.png`,
-  `${IMG}/collection/accessories-cos.png`,
-  `${IMG}/collection/outfit.png`,
-];
 
 async function safe<T>(p: Promise<T>, fallback: T): Promise<T> {
   try {
@@ -56,10 +41,10 @@ export async function AnvogueHome() {
   const bestSellers = latest.products;
   const featuredGrid = featured.slice(0, 8);
 
-  const collectionItems: CollectionItem[] = categories.slice(0, 8).map((c, i) => ({
+  const collectionItems: CollectionItem[] = categories.slice(0, 8).map((c) => ({
     name: c.name,
     href: c.href,
-    image: COLLECTION_IMAGES[i % COLLECTION_IMAGES.length],
+    image: c.icon ?? "",
   }));
 
   return (
@@ -96,22 +81,18 @@ export async function AnvogueHome() {
       <div className={`${container} md:pt-20 pt-10`}>
         <div className="banner-block style-one grid sm:grid-cols-2 gap-5">
           {[
-            { img: `${IMG}/banner/1.png`, title: "Lo más vendido", href: "/productos" },
-            { img: `${IMG}/banner/2.png`, title: "Ofertas", href: "/categorias/ofertas/" },
+            { title: "Lo más vendido", href: "/productos" },
+            { title: "Ofertas", href: "/categorias/ofertas/" },
           ].map((b) => (
             <Link
               key={b.title}
               href={b.href}
               className="banner-item group relative block overflow-hidden rounded-2xl duration-500"
             >
-              <div className="banner-img aspect-[20/13] overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={b.img}
-                  alt=""
-                  className="h-full w-full object-cover duration-1000 group-hover:scale-105"
-                />
-              </div>
+              <div
+                className="banner-img aspect-[20/13] overflow-hidden duration-1000 group-hover:scale-105"
+                style={{ background: "var(--brand-gradient)" }}
+              />
               <div className="banner-content absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center">
                 <div className={`${heading2} text-white`}>{b.title}</div>
                 <div
@@ -144,12 +125,6 @@ export async function AnvogueHome() {
           </div>
         </div>
       </div>
-
-      {/* INSTAGRAM */}
-      <AnvogueInstagram title="Seguinos en redes" tag="Inspiración para tu día a día" />
-
-      {/* BRANDS */}
-      <AnvogueBrands />
     </div>
   );
 }
