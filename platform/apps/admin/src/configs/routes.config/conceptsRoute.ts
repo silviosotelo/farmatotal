@@ -77,6 +77,15 @@ const conceptsRoute: Routes = [
         },
     },
     {
+        key: 'shop.headerFooter',
+        path: `${CONCEPTS_PREFIX_PATH}/header-footer`,
+        component: lazy(() => import('@/views/concepts/store-config/HeaderFooterConfig')),
+        authority: [ADMIN, USER],
+        meta: {
+            pageContainerType: 'contained',
+        },
+    },
+    {
         key: 'shop.variants',
         path: `${CONCEPTS_PREFIX_PATH}/variants`,
         component: lazy(() => import('@/views/concepts/variants/Variants')),

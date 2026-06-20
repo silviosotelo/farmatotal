@@ -74,6 +74,7 @@ const conceptsNavigationConfig: NavigationTree[] = [
     ]),
     section('shop.store', 'Tienda', [
         item('shop.storeConfig', `${CONCEPTS_PREFIX_PATH}/store-config`, 'Apariencia y marca', 'cmStore'),
+        item('shop.headerFooter', `${CONCEPTS_PREFIX_PATH}/header-footer`, 'Header y Footer', 'cmStore'),
         item('shop.settings', `${CONCEPTS_PREFIX_PATH}/settings`, 'Ajustes', 'cmSettings'),
     ]),
     section('shop.system', 'Sistema', [
