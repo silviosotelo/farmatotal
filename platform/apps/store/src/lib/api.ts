@@ -191,7 +191,9 @@ export async function getHomeCategories(): Promise<Category[]> {
 // ---- Header / Footer configurables (editables en admin) ----
 export type NavItem = { label: string; href: string };
 export type HeaderConfig = { topNav: NavItem[]; categories: NavItem[] };
+export type FooterColumn = { title: string; links: NavItem[] };
 export type FooterConfig = {
+  columns: FooterColumn[];
   copyright: string;
   partner?: { href: string; image: string; alt: string } | null;
 };
@@ -216,6 +218,40 @@ const HEADER_DEFAULTS: HeaderConfig = {
 };
 
 const FOOTER_DEFAULTS: FooterConfig = {
+  columns: [
+    {
+      title: "Información",
+      links: [
+        { label: "Sobre nosotros", href: "/paginas/sobre-nosotros/" },
+        { label: "Sucursales", href: "/sucursales/" },
+        { label: "Contacto", href: "/contacto/" },
+      ],
+    },
+    {
+      title: "Comprar",
+      links: [
+        { label: "Catálogo", href: "/catalogo/" },
+        { label: "Ofertas", href: "/categorias/ofertas/" },
+        { label: "Categorías", href: "/catalogo/" },
+        { label: "Carrito", href: "/carrito/" },
+      ],
+    },
+    {
+      title: "Atención",
+      links: [
+        { label: "¿Dónde está mi pedido?", href: "/rastrear-pedido/" },
+        { label: "Mi cuenta", href: "/mi-cuenta/" },
+        { label: "Mis favoritos", href: "/mis-favoritos/" },
+      ],
+    },
+    {
+      title: "Legal",
+      links: [
+        { label: "Política de privacidad", href: "/politica-de-privacidad/" },
+        { label: "Términos y condiciones", href: "/paginas/terminos-y-condiciones/" },
+      ],
+    },
+  ],
   copyright: "Copyright 2023 © Defensores S.A. Todos los derechos reservados.",
   partner: {
     href: "https://www.century.com.py/",
@@ -333,6 +369,7 @@ export async function getHeaderConfig(): Promise<HeaderConfig> {
 export async function getFooterConfig(): Promise<FooterConfig> {
   const cfg = await getSetting<Partial<FooterConfig>>("footer_config");
   return {
+    columns: cfg?.columns?.length ? cfg.columns : FOOTER_DEFAULTS.columns,
     copyright: cfg?.copyright || FOOTER_DEFAULTS.copyright,
     partner: cfg?.partner !== undefined ? cfg.partner : FOOTER_DEFAULTS.partner,
   };
