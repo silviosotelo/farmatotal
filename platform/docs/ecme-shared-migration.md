@@ -1,5 +1,10 @@
 # Migración: Ecme como librería compartida (packages/ui) para admin + 3 temas del store
 
+> **ESTADO: COMPLETADA ✅** — Fases 0-4 hechas y verificadas. admin (Vite) y store
+> (Next) compilan y buildean consumiendo `@ft/ui` con una sola instancia de React.
+> Componente Ecme (`Button`) renderizando en los 3 temas vía `FloatingButtons`;
+> build completo del store OK con la API arriba.
+
 **Decisiones del usuario:** (1) **Unificar en monorepo** — store dentro del workspace pnpm, una
 sola instancia de React, `packages/ui` consumido por admin Y store. (2) **Portar todo Ecme**
 (38 UI + 32 shared + utils/hooks/hoc).

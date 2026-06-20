@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@ft/ui";
 import { BarcodeIcon, MicIcon, ArrowUpIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
@@ -44,19 +45,21 @@ export default function FloatingButtons() {
         </button>
       </div>
 
-      {/* Scroll-to-top */}
-      <button
+      {/* Scroll-to-top — componente Button de Ecme (@ft/ui). variant solid usa
+          bg-primary, que el puente de tokens mapea al naranja de marca. */}
+      <Button
         onClick={handleScrollTop}
         aria-label="Volver arriba"
+        variant="solid"
+        shape="circle"
+        icon={<ArrowUpIcon className="w-5 h-5" />}
         className={cn(
-          "fixed bottom-6 right-6 z-50 size-11 rounded-full bg-brand-orange text-white shadow-md flex items-center justify-center transition-all duration-300",
+          "fixed bottom-6 right-6 z-50 size-11 shadow-md transition-all duration-300",
           showScrollTop
             ? "opacity-100 scale-100 pointer-events-auto"
             : "opacity-0 scale-75 pointer-events-none"
         )}
-      >
-        <ArrowUpIcon className="w-5 h-5" />
-      </button>
+      />
     </>
   );
 }
