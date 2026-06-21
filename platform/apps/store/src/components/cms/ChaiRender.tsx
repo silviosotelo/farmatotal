@@ -17,7 +17,7 @@ import { BranchesBlock } from "./BranchesBlock";
 import { OrderConfirmationBlock } from "./OrderConfirmationBlock";
 import { OrderTrackingBlock } from "./OrderTrackingBlock";
 import { AccountBlock } from "./AccountBlock";
-import { ContactForm } from "../sections/ContactForm";
+import { ContactFormFields } from "../sections/ContactForm.client";
 import { WishlistBlock } from "./WishlistBlock";
 import { PaymentBlock } from "./PaymentBlock";
 import { PasswordRecoveryBlock } from "./PasswordRecoveryBlock";
@@ -429,7 +429,11 @@ function RenderBlock({
     case "Checkout":
       return <CheckoutBlock />;
     case "ContactForm":
-      return <ContactForm />;
+      return (
+        <div className={className || "ft-container py-6"}>
+          <ContactFormFields />
+        </div>
+      );
     case "Search":
       return (
         <SearchBlock
