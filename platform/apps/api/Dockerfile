@@ -1,7 +1,7 @@
 # API (Fastify + Drizzle) — corre con tsx (los packages del monorepo se consumen
 # como TS source). Build context = raíz del monorepo.
 FROM node:22-slim
-RUN corepack enable
+RUN corepack enable && corepack prepare pnpm@10.16.1 --activate
 WORKDIR /app
 COPY . .
 RUN pnpm install --no-frozen-lockfile
