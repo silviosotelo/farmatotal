@@ -46,8 +46,12 @@ export function SucursalProvider({ children }: { children: ReactNode }) {
         /* ignore */
       }
       const found = storedId ? list.find((s) => s.id === storedId) : undefined;
+      // En /sucursales NO auto-abrimos el modal: esa página ES el selector (mapa +
+      // filtros), el modal lo taparía. En el resto, modal obligatorio si no hay elegida.
+      const onSucursalesPage =
+        typeof window !== "undefined" && /^\/sucursales\/?$/.test(window.location.pathname);
       if (found) setSelected(found);
-      else setIsOpen(true);
+      else if (!onSucursalesPage) setIsOpen(true);
     });
     return () => {
       cancelled = true;

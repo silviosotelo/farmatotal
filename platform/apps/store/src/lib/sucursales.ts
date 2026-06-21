@@ -62,7 +62,53 @@ export async function fetchSucursales(): Promise<Sucursal[]> {
 
 /** Zonas únicas (ciudades) en orden alfabético. */
 export function zonasOf(list: Sucursal[]): string[] {
-  return [...new Set(list.map((s) => s.zona))].sort();
+  return [...new Set(list.map((s) => s.zona.trim()))].filter(Boolean).sort();
+}
+
+/** Clave normalizada (sin acentos, minúscula, sin espacios extra) para matchear ciudades. */
+function norm(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Departamento (PY) derivado de la ciudad. NOTA white-label: esto es una derivación
+ * para el demo; la versión tenant-agnóstica correcta sería un campo `department`
+ * editable por sucursal en el admin. Ciudades no mapeadas caen en "Otros".
+ */
+const DEPT_BY_CITY: Record<string, string> = {
+  asuncion: "Asunción",
+  "loma pyta": "Asunción",
+  aregua: "Central",
+  capiata: "Central",
+  "fernando de la mora": "Central",
+  guarambare: "Central",
+  ita: "Central",
+  lambare: "Central",
+  limpio: "Central",
+  luque: "Central",
+  "san lorenzo": "Central",
+  "villa elisa": "Central",
+  ypane: "Central",
+  nemby: "Central",
+  caacupe: "Cordillera",
+  "itacurubi de la cordillera": "Cordillera",
+  piribebuy: "Cordillera",
+  "san bernardino": "Cordillera",
+};
+
+export function departmentOf(city: string): string {
+  return DEPT_BY_CITY[norm(city)] ?? "Otros";
+}
+
+/** Departamentos únicos presentes, ordenados (con "Otros" al final). */
+export function departmentsOf(list: Sucursal[]): string[] {
+  const set = [...new Set(list.map((s) => departmentOf(s.zona)))];
+  return set.sort((a, b) => (a === "Otros" ? 1 : b === "Otros" ? -1 : a.localeCompare(b)));
 }
 
 /** Distancia haversine en km entre dos puntos. */
