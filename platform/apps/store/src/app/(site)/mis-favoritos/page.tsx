@@ -1,12 +1,11 @@
+import { notFound } from "next/navigation";
 import { getPage } from "@/lib/api";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import ChaiRender, { type ChaiBlock } from "@/components/cms/ChaiRender";
-import MisFavoritosNative from "./MisFavoritosNative";
 
 /**
- * Mis Favoritos: si el documento "mis-favoritos" está publicado en el builder
- * (con el WishlistBlock data-bound), manda el builder; si no, cae al contenido
- * nativo (MisFavoritosNative, mismos datos vía useWishlist → /api/wishlist).
+ * Mis Favoritos: el documento "mis-favoritos" del builder (con el WishlistBlock
+ * data-bound) debe estar publicado con bloques.
  */
 export default async function MisFavoritosPage() {
   const page = await getPage("mis-favoritos").catch(() => null);
@@ -21,5 +20,5 @@ export default async function MisFavoritosPage() {
     );
   }
 
-  return <MisFavoritosNative />;
+  notFound();
 }

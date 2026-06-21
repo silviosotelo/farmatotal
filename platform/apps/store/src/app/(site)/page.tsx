@@ -1,7 +1,7 @@
+import { notFound } from "next/navigation";
 import { getActiveTheme } from "@/themes/registry";
 import { EkomartHome } from "@/themes/ekomart/EkomartHome";
 import { AnvogueHome } from "@/themes/anvogue/AnvogueHome";
-import { BaseHome } from "@/components/BaseHome";
 import { getPage } from "@/lib/api";
 import ChaiRender, { type ChaiBlock } from "@/components/cms/ChaiRender";
 
@@ -20,8 +20,7 @@ export default async function Home() {
   }
 
   // Farmatotal: home construido en el builder (editable, bloques data-bound que
-  // consumen el backend). Si el doc "home" está publicado, manda el builder; si no,
-  // cae al home nativo (mismos componentes/datos) como respaldo.
+  // consumen el backend). El doc "home" debe estar publicado con bloques.
   const page = await getPage("home").catch(() => null);
   if (page?.published && hasChaiBlocks(page.blocks)) {
     return (
@@ -31,5 +30,5 @@ export default async function Home() {
       </main>
     );
   }
-  return <BaseHome />;
+  notFound();
 }

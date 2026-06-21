@@ -1,6 +1,6 @@
+import { notFound } from "next/navigation";
 import { getPage } from "@/lib/api";
 import ChaiRender, { type ChaiBlock } from "@/components/cms/ChaiRender";
-import MiCuentaNative from "./MiCuentaNative";
 
 function hasChaiBlocks(blocks: unknown): blocks is ChaiBlock[] {
   return Array.isArray(blocks) && blocks.length > 0;
@@ -8,8 +8,7 @@ function hasChaiBlocks(blocks: unknown): blocks is ChaiBlock[] {
 
 export default async function MiCuentaPage() {
   // Mi cuenta construido en el builder (editable, AccountBlock data-bound al
-  // backend). Si el doc "mi-cuenta" está publicado, manda el builder; si no, cae
-  // al contenido nativo (mismos datos/API) como respaldo.
+  // backend). El doc "mi-cuenta" debe estar publicado con bloques.
   const page = await getPage("mi-cuenta").catch(() => null);
   if (page?.published && hasChaiBlocks(page.blocks)) {
     return (
@@ -19,5 +18,5 @@ export default async function MiCuentaPage() {
       </main>
     );
   }
-  return <MiCuentaNative />;
+  notFound();
 }

@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { getPage } from "@/lib/api";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import ChaiRender, { type ChaiBlock } from "@/components/cms/ChaiRender";
-import SearchFallback from "./SearchFallback";
 
 export const metadata: Metadata = { title: "Buscar" };
 
 export default async function BuscarPage() {
   // Búsqueda construida en el builder (slug `buscar`). El SearchBlock es data-bound
-  // y lee `?q=` de la URL. Si el doc está publicado y tiene bloques manda el builder;
-  // si no, cae al buscador nativo (mismos endpoints del API) como respaldo.
+  // y lee `?q=` de la URL. El doc debe estar publicado con bloques.
   const doc = await getPage("buscar").catch(() => null);
   if (doc?.published && Array.isArray(doc.blocks) && doc.blocks.length > 0) {
     return (
@@ -21,5 +20,5 @@ export default async function BuscarPage() {
     );
   }
 
-  return <SearchFallback />;
+  notFound();
 }

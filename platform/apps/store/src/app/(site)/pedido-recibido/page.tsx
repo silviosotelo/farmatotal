@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { getPage } from "@/lib/api";
 import ChaiRender, { type ChaiBlock } from "@/components/cms/ChaiRender";
-import OrderReceivedNative from "./OrderReceivedNative";
 
 export const metadata: Metadata = { title: "Pedido recibido" };
 
@@ -11,9 +11,8 @@ function hasChaiBlocks(blocks: unknown): blocks is ChaiBlock[] {
 
 export default async function PedidoRecibidoPage() {
   // Confirmación de pedido construida en el builder (editable, data-bound al
-  // backend vía OrderConfirmationBlock). Si el doc "pedido-recibido" está
-  // publicado, manda el builder; si no, cae al contenido nativo (mismos
-  // endpoints del API) como respaldo.
+  // backend vía OrderConfirmationBlock). El doc "pedido-recibido" debe estar
+  // publicado con bloques.
   const page = await getPage("pedido-recibido").catch(() => null);
   if (page?.published && hasChaiBlocks(page.blocks)) {
     return (
@@ -23,5 +22,5 @@ export default async function PedidoRecibidoPage() {
     );
   }
 
-  return <OrderReceivedNative />;
+  notFound();
 }
