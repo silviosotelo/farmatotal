@@ -1,17 +1,12 @@
-# Store (Next 16). NEXT_PUBLIC_API_URL se inyecta en BUILD (se inlinea en el bundle
-# del cliente). API_URL (SSR interno) se pasa en runtime. Build context = raíz monorepo.
-FROM node:22-slim
-RUN corepack enable && corepack prepare pnpm@10.16.1 --activate
-WORKDIR /app
-COPY . .
-RUN pnpm install --no-frozen-lockfile
+# Store (Next 16). Deriva de ft-base. NEXT_PUBLIC_API_URL se inlinea en build (cliente);
+# API_URL es el API interno para el prerender/SSG (alcanzable en la red Docker durante
+# el build con --network). El store tiene un BFF con Prisma (libSQL) → prisma generate.
+FROM ft-base
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-# API_URL interno para el prerender/SSG del build (alcanzable en la red Docker).
 ARG API_URL
 ENV API_URL=$API_URL
 WORKDIR /app/apps/store
-# El store tiene un BFF con Prisma (libSQL): generar el client antes del type-check.
 RUN pnpm exec prisma generate
 RUN pnpm exec next build
 EXPOSE 3000

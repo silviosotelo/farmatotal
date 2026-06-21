@@ -1,0 +1,8 @@
+# Imagen base: instala el monorepo UNA sola vez (la red del host es lenta). api/store/
+# admin derivan de ésta (FROM ft-base) y solo corren tsc/next/vite — sin reinstalar.
+FROM node:22-slim
+RUN corepack enable && corepack prepare pnpm@10.16.1 --activate
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY . .
+RUN pnpm install --no-frozen-lockfile

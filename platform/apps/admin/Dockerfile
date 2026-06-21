@@ -1,10 +1,6 @@
-# Admin (Vite SPA) → build estático servido por nginx. VITE_API_URL/VITE_TENANT se
-# inyectan en BUILD (se inlinean). Build context = raíz monorepo.
-FROM node:22-slim AS build
-RUN corepack enable && corepack prepare pnpm@10.16.1 --activate
-WORKDIR /app
-COPY . .
-RUN pnpm install --no-frozen-lockfile
+# Admin (Vite SPA) → estático servido por nginx. Deriva de ft-base. VITE_* se inlinean
+# en build. El outDir de Vite es 'build' (ver vite.config).
+FROM ft-base AS build
 ARG VITE_API_URL
 ARG VITE_TENANT=default
 ENV VITE_API_URL=$VITE_API_URL VITE_TENANT=$VITE_TENANT
