@@ -5,6 +5,7 @@
 **/.git
 .git
 docs/research
+apps/store/reference-native
 **/*.log
 .env
 **/.env
