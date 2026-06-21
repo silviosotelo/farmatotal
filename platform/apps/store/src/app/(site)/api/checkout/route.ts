@@ -23,6 +23,13 @@ const checkoutSchema = z.object({
   shippingMethodId: z.string().optional(),
   taxRateId: z.string().optional(),
   branchId: z.string().optional(),
+  // Pago elegido (clave/label de mod_payments, incluye métodos custom) para guardar.
+  paymentKey: z.string().optional(),
+  paymentLabel: z.string().optional(),
+  // Ubicación exacta marcada en el mapa (delivery).
+  location: z.object({ lat: z.number(), lng: z.number() }).optional(),
+  // Campos custom definidos por el tenant (mod_checkout).
+  customFields: z.record(z.string(), z.string()).optional(),
   billing: z.object({
     name: z.string().min(1),
     email: z.string().email().optional(),
@@ -59,7 +66,7 @@ export async function POST(req: NextRequest) {
     const payload = {
       customerName: data.billing.name,
       // El backend valida email; si el front no lo manda usamos un placeholder.
-      customerEmail: data.billing.email || "sin-correo@farmatotal.com.py",
+      customerEmail: data.billing.email || "sin-correo@checkout.local",
       customerPhone: data.billing.phone || undefined,
       customerDoc: data.billing.doc || undefined,
       docType,
@@ -70,10 +77,21 @@ export async function POST(req: NextRequest) {
         data.shippingMethod === "delivery" ? data.shippingMethodId || undefined : undefined,
       taxRateId: data.taxRateId || undefined,
       branchId,
-      shippingAddress:
-        data.shippingMethod === "delivery"
-          ? { address: data.billing.address ?? "", city: data.billing.city ?? "" }
-          : undefined,
+      shippingAddress: (() => {
+        const a: Record<string, unknown> = {};
+        if (data.shippingMethod === "delivery") {
+          a.address = data.billing.address ?? "";
+          a.city = data.billing.city ?? "";
+          if (data.location) {
+            a.lat = data.location.lat;
+            a.lng = data.location.lng;
+          }
+        }
+        if (data.paymentLabel) a.paymentLabel = data.paymentLabel;
+        if (data.paymentKey) a.paymentKey = data.paymentKey;
+        if (data.customFields && Object.keys(data.customFields).length) a.customFields = data.customFields;
+        return Object.keys(a).length ? a : undefined;
+      })(),
       paymentMethod,
       couponCode: data.couponCode || undefined,
       lines: data.lines.map((l) => ({

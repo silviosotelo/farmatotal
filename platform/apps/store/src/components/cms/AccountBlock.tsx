@@ -79,11 +79,42 @@ export function AccountBlock({
   showProfile?: boolean;
   showOrders?: boolean;
 } = {}) {
-  const { user, isLoggedIn, logout, refresh } = useAuth();
+  const { user, isLoggedIn, login, register, logout, refresh } = useAuth();
   const { toast } = useToast();
   const money = useMoney();
   const { currency, locale } = useCurrency();
   const flags = useFlags();
+
+  /* ── Auth (login / registro) para el estado deslogueado ── */
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPwd, setAuthPwd] = useState("");
+  const [authFirst, setAuthFirst] = useState("");
+  const [authLast, setAuthLast] = useState("");
+  const [authPhone, setAuthPhone] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authErr, setAuthErr] = useState("");
+
+  async function handleAuth(e: React.FormEvent) {
+    e.preventDefault();
+    setAuthErr("");
+    setAuthBusy(true);
+    try {
+      const r =
+        authMode === "login"
+          ? await login(authEmail.trim(), authPwd)
+          : await register({ email: authEmail.trim(), password: authPwd, firstName: authFirst.trim(), lastName: authLast.trim(), phone: authPhone.trim() || undefined });
+      if (!r.ok) {
+        setAuthErr(r.message || "No se pudo iniciar sesión.");
+      } else {
+        toast(authMode === "login" ? "Sesión iniciada." : "Cuenta creada.", "success");
+      }
+    } catch {
+      setAuthErr("Error de conexión. Intentá de nuevo.");
+    } finally {
+      setAuthBusy(false);
+    }
+  }
 
   /* ── Cliente real (tabla customers) ── */
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -199,19 +230,39 @@ export function AccountBlock({
 
   /* ── Invitado ── */
   if (!isLoggedIn || !user) {
+    const inp =
+      "w-full bg-search-bg rounded-md h-11 px-3 text-sm outline-none border border-transparent focus-visible:ring-2 focus-visible:ring-brand-orange/40 text-brand-text placeholder:text-brand-muted";
     return (
       <div className="ft-container py-12">
-        <div className="max-w-lg mx-auto border border-[#ededf1] rounded-[10px] p-8 text-center space-y-4">
-          <h2 className="font-heading text-xl font-bold text-brand-text">{title}</h2>
-          <p className="text-sm text-brand-muted">
-            Iniciá sesión para ver tus datos y el historial de pedidos.
+        <div className="max-w-md mx-auto border border-[#ededf1] rounded-[12px] p-8 bg-white">
+          <h2 className="font-heading text-xl font-bold text-brand-text text-center">{title}</h2>
+          <p className="mt-1 text-center text-sm text-brand-muted">
+            {authMode === "login" ? "Iniciá sesión para ver tus datos y pedidos." : "Creá tu cuenta para comprar más rápido."}
           </p>
-          <Link
-            href="/mi-cuenta"
-            className="brand-gradient focus-ring text-white rounded-[8px] h-[44px] px-8 text-sm font-semibold inline-flex items-center justify-center"
+          <form onSubmit={handleAuth} className="mt-6 flex flex-col gap-3" noValidate>
+            {authMode === "register" && (
+              <div className="grid grid-cols-2 gap-3">
+                <input value={authFirst} onChange={(e) => setAuthFirst(e.target.value)} placeholder="Nombre" className={inp} aria-label="Nombre" />
+                <input value={authLast} onChange={(e) => setAuthLast(e.target.value)} placeholder="Apellido" className={inp} aria-label="Apellido" />
+              </div>
+            )}
+            <input type="email" required value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder="correo@ejemplo.com" className={inp} aria-label="Email" />
+            <input type="password" required value={authPwd} onChange={(e) => setAuthPwd(e.target.value)} placeholder="Contraseña" className={inp} aria-label="Contraseña" />
+            {authMode === "register" && (
+              <input value={authPhone} onChange={(e) => setAuthPhone(e.target.value)} placeholder="Teléfono (opcional)" className={inp} aria-label="Teléfono" />
+            )}
+            {authErr ? <p className="text-xs text-[#c0392b]">{authErr}</p> : null}
+            <button type="submit" disabled={authBusy} className="mt-1 brand-gradient focus-ring text-white rounded-[30px] h-11 px-8 text-sm font-semibold inline-flex items-center justify-center disabled:opacity-60">
+              {authBusy ? "Procesando…" : authMode === "login" ? "Iniciar sesión" : "Crear cuenta"}
+            </button>
+          </form>
+          <button
+            type="button"
+            onClick={() => { setAuthMode((m) => (m === "login" ? "register" : "login")); setAuthErr(""); }}
+            className="mt-4 w-full text-center text-sm text-brand-orange-ink hover:underline"
           >
-            Iniciar sesión
-          </Link>
+            {authMode === "login" ? "¿No tenés cuenta? Registrate" : "¿Ya tenés cuenta? Iniciá sesión"}
+          </button>
         </div>
       </div>
     );

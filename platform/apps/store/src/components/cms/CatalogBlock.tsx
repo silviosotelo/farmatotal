@@ -67,6 +67,23 @@ export function CatalogBlock({
   const [priceApplied, setPriceApplied] = useState<{ min: string; max: string }>({ min: "", max: "" });
   const firstRender = useRef(true);
 
+  // Filtros de categoría y marca (el backend soporta categoryId/brandId).
+  const [cats, setCats] = useState<{ id: string; name: string }[]>([]);
+  const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
+  const [catId, setCatId] = useState("");
+  const [brandId, setBrandId] = useState("");
+
+  useEffect(() => {
+    fetch(`${API}/catalog/categories`, { headers: tenantHeaders() })
+      .then((r) => r.json())
+      .then((d) => setCats(((d.data as { id: string; name: string }[]) || []).map((c) => ({ id: c.id, name: c.name }))))
+      .catch(() => {});
+    fetch(`${API}/catalog/brands`, { headers: tenantHeaders() })
+      .then((r) => r.json())
+      .then((d) => setBrands(((d.data as { id: string; name: string }[]) || []).map((b) => ({ id: b.id, name: b.name }))))
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     const t = setTimeout(() => setPriceApplied({ min: minPrice, max: maxPrice }), 450);
     return () => clearTimeout(t);
@@ -76,7 +93,7 @@ export function CatalogBlock({
   useEffect(() => {
     if (firstRender.current) return;
     setPage(1);
-  }, [sort, perPage, priceApplied]);
+  }, [sort, perPage, priceApplied, catId, brandId]);
 
   const qkey = JSON.stringify(query || {});
   useEffect(() => {
@@ -88,6 +105,8 @@ export function CatalogBlock({
     if (apiSort) qs.set("sort", apiSort);
     if (priceApplied.min) qs.set("priceMin", priceApplied.min);
     if (priceApplied.max) qs.set("priceMax", priceApplied.max);
+    if (catId) qs.set("categoryId", catId);
+    if (brandId) qs.set("brandId", brandId);
     setLoaded(false);
     fetch(`${API}/catalog/products?${qs.toString()}`, { headers: tenantHeaders() })
       .then((r) => r.json())
@@ -98,7 +117,7 @@ export function CatalogBlock({
       })
       .catch(() => setLoaded(true));
     firstRender.current = false;
-  }, [page, perPage, sort, priceApplied, qkey]);
+  }, [page, perPage, sort, priceApplied, catId, brandId, qkey]);
 
   const totalPages = Math.max(1, Math.ceil(total / perPage));
   const skus = items.map((p) => p.sku).filter((s): s is string => !!s);
@@ -145,6 +164,22 @@ export function CatalogBlock({
                 className="h-8 w-24 rounded border border-[#ededf1] bg-white px-2 text-sm text-brand-text placeholder:text-brand-muted/60 focus:outline-none focus:ring-2 focus:ring-brand-orange/50"
               />
             </div>
+            <select value={catId} onChange={(e) => setCatId(e.target.value)} aria-label="Categoría" className="h-8 max-w-[180px] rounded border border-[#ededf1] bg-white px-2 text-sm text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-orange/50">
+              <option value="">Todas las categorías</option>
+              {cats.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <select value={brandId} onChange={(e) => setBrandId(e.target.value)} aria-label="Marca" className="h-8 max-w-[160px] rounded border border-[#ededf1] bg-white px-2 text-sm text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-orange/50">
+              <option value="">Todas las marcas</option>
+              {brands.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
             <span className="text-sm text-brand-muted">
               {total.toLocaleString("es-PY")} resultado{total !== 1 ? "s" : ""}
             </span>

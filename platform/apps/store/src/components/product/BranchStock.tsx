@@ -15,7 +15,7 @@ type InvRow = { branchId: string; branchName: string; branchCode: string; stock:
  * contra el inventario real.
  */
 export function BranchStock({ productId }: { productId: string }) {
-  const { selected, open } = useSucursal();
+  const { selected } = useSucursal();
   const flags = useFlags();
   const [rows, setRows] = useState<InvRow[] | null>(null);
 
@@ -46,10 +46,7 @@ export function BranchStock({ productId }: { productId: string }) {
       <div className="flex items-center gap-2 text-brand-muted">
         <LocationIcon className="size-4 text-brand-orange" />
         <span>
-          Tu tienda:{" "}
-          <button type="button" onClick={open} className="font-medium text-brand-text underline-offset-2 hover:underline">
-            {selected.name}
-          </button>
+          Tu tienda: <span className="font-medium text-brand-text">{selected.name}</span>
         </span>
       </div>
       <div className="mt-1">
