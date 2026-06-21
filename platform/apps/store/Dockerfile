@@ -7,6 +7,9 @@ COPY . .
 RUN pnpm install --no-frozen-lockfile
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# API_URL interno para el prerender/SSG del build (alcanzable en la red Docker).
+ARG API_URL
+ENV API_URL=$API_URL
 WORKDIR /app/apps/store
 # El store tiene un BFF con Prisma (libSQL): generar el client antes del type-check.
 RUN pnpm exec prisma generate

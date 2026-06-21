@@ -4,7 +4,9 @@
  */
 import type { Product, Category } from "@/types";
 
-const API = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "http://localhost:4000";
+// Server (SSR/SSG/build) prioriza API_URL interno (ej. http://api:4000); el cliente
+// no ve API_URL (no es NEXT_PUBLIC) y cae a NEXT_PUBLIC_API_URL (URL pública).
+const API = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 type BackendImage = { url: string; alt?: string | null; isPrimary?: boolean; position?: number };
 type BackendProduct = {
