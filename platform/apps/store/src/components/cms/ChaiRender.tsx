@@ -17,6 +17,7 @@ import { BranchesBlock } from "./BranchesBlock";
 import { OrderConfirmationBlock } from "./OrderConfirmationBlock";
 import { OrderTrackingBlock } from "./OrderTrackingBlock";
 import { AccountBlock } from "./AccountBlock";
+import { ContactForm } from "../sections/ContactForm";
 import { WishlistBlock } from "./WishlistBlock";
 import { PaymentBlock } from "./PaymentBlock";
 import { PasswordRecoveryBlock } from "./PasswordRecoveryBlock";
@@ -427,6 +428,8 @@ function RenderBlock({
       return <CartBlock showCoupon={block.showCoupon !== false} />;
     case "Checkout":
       return <CheckoutBlock />;
+    case "ContactForm":
+      return <ContactForm />;
     case "Search":
       return (
         <SearchBlock
