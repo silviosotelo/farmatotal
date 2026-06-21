@@ -8,6 +8,8 @@ RUN pnpm install --no-frozen-lockfile
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 WORKDIR /app/apps/store
+# El store tiene un BFF con Prisma (libSQL): generar el client antes del type-check.
+RUN pnpm exec prisma generate
 RUN pnpm exec next build
 EXPOSE 3000
 CMD ["pnpm", "exec", "next", "start", "-p", "3000"]
