@@ -68,7 +68,7 @@ export function AnvogueFooter({ brandName }: { brandName?: string }) {
             <div className="basis-full pl-0 md:basis-1/3 md:pl-7">
               <div className="text-sm font-semibold uppercase tracking-[0.06em]">Newsletter</div>
               <p className="mt-3 text-sm text-[#696C70]">
-                Suscribite y recibí 10% off en tu primera compra.
+                Suscribite para recibir novedades y ofertas.
               </p>
               <form action="#" className="relative mt-4 h-[52px] w-full">
                 <input

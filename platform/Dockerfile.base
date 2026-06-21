@@ -1,8 +1,20 @@
-# Imagen base: instala el monorepo UNA sola vez (la red del host es lenta). api/store/
-# admin derivan de ésta (FROM ft-base) y solo corren tsc/next/vite — sin reinstalar.
+# Imagen base: instala el monorepo una vez. Deps PRIMERO (cache estable): solo se
+# re-instala si cambian los package.json/lock; los cambios de código fuente NO
+# invalidan el install. api/store/admin derivan de ésta (FROM ft-base).
 FROM node:22-slim
 RUN corepack enable && corepack prepare pnpm@10.16.1 --activate
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY . .
+
+# 1) Manifiestos del workspace (capa cacheable)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/admin/package.json apps/admin/
+COPY apps/api/package.json apps/api/
+COPY apps/store/package.json apps/store/
+COPY packages/shared-types/package.json packages/shared-types/
+COPY packages/engine/package.json packages/engine/
+COPY packages/ui/package.json packages/ui/
 RUN pnpm install --no-frozen-lockfile
+
+# 2) Código fuente (cambios acá NO re-instalan deps)
+COPY . .

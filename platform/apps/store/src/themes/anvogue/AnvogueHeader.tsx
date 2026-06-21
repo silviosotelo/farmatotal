@@ -16,7 +16,7 @@ export function AnvogueHeader({ brandName, logo }: { brandName?: string; logo?: 
       <div className="bg-[#1F1F1F] text-white">
         <div className="mx-auto flex h-10 max-w-[1322px] items-center justify-center px-4 text-center text-xs font-semibold uppercase tracking-[0.08em] sm:justify-between">
           <span className="hidden sm:block text-[#A0A0A0]">Envío en todo el país</span>
-          <span>Nuevos clientes: 10% off en tu primera compra</span>
+          <span>Tu tienda online de confianza</span>
           <span className="hidden sm:block text-[#A0A0A0]">Comprá fácil y seguro</span>
         </div>
       </div>

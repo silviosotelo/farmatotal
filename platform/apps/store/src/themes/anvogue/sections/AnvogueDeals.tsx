@@ -43,7 +43,6 @@ export function AnvogueDeals({ products }: { products: Product[] }) {
   const minutes = Math.floor((s % 3600) / 60);
   const secs = s % 60;
   const units = [
-    { v: 0, l: "Days" },
     { v: hours, l: "Hours" },
     { v: minutes, l: "Minutes" },
     { v: secs, l: "Seconds" },

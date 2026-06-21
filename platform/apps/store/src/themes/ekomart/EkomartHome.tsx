@@ -187,53 +187,6 @@ function DiscountSection({ deals, currency, locale }: { deals: Product[]; curren
   );
 }
 
-/* ---------------- FeatureDiscount (4 tarjetas promo con fondo) ---------------- */
-const PROMO_CARDS = [
-  { bg: `${IMG}/category/01.jpg`, btn: "Descuento de fin de semana", title: <>Productos frescos <br /><span>Cada día</span></> },
-  { bg: `${IMG}/category/02.jpg`, btn: "Descuento de fin de semana", title: <>Cuidado personal<span>Para vos</span></> },
-  { bg: `${IMG}/category/03.jpg`, btn: "Descuento de fin de semana", title: <>Bebés y mamás<span>Lo que necesitás</span></> },
-  { bg: `${IMG}/category/04.jpg`, btn: "Descuento de fin de semana", title: <>Belleza y bienestar<span>Mejores marcas</span></> },
-];
-
-function FeatureDiscountSection() {
-  return (
-    <div className="category-feature-area rts-section-gapTop">
-      <div className="container">
-        <div className="row g-4">
-          {PROMO_CARDS.map((card, idx) => (
-            <div key={idx} className="col-lg-3 col-md-6 col-sm-12 col-12">
-              <div
-                className="single-feature-card bg_image"
-                style={{
-                  backgroundImage: `url(${card.bg})`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundSize: "cover",
-                }}
-              >
-                <div className="content-area">
-                  <Link href="/productos" className="rts-btn btn-primary">
-                    {card.btn}
-                  </Link>
-                  <h3 className="title">{card.title}</h3>
-                  <Link href="/productos" className="shop-now-goshop-btn">
-                    <span className="text">Comprar ahora</span>
-                    <div className="plus-icon">
-                      <i className="fa-sharp fa-regular fa-plus" />
-                    </div>
-                    <div className="plus-icon">
-                      <i className="fa-sharp fa-regular fa-plus" />
-                    </div>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ---------------- TrandingProduct (grilla de tendencias) ---------------- */
 function TrendingSection({ products, currency, locale }: { products: Product[]; currency: string; locale: string }) {
   if (!products.length) return null;
@@ -337,7 +290,6 @@ export async function EkomartHome() {
       <EkomartProductCarousel title="Destacados" products={featured} />
       <DiscountSection deals={deals} currency={currency} locale={locale} />
       <EkomartWeeklyTabs title="Lo más vendido" tabs={weeklyTabs} />
-      <FeatureDiscountSection />
       <TrendingSection products={products} currency={currency} locale={locale} />
     </div>
   );

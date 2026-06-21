@@ -10,8 +10,8 @@ type Slide = { sub: string; title: string; href: string; img: string; imgClass: 
 
 const SLIDES: Slide[] = [
   {
-    sub: "¡Hasta 50% off!",
-    title: "Ofertas de temporada",
+    sub: "Ofertas de temporada",
+    title: "Descubrí nuestras ofertas",
     href: "/categorias/ofertas/",
     img: `${IMG}/banner/bg-flash-sale-organic.png`,
     imgClass: "",

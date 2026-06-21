@@ -887,6 +887,140 @@ function Texto({ html, align = 'left', styles, blockProps }: TextoProps) {
     )
 }
 
+// ─────────────────────────── Search (resultados de búsqueda) ───────────────────────────
+function SearchPv({ placeholder = '¿Qué estás buscando?', columns = 5, styles, blockProps }: CommonProps & { placeholder?: string; columns?: number }) {
+    return (
+        <section {...root(styles, blockProps)}>
+            <div className="mb-6 flex items-center gap-2">
+                <div className="flex h-12 flex-1 items-center rounded-full border border-gray-200 bg-gray-50 px-5 text-sm text-gray-400">{placeholder}</div>
+                <div className="h-12 w-12 flex-none rounded-full border border-gray-200 bg-white" />
+            </div>
+            <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+                {Array.from({ length: columns }).map((_, i) => <div key={i} className="aspect-square rounded-xl bg-gray-50" />)}
+            </div>
+            <div className="mt-3 text-center text-xs text-gray-400">(resultados de búsqueda — data-bound a ?q= del catálogo)</div>
+        </section>
+    )
+}
+
+// ─────────────────────────── Category (página de categorías) ───────────────────────────
+function CategoryPv({ title = 'Categorías', columns = 4, styles, blockProps }: CommonProps & { title?: string; columns?: number }) {
+    return (
+        <section {...root(styles, blockProps)}>
+            {title && <h2 className="mb-4 text-xl font-bold text-gray-900">{title}</h2>}
+            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+                {Array.from({ length: columns }).map((_, i) => (
+                    <div key={i} className="rounded-xl border border-gray-100 bg-white p-4">
+                        <div className="flex items-center gap-3"><div className="h-12 w-12 shrink-0 rounded-full bg-gray-100" /><div className="h-3 w-24 rounded bg-gray-100" /></div>
+                        <div className="mt-3 space-y-1.5 border-t border-gray-100 pt-3">{[1, 2, 3].map((j) => <div key={j} className="h-2.5 w-20 rounded bg-gray-50" />)}</div>
+                    </div>
+                ))}
+            </div>
+        </section>
+    )
+}
+
+// ─────────────────────────── Branches (sucursales) ───────────────────────────
+function BranchesPv({ styles, blockProps }: CommonProps) {
+    return (
+        <section {...root(styles, blockProps)}>
+            <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-400">
+                Sucursales (filtro por zona + geolocalización — data-bound a /branches del tenant)
+            </div>
+        </section>
+    )
+}
+
+// ─────────────────────────── OrderConfirmation (pedido recibido) ───────────────────────────
+function OrderConfirmationPv({ title = '¡Gracias por tu compra!', subtitle = 'Tu pedido fue recibido y está siendo procesado.', styles, blockProps }: CommonProps & { title?: string; subtitle?: string }) {
+    return (
+        <section {...root(styles, blockProps)}>
+            <div className="mx-auto max-w-2xl">
+                <div className="mb-8 flex flex-col items-center gap-4 text-center">
+                    <div className="h-20 w-20 rounded-full bg-green-100" />
+                    <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+                    <p className="text-sm text-gray-400">{subtitle}</p>
+                </div>
+                <div className="mb-6 rounded-xl border border-gray-100 p-6"><div className="grid grid-cols-2 gap-4">{[1, 2, 3, 4].map((i) => <div key={i} className="h-10 rounded bg-gray-50" />)}</div></div>
+                <div className="rounded-xl border border-gray-100 p-6"><div className="h-24 rounded bg-gray-50" /></div>
+                <div className="mt-3 text-center text-xs text-gray-400">(confirmación funcional — data-bound a la orden por id/número)</div>
+            </div>
+        </section>
+    )
+}
+
+// ─────────────────────────── OrderTracking (seguimiento) ───────────────────────────
+function OrderTrackingPv({ title = '¿Dónde está mi pedido?', subtitle = 'Ingresá el número de pedido y el correo con el que compraste.', styles, blockProps }: CommonProps & { title?: string; subtitle?: string }) {
+    return (
+        <section {...root(styles, blockProps)}>
+            <div className="mx-auto max-w-2xl">
+                <h2 className="mb-2 text-2xl font-bold text-gray-900">{title}</h2>
+                <p className="mb-6 text-sm text-gray-400">{subtitle}</p>
+                <div className="flex gap-4"><div className="h-11 flex-1 rounded-md bg-gray-50" /><div className="h-11 flex-1 rounded-md bg-gray-50" /><div className="h-11 w-28 rounded-full bg-gray-900" /></div>
+                <div className="mt-3 text-center text-xs text-gray-400">(seguimiento funcional — el paso se deriva del status real del pedido)</div>
+            </div>
+        </section>
+    )
+}
+
+// ─────────────────────────── Account (mi cuenta) ───────────────────────────
+function AccountPv({ title = 'Mi cuenta', showProfile = true, showOrders = true, styles, blockProps }: CommonProps & { title?: string; showProfile?: boolean; showOrders?: boolean }) {
+    return (
+        <section {...root(styles, blockProps)}>
+            <h2 className="mb-6 text-2xl font-bold text-gray-900">{title}</h2>
+            <div className="flex flex-col gap-8 lg:flex-row">
+                {showProfile && (
+                    <div className="flex-none lg:w-96"><div className="rounded-xl border border-gray-100 p-6"><div className="mb-5 h-4 w-40 rounded bg-gray-100" /><div className="space-y-4">{[1, 2, 3].map((i) => <div key={i} className="h-11 rounded-md bg-gray-50" />)}</div></div></div>
+                )}
+                {showOrders && (
+                    <div className="min-w-0 flex-1"><div className="mb-5 h-4 w-32 rounded bg-gray-100" /><div className="rounded-xl border border-gray-100"><div className="h-12 bg-gray-50" />{[1, 2, 3].map((i) => <div key={i} className="h-12 border-t border-gray-100" />)}</div></div>
+                )}
+            </div>
+            <div className="mt-3 text-center text-xs text-gray-400">(mi cuenta funcional — perfil + historial de pedidos del usuario logueado)</div>
+        </section>
+    )
+}
+
+// ─────────────────────────── Wishlist (favoritos) ───────────────────────────
+function WishlistPv({ title = 'Mis Favoritos', columns = 4, styles, blockProps }: CommonProps & { title?: string; columns?: number }) {
+    return (
+        <section {...root(styles, blockProps)}>
+            <h2 className="mb-6 text-2xl font-bold text-gray-900">{title}</h2>
+            <div className="grid gap-5" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+                {Array.from({ length: columns }).map((_, i) => <div key={i} className="aspect-square rounded-xl bg-gray-50" />)}
+            </div>
+            <div className="mt-3 text-center text-xs text-gray-400">(favoritos funcional — lista del usuario/invitado)</div>
+        </section>
+    )
+}
+
+// ─────────────────────────── Payment (pago Bancard) ───────────────────────────
+function PaymentPv({ title = 'Pago con tarjeta', subtitle = 'Procesado de forma segura por Bancard.', styles, blockProps }: CommonProps & { title?: string; subtitle?: string }) {
+    return (
+        <section {...root(styles, blockProps)}>
+            <div className="mx-auto w-full max-w-2xl text-center">
+                <h1 className="mb-2 text-2xl font-bold text-gray-900">{title}</h1>
+                <p className="mb-8 text-sm text-gray-400">{subtitle}</p>
+                <div className="flex h-72 items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-400">Formulario de pago (iframe Bancard — data-bound a la orden)</div>
+            </div>
+        </section>
+    )
+}
+
+// ─────────────────────────── PasswordRecovery (recuperar contraseña) ───────────────────────────
+function PasswordRecoveryPv({ title = 'Recuperar contraseña', description = 'Ingresá el email de tu cuenta y te enviaremos un enlace para restablecer tu contraseña.', submitLabel = 'Enviar enlace de recuperación', styles, blockProps }: CommonProps & { title?: string; description?: string; submitLabel?: string }) {
+    return (
+        <section {...root(styles, blockProps)}>
+            <div className="mx-auto w-full max-w-md rounded-xl border border-gray-100 p-6">
+                <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+                <p className="mt-2 text-sm text-gray-400">{description}</p>
+                <div className="mt-6 space-y-4"><div className="h-11 rounded-md bg-gray-50" /><div className="h-11 rounded-full bg-gray-900" /></div>
+                <div className="mt-3 text-center text-xs text-gray-400">{submitLabel} — (recuperación funcional)</div>
+            </div>
+        </section>
+    )
+}
+
 // ─────────────────────────── Registro ───────────────────────────
 let registered = false
 
@@ -1228,6 +1362,150 @@ export function registerCommerceBlocks() {
             },
         }) as any,
         i18nProps: ['html'],
+    } as any)
+
+    registerChaiBlock(SearchPv as any, {
+        type: 'Search',
+        label: 'Resultados de búsqueda',
+        group: 'Comercio',
+        description: 'Buscador + grilla de resultados (data-bound a ?q= del catálogo). Voz y escaneo embebidos. Bloque funcional.',
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('ft-container py-6'),
+                placeholder: { type: 'string', title: 'Texto del buscador', default: '¿Qué estás buscando?' },
+                perPage: { type: 'number', title: 'Resultados por página', default: 48 },
+                columns: { type: 'number', title: 'Columnas', default: 5 },
+            },
+        }) as any,
+        i18nProps: ['placeholder'],
+    } as any)
+
+    registerChaiBlock(CategoryPv as any, {
+        type: 'Category',
+        label: 'Página de categorías',
+        group: 'Comercio',
+        description: 'Árbol de categorías del catálogo como tarjetas con subcategorías enlazadas. Data-bound al tenant.',
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('ft-container py-6'),
+                title: { type: 'string', title: 'Título', default: 'Categorías' },
+                columns: { type: 'number', title: 'Columnas', default: 4 },
+            },
+        }) as any,
+        i18nProps: ['title'],
+    } as any)
+
+    registerChaiBlock(BranchesPv as any, {
+        type: 'Branches',
+        label: 'Sucursales',
+        group: 'Comercio',
+        description: 'Listado de sucursales con filtro por zona y geolocalización (data-bound a /branches). Gateado por flags.branches.',
+        props: registerChaiBlockProps({
+            properties: { styles: StylesProp('ft-container py-6') },
+        }) as any,
+    } as any)
+
+    registerChaiBlock(OrderConfirmationPv as any, {
+        type: 'OrderConfirmation',
+        label: 'Confirmación de pedido',
+        group: 'Comercio',
+        description: 'Confirmación "pedido recibido": data-bound a la orden por id/número (de la URL o props). Bloque funcional.',
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('py-10'),
+                title: { type: 'string', title: 'Título', default: '¡Gracias por tu compra!' },
+                subtitle: { type: 'string', title: 'Subtítulo', default: 'Tu pedido fue recibido y está siendo procesado.' },
+                catalogHref: { type: 'string', title: 'Enlace "seguir comprando"', default: '/catalogo' },
+                accountHref: { type: 'string', title: 'Enlace "mis pedidos"', default: '/mi-cuenta' },
+                orderId: { type: 'string', title: 'Id de orden (opcional, override)', default: '' },
+                orderNumber: { type: 'string', title: 'N° de orden (opcional, override)', default: '' },
+            },
+        }) as any,
+        i18nProps: ['title', 'subtitle'],
+    } as any)
+
+    registerChaiBlock(OrderTrackingPv as any, {
+        type: 'OrderTracking',
+        label: 'Seguimiento de pedido',
+        group: 'Comercio',
+        description: 'Rastreo por número de pedido: el paso del stepper se deriva del status real de la orden. Bloque funcional.',
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('py-8'),
+                title: { type: 'string', title: 'Título', default: '¿Dónde está mi pedido?' },
+                subtitle: { type: 'string', title: 'Subtítulo', default: 'Ingresá el número de pedido y el correo con el que compraste.' },
+                requireEmail: { type: 'boolean', title: 'Exigir correo', default: false },
+                showItems: { type: 'boolean', title: 'Mostrar ítems del pedido', default: true },
+            },
+        }) as any,
+        i18nProps: ['title', 'subtitle'],
+    } as any)
+
+    registerChaiBlock(AccountPv as any, {
+        type: 'Account',
+        label: 'Mi cuenta',
+        group: 'Comercio',
+        description: 'Cuenta del usuario logueado: perfil editable + historial de pedidos (proxy autenticado). Bloque funcional.',
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('py-8'),
+                title: { type: 'string', title: 'Título', default: 'Mi cuenta' },
+                showProfile: { type: 'boolean', title: 'Mostrar detalles de la cuenta', default: true },
+                showOrders: { type: 'boolean', title: 'Mostrar historial de pedidos', default: true },
+            },
+        }) as any,
+        i18nProps: ['title'],
+    } as any)
+
+    registerChaiBlock(WishlistPv as any, {
+        type: 'Wishlist',
+        label: 'Favoritos',
+        group: 'Comercio',
+        description: 'Lista de favoritos del usuario/invitado en grilla (reusa la tarjeta de producto). Bloque funcional.',
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('ft-container py-8'),
+                title: { type: 'string', title: 'Título', default: 'Mis Favoritos' },
+                columns: { type: 'number', title: 'Columnas', default: 4 },
+            },
+        }) as any,
+        i18nProps: ['title'],
+    } as any)
+
+    registerChaiBlock(PaymentPv as any, {
+        type: 'Payment',
+        label: 'Pago (pasarela)',
+        group: 'Comercio',
+        description: 'Formulario de pago (iframe Bancard vPOS) data-bound a la orden de la ruta. Bloque funcional.',
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('py-10'),
+                title: { type: 'string', title: 'Título', default: 'Pago con tarjeta' },
+                subtitle: { type: 'string', title: 'Subtítulo', default: 'Procesado de forma segura por Bancard.' },
+                returnHref: { type: 'string', title: 'Enlace de retorno', default: '/pedido-recibido' },
+                returnLabel: { type: 'string', title: 'Texto del botón de retorno', default: 'Ver mi pedido' },
+                orderId: { type: 'string', title: 'Id de orden (opcional, override)', default: '' },
+            },
+        }) as any,
+        i18nProps: ['title', 'subtitle', 'returnLabel'],
+    } as any)
+
+    registerChaiBlock(PasswordRecoveryPv as any, {
+        type: 'PasswordRecovery',
+        label: 'Recuperar contraseña',
+        group: 'Comercio',
+        description: 'Formulario de recuperación de contraseña (dispara el flujo contra el API del tenant). Bloque funcional.',
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('py-10'),
+                title: { type: 'string', title: 'Título', default: 'Recuperar contraseña' },
+                description: { type: 'string', title: 'Descripción', default: 'Ingresá el email de tu cuenta y te enviaremos un enlace para restablecer tu contraseña.' },
+                submitLabel: { type: 'string', title: 'Texto del botón', default: 'Enviar enlace de recuperación' },
+                successMessage: { type: 'string', title: 'Mensaje de éxito', default: 'Si el email existe, te enviamos las instrucciones para restablecer tu contraseña.' },
+                loginHref: { type: 'string', title: 'Enlace a iniciar sesión', default: '/mi-cuenta/' },
+            },
+        }) as any,
+        i18nProps: ['title', 'description', 'submitLabel', 'successMessage'],
     } as any)
     /* eslint-enable @typescript-eslint/no-explicit-any */
 }

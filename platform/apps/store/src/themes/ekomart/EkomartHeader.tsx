@@ -17,7 +17,7 @@ export function EkomartHeader({ brandName, logo }: { brandName?: string; logo?: 
             <div className="col-lg-12">
               <div className="bwtween-area-header-top">
                 <div className="discount-area">
-                  <p className="disc">Envío gratis en tu primera compra. Aprovechá nuestras ofertas.</p>
+                  <p className="disc">Comprá online de forma fácil y segura.</p>
                 </div>
                 <div className="contact-number-area">
                   <p>

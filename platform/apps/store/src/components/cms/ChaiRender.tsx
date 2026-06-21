@@ -11,6 +11,15 @@ import { CatalogBlock } from "./CatalogBlock";
 import { ProductDetailBlock } from "./ProductDetailBlock";
 import { CartBlock } from "./CartBlock";
 import { CheckoutBlock } from "./CheckoutBlock";
+import { SearchBlock } from "./SearchBlock";
+import { CategoryBlock } from "./CategoryBlock";
+import { BranchesBlock } from "./BranchesBlock";
+import { OrderConfirmationBlock } from "./OrderConfirmationBlock";
+import { OrderTrackingBlock } from "./OrderTrackingBlock";
+import { AccountBlock } from "./AccountBlock";
+import { WishlistBlock } from "./WishlistBlock";
+import { PaymentBlock } from "./PaymentBlock";
+import { PasswordRecoveryBlock } from "./PasswordRecoveryBlock";
 import { SiteHeaderBlock, SiteFooterBlock } from "./SiteChromeBlocks";
 import {
   HeaderTopBarBlock,
@@ -418,6 +427,82 @@ function RenderBlock({
       return <CartBlock showCoupon={block.showCoupon !== false} />;
     case "Checkout":
       return <CheckoutBlock />;
+    case "Search":
+      return (
+        <SearchBlock
+          perPage={num(block.perPage, 48)}
+          columns={num(block.columns, 5)}
+          placeholder={str(block.placeholder) || undefined}
+          className={className || undefined}
+        />
+      );
+    case "Category":
+      return (
+        <CategoryBlock
+          title={str(block.title) || undefined}
+          columns={num(block.columns, 4)}
+          className={className || undefined}
+        />
+      );
+    case "Branches":
+      return <BranchesBlock className={className || undefined} />;
+    case "OrderConfirmation":
+      return (
+        <OrderConfirmationBlock
+          orderId={str(block.orderId) || undefined}
+          orderNumber={str(block.orderNumber) || undefined}
+          title={str(block.title) || undefined}
+          subtitle={str(block.subtitle) || undefined}
+          catalogHref={str(block.catalogHref) || undefined}
+          accountHref={str(block.accountHref) || undefined}
+        />
+      );
+    case "OrderTracking":
+      return (
+        <OrderTrackingBlock
+          title={str(block.title) || undefined}
+          subtitle={str(block.subtitle) || undefined}
+          requireEmail={!!block.requireEmail}
+          showItems={block.showItems !== false}
+        />
+      );
+    case "Account":
+      return (
+        <AccountBlock
+          title={str(block.title) || undefined}
+          showProfile={block.showProfile !== false}
+          showOrders={block.showOrders !== false}
+        />
+      );
+    case "Wishlist":
+      return (
+        <WishlistBlock
+          title={str(block.title) || undefined}
+          columns={num(block.columns, 4)}
+          className={className || undefined}
+        />
+      );
+    case "Payment":
+      return (
+        <PaymentBlock
+          orderId={str(block.orderId) || undefined}
+          amount={typeof block.amount === "number" ? block.amount : undefined}
+          title={str(block.title) || undefined}
+          subtitle={str(block.subtitle) || undefined}
+          returnHref={str(block.returnHref) || undefined}
+          returnLabel={str(block.returnLabel) || undefined}
+        />
+      );
+    case "PasswordRecovery":
+      return (
+        <PasswordRecoveryBlock
+          title={str(block.title) || undefined}
+          description={str(block.description) || undefined}
+          submitLabel={str(block.submitLabel) || undefined}
+          successMessage={str(block.successMessage) || undefined}
+          loginHref={str(block.loginHref) || undefined}
+        />
+      );
     case "SiteHeader":
       return <SiteHeaderBlock showTopBar={block.showTopBar !== false} />;
     case "SiteFooter":
