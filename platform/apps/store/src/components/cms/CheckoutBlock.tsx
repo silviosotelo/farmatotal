@@ -17,17 +17,39 @@ import { useShippingQuote, useTaxConfig, usePaymentMethods, defaultRate, compute
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const GEO_KEY = "ft_geo";
 
+type FieldRole = "name" | "firstName" | "lastName" | "email" | "phone" | "city" | "address" | "";
+type Field = {
+  key: string;
+  label: string;
+  type: "text" | "email" | "tel" | "textarea" | "select" | "city" | "department";
+  required: boolean;
+  width: "full" | "half";
+  enabled?: boolean;
+  role?: FieldRole;
+  options?: string[];
+};
+
+// Formulario por defecto = todos los campos (editable desde el admin → mod_checkout).
+const DEFAULT_FIELDS: Field[] = [
+  { key: "firstName", label: "Nombre", type: "text", width: "half", required: true, enabled: true, role: "firstName" },
+  { key: "lastName", label: "Apellido", type: "text", width: "half", required: false, enabled: true, role: "lastName" },
+  { key: "email", label: "Email", type: "email", width: "half", required: true, enabled: true, role: "email" },
+  { key: "phone", label: "Teléfono", type: "tel", width: "half", required: false, enabled: true, role: "phone" },
+  { key: "department", label: "Departamento", type: "department", width: "half", required: false, enabled: true },
+  { key: "city", label: "Ciudad", type: "city", width: "half", required: false, enabled: true, role: "city" },
+  { key: "address", label: "Dirección", type: "text", width: "full", required: false, enabled: true, role: "address" },
+];
+
 const CheckoutMap = dynamic(() => import("./CheckoutMap"), {
   ssr: false,
   loading: () => <div className="flex h-full items-center justify-center bg-search-bg text-sm text-brand-muted">Cargando mapa…</div>,
 });
 
-type CustomField = { key: string; label: string; type?: string; required?: boolean; options?: string[]; width?: "full" | "half" };
-
 const INPUT_CLS =
   "w-full bg-search-bg rounded-md h-11 px-3 text-sm outline-none border border-transparent focus-visible:ring-2 focus-visible:ring-brand-orange/40 text-brand-text placeholder:text-brand-muted";
 const LABEL_CLS = "block text-sm font-medium text-brand-text mb-1";
 const SECTION_CLS = "rounded-xl border border-[#ededf1] bg-white p-6";
+const BILLING_ROLES: FieldRole[] = ["name", "firstName", "lastName", "email", "phone", "city", "address"];
 
 export function CheckoutBlock() {
   const money = useMoney();
@@ -37,44 +59,34 @@ export function CheckoutBlock() {
   const { toast } = useToast();
   const flags = useFlags();
 
-  const [nombre, setNombre] = useState("");
-  const [apellido, setApellido] = useState("");
-  const [email, setEmail] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [departamento, setDepartamento] = useState("");
-  const [ciudad, setCiudad] = useState("");
-  const [direccion, setDireccion] = useState("");
+  const [fields, setFields] = useState<Field[]>(DEFAULT_FIELDS);
+  const [values, setValues] = useState<Record<string, string>>({});
+  const setVal = (k: string, v: string) => setValues((s) => ({ ...s, [k]: v }));
   const [submitting, setSubmitting] = useState(false);
 
-  // Ubicación exacta (mapa) — persistida en localStorage (no cookies).
   const [loc, setLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [geoMsg, setGeoMsg] = useState("");
-
-  // Sucursales: fuente de ciudades/departamentos para los selects (branch-derived).
   const [branches, setBranches] = useState<Sucursal[]>([]);
+
   const departamentos = useMemo(() => departmentsOf(branches), [branches]);
+  const deptField = fields.find((f) => f.type === "department");
+  const deptValue = deptField ? values[deptField.key] ?? "" : "";
   const ciudades = useMemo(
-    () => (departamento ? zonasOf(branches).filter((c) => departmentOf(c) === departamento) : zonasOf(branches)),
-    [branches, departamento],
+    () => (deptValue ? zonasOf(branches).filter((c) => departmentOf(c) === deptValue) : zonasOf(branches)),
+    [branches, deptValue],
   );
 
-  // Campos custom (config del tenant, con layout width).
-  const [customFields, setCustomFields] = useState<CustomField[]>([]);
-  const [customVals, setCustomVals] = useState<Record<string, string>>({});
-
+  const enabledFields = fields.filter((f) => f.enabled !== false);
+  const byRole = (r: FieldRole) => enabledFields.find((f) => f.role === r);
   const requiresShipping = lines.some((l) => (l.product.productType ?? "physical") === "physical");
 
-  // Envío: ÚNICA fuente = /shipping/quote (retiro gratis + delivery 12.000). Se
-  // cotiza siempre (no gateado por un selector aparte); el comportamiento sale del
-  // `type` del método elegido.
-  const ship = useShippingQuote({ enabled: requiresShipping, city: ciudad, subtotal });
+  const ship = useShippingQuote({ enabled: requiresShipping, city: values[byRole("city")?.key ?? "city"] ?? "", subtotal });
   const taxCfg = useTaxConfig();
   const paymentMethods = usePaymentMethods();
   const rate = defaultRate(taxCfg);
   const selectedShip = ship.options.find((o) => o.id === ship.selectedId) ?? null;
   const isPickup = selectedShip?.type === "pickup";
 
-  // Pago dinámico (incluye custom; oculta los deshabilitados).
   const payOptions = (paymentMethods ?? []).filter((m) => m.enabled);
   const [paymentKey, setPaymentKey] = useState("");
   useEffect(() => {
@@ -82,14 +94,13 @@ export function CheckoutBlock() {
     setPaymentKey((prev) => (payOptions.some((o) => o.key === prev) ? prev : payOptions[0].key));
   }, [paymentMethods]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Carga inicial: sucursales, campos custom, ubicación guardada.
   useEffect(() => {
     fetchSucursales().then(setBranches);
     fetch(`${API}/cms/settings/mod_checkout`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        const f = (d?.value?.fields ?? []) as CustomField[];
-        if (Array.isArray(f)) setCustomFields(f.filter((x) => x?.key && x?.label));
+        const f = (d?.value?.fields ?? []) as Field[];
+        if (Array.isArray(f) && f.length) setFields(f.filter((x) => x?.key && x?.label));
       })
       .catch(() => {});
     try {
@@ -98,32 +109,28 @@ export function CheckoutBlock() {
     } catch { /* ignore */ }
   }, []);
 
-  // Precarga ciudad/departamento desde la sucursal elegida (branch-derived).
+  // Precarga ciudad/departamento desde la sucursal elegida.
   useEffect(() => {
-    if (selected?.zona && !ciudad) {
-      setCiudad(selected.zona.trim());
-      setDepartamento(departmentOf(selected.zona));
-    }
-  }, [selected]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!selected?.zona) return;
+    const cityF = fields.find((f) => f.type === "city");
+    const deptF = fields.find((f) => f.type === "department");
+    setValues((s) => {
+      const next = { ...s };
+      if (cityF && !s[cityF.key]) next[cityF.key] = selected.zona.trim();
+      if (deptF && !s[deptF.key]) next[deptF.key] = departmentOf(selected.zona);
+      return next;
+    });
+  }, [selected, fields]);
 
   function persistLoc(p: { lat: number; lng: number } | null) {
     setLoc(p);
-    try {
-      if (p) localStorage.setItem(GEO_KEY, JSON.stringify(p));
-    } catch { /* ignore */ }
+    try { if (p) localStorage.setItem(GEO_KEY, JSON.stringify(p)); } catch { /* ignore */ }
   }
-
   function locate() {
-    if (!("geolocation" in navigator)) {
-      setGeoMsg("Tu navegador no permite geolocalización.");
-      return;
-    }
+    if (!("geolocation" in navigator)) { setGeoMsg("Tu navegador no permite geolocalización."); return; }
     setGeoMsg("Obteniendo tu ubicación…");
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        persistLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setGeoMsg("Ubicación marcada. Podés arrastrar el pin para ajustar.");
-      },
+      (pos) => { persistLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGeoMsg("Ubicación marcada. Arrastrá el pin para ajustar."); },
       () => setGeoMsg("No pudimos obtener tu ubicación. Marcá el punto en el mapa."),
       { enableHighAccuracy: true, timeout: 10000 },
     );
@@ -133,72 +140,58 @@ export function CheckoutBlock() {
     return (
       <div className="ft-container py-20 flex flex-col items-center gap-6 text-center">
         <p className="text-brand-muted text-lg">Tu carrito está vacío.</p>
-        <Link href="/catalogo" className="brand-gradient focus-ring text-white rounded-[30px] h-11 px-6 text-sm font-semibold flex items-center justify-center">
-          Ver catálogo
-        </Link>
+        <Link href="/catalogo" className="brand-gradient focus-ring text-white rounded-[30px] h-11 px-6 text-sm font-semibold flex items-center justify-center">Ver catálogo</Link>
       </div>
     );
   }
 
+  function buildBilling() {
+    const v = (r: FieldRole) => { const f = byRole(r); return f ? (values[f.key] ?? "").trim() : ""; };
+    const name = v("name") || `${v("firstName")} ${v("lastName")}`.trim();
+    return { name, email: v("email"), phone: v("phone"), address: v("address"), city: v("city") };
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!nombre.trim() || !email.trim()) {
-      toast("Completá al menos tu nombre y email.", "error");
-      return;
-    }
-    const missing = customFields.find((f) => f.required && !customVals[f.key]?.trim());
-    if (missing) {
-      toast(`Completá: ${missing.label}`, "error");
-      return;
-    }
+    const billing = buildBilling();
+    if (!billing.name || !billing.email) { toast("Completá al menos nombre y email.", "error"); return; }
+    const missing = enabledFields.find((f) => f.required && !(values[f.key]?.trim()));
+    if (missing) { toast(`Completá: ${missing.label}`, "error"); return; }
     setSubmitting(true);
     try {
       const chosen = payOptions.find((o) => o.key === paymentKey);
       const paymentMethod = paymentKey === "bancard" ? "online" : "contraentrega";
       const shippingMethod = requiresShipping && !isPickup ? "delivery" : "pickup";
+      // customFields = todo campo activo que NO mapea a un dato estándar del pedido.
+      const customFields: Record<string, string> = {};
+      for (const f of enabledFields) {
+        if (BILLING_ROLES.includes(f.role ?? "")) continue;
+        const val = values[f.key]?.trim();
+        if (val) customFields[f.key] = val;
+      }
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          lines: lines.map(({ product, quantity }) => ({
-            productId: product.variantOf ?? product.id,
-            sku: product.sku,
-            title: product.title,
-            quantity,
-            unitPrice: product.priceWeb,
-          })),
+          lines: lines.map(({ product, quantity }) => ({ productId: product.variantOf ?? product.id, sku: product.sku, title: product.title, quantity, unitPrice: product.priceWeb })),
           couponCode: coupon?.code,
-          paymentMethod,
-          paymentKey,
-          paymentLabel: chosen?.name,
+          paymentMethod, paymentKey, paymentLabel: chosen?.name,
           shippingMethod,
           shippingMethodId: shippingMethod === "delivery" ? (ship.selectedId ?? undefined) : undefined,
           taxRateId: rate?.id,
           branchId: flags.branches && shippingMethod === "pickup" ? selected?.branchId : undefined,
           location: shippingMethod === "delivery" ? loc ?? undefined : undefined,
-          customFields: Object.keys(customVals).length ? customVals : undefined,
-          billing: { name: `${nombre} ${apellido}`.trim(), email, phone: telefono, address: direccion, city: ciudad },
+          customFields: Object.keys(customFields).length ? customFields : undefined,
+          billing,
         }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        toast(data.error ?? "Error al crear el pedido", "error");
-        setSubmitting(false);
-        return;
-      }
+      if (!res.ok) { const data = await res.json(); toast(data.error ?? "Error al crear el pedido", "error"); setSubmitting(false); return; }
       const order = await res.json();
       try {
-        localStorage.setItem("ft_last_order_v1", JSON.stringify({
-          id: order.number, date: new Date().toISOString(), status: order.status, total: order.total,
-          sucursal: isPickup ? selected?.name : undefined, paymentMethod: chosen?.name,
-          lines: lines.map(({ product, quantity }) => ({ title: product.title, sku: product.sku, quantity, price: product.priceWeb, image: product.image })),
-        }));
+        localStorage.setItem("ft_last_order_v1", JSON.stringify({ id: order.number, date: new Date().toISOString(), status: order.status, total: order.total, sucursal: isPickup ? selected?.name : undefined, paymentMethod: chosen?.name, lines: lines.map(({ product, quantity }) => ({ title: product.title, sku: product.sku, quantity, price: product.priceWeb, image: product.image })) }));
       } catch { /* ignore */ }
       clear();
-      if (paymentMethod === "online") {
-        window.location.href = `/pago/${order.id}`;
-        return;
-      }
+      if (paymentMethod === "online") { window.location.href = `/pago/${order.id}`; return; }
       router.push("/pedido-recibido");
     } catch {
       toast("Error de conexión. Intentá de nuevo.", "error");
@@ -207,12 +200,49 @@ export function CheckoutBlock() {
     }
   }
 
+  function renderField(f: Field) {
+    const id = `f-${f.key}`;
+    const val = values[f.key] ?? "";
+    const common = { id, value: val };
+    let control;
+    if (f.type === "department") {
+      control = (
+        <select id={id} value={val} className={INPUT_CLS} onChange={(e) => { setVal(f.key, e.target.value); const cityF = fields.find((x) => x.type === "city"); if (cityF) setVal(cityF.key, ""); }}>
+          <option value="">Elegí un departamento</option>
+          {departamentos.map((d) => <option key={d} value={d}>{d}</option>)}
+        </select>
+      );
+    } else if (f.type === "city") {
+      control = (
+        <select id={id} value={val} className={INPUT_CLS} onChange={(e) => setVal(f.key, e.target.value)}>
+          <option value="">Elegí una ciudad</option>
+          {ciudades.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      );
+    } else if (f.type === "textarea") {
+      control = <textarea {...common} className={INPUT_CLS + " h-auto py-2 resize-y"} rows={3} onChange={(e) => setVal(f.key, e.target.value)} />;
+    } else if (f.type === "select") {
+      control = (
+        <select id={id} value={val} className={INPUT_CLS} onChange={(e) => setVal(f.key, e.target.value)}>
+          <option value="">Elegí una opción</option>
+          {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
+      );
+    } else {
+      control = <input {...common} type={f.type === "email" ? "email" : f.type === "tel" ? "tel" : "text"} className={INPUT_CLS} onChange={(e) => setVal(f.key, e.target.value)} />;
+    }
+    return (
+      <div key={f.key} className={f.width === "full" || f.type === "textarea" ? "sm:col-span-2" : ""}>
+        <label htmlFor={id} className={LABEL_CLS}>{f.label} {f.required ? <span className="text-[#c0392b]">*</span> : null}</label>
+        {control}
+      </div>
+    );
+  }
+
   const shippingCost = requiresShipping ? (selectedShip?.cost ?? 0) : 0;
   const taxIncluded = taxCfg?.pricesIncludeTax ?? true;
   const taxAmount = rate ? computeTax(total, rate.percent, taxIncluded) : 0;
   const grandTotal = total + shippingCost + (taxIncluded ? 0 : taxAmount);
-
-  const sel = INPUT_CLS;
 
   return (
     <div className="ft-container py-8">
@@ -223,57 +253,7 @@ export function CheckoutBlock() {
             <section className={SECTION_CLS}>
               <h3 className="font-heading text-lg text-brand-text mb-5">Datos de facturación</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="nombre" className={LABEL_CLS}>Nombre <span className="text-[#c0392b]">*</span></label>
-                  <input id="nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Juan" required className={INPUT_CLS} />
-                </div>
-                <div>
-                  <label htmlFor="apellido" className={LABEL_CLS}>Apellido</label>
-                  <input id="apellido" value={apellido} onChange={(e) => setApellido(e.target.value)} placeholder="Pérez" className={INPUT_CLS} />
-                </div>
-                <div>
-                  <label htmlFor="email" className={LABEL_CLS}>Email <span className="text-[#c0392b]">*</span></label>
-                  <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="correo@ejemplo.com" required className={INPUT_CLS} />
-                </div>
-                <div>
-                  <label htmlFor="telefono" className={LABEL_CLS}>Teléfono</label>
-                  <input id="telefono" inputMode="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="0981 000 000" className={INPUT_CLS} />
-                </div>
-                <div>
-                  <label htmlFor="departamento" className={LABEL_CLS}>Departamento</label>
-                  <select id="departamento" value={departamento} onChange={(e) => { setDepartamento(e.target.value); setCiudad(""); }} className={sel}>
-                    <option value="">Elegí un departamento</option>
-                    {departamentos.map((d) => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="ciudad" className={LABEL_CLS}>Ciudad</label>
-                  <select id="ciudad" value={ciudad} onChange={(e) => setCiudad(e.target.value)} className={sel}>
-                    <option value="">Elegí una ciudad</option>
-                    {ciudades.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div className="sm:col-span-2">
-                  <label htmlFor="direccion" className={LABEL_CLS}>Dirección</label>
-                  <input id="direccion" value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Av. Mariscal López 1234" className={INPUT_CLS} />
-                </div>
-                {customFields.map((f) => (
-                  <div key={f.key} className={f.width === "full" || f.type === "textarea" ? "sm:col-span-2" : ""}>
-                    <label htmlFor={`cf-${f.key}`} className={LABEL_CLS}>
-                      {f.label} {f.required ? <span className="text-[#c0392b]">*</span> : null}
-                    </label>
-                    {f.type === "textarea" ? (
-                      <textarea id={`cf-${f.key}`} value={customVals[f.key] ?? ""} onChange={(e) => setCustomVals((v) => ({ ...v, [f.key]: e.target.value }))} className={INPUT_CLS + " h-auto py-2 resize-y"} rows={3} />
-                    ) : f.type === "select" && f.options?.length ? (
-                      <select id={`cf-${f.key}`} value={customVals[f.key] ?? ""} onChange={(e) => setCustomVals((v) => ({ ...v, [f.key]: e.target.value }))} className={sel}>
-                        <option value="">Elegí una opción</option>
-                        {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
-                      </select>
-                    ) : (
-                      <input id={`cf-${f.key}`} value={customVals[f.key] ?? ""} onChange={(e) => setCustomVals((v) => ({ ...v, [f.key]: e.target.value }))} className={INPUT_CLS} />
-                    )}
-                  </div>
-                ))}
+                {enabledFields.map(renderField)}
               </div>
             </section>
 
@@ -296,30 +276,20 @@ export function CheckoutBlock() {
                       </label>
                     ))}
                   </div>
-
                   {isPickup ? (
                     <div className="mt-4 text-sm text-brand-text">
-                      {selected ? (
-                        <span>Retirás en <span className="font-semibold">{selected.name}</span>{selected.address ? <span className="text-brand-muted"> — {selected.address}</span> : null}</span>
-                      ) : (
-                        <span className="text-brand-muted">Elegí tu sucursal para retirar tu pedido.</span>
-                      )}
+                      {selected ? <span>Retirás en <span className="font-semibold">{selected.name}</span>{selected.address ? <span className="text-brand-muted"> — {selected.address}</span> : null}</span> : <span className="text-brand-muted">Elegí tu sucursal para retirar tu pedido.</span>}
                     </div>
                   ) : (
                     <div className="mt-4">
                       <div className="mb-2 flex items-center justify-between gap-2">
                         <span className="text-sm font-medium text-brand-text">Ubicación exacta de entrega</span>
-                        <button type="button" onClick={locate} className="rounded-[30px] border border-brand-orange px-3 py-1.5 text-xs font-semibold text-brand-orange-ink transition hover:bg-brand-orange hover:text-white">
-                          Usar mi ubicación
-                        </button>
+                        <button type="button" onClick={locate} className="rounded-[30px] border border-brand-orange px-3 py-1.5 text-xs font-semibold text-brand-orange-ink transition hover:bg-brand-orange hover:text-white">Usar mi ubicación</button>
                       </div>
                       <div className="h-[300px] overflow-hidden rounded-lg border border-[#ededf1]">
                         <CheckoutMap value={loc} onChange={(lat, lng) => persistLoc({ lat, lng })} />
                       </div>
-                      <p className="mt-1 text-xs text-brand-muted">
-                        {geoMsg || "Tocá el mapa o arrastrá el pin para marcar tu dirección exacta."}
-                        {loc ? ` (${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)})` : ""}
-                      </p>
+                      <p className="mt-1 text-xs text-brand-muted">{geoMsg || "Tocá el mapa o arrastrá el pin para marcar tu dirección exacta."}{loc ? ` (${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)})` : ""}</p>
                     </div>
                   )}
                 </>
@@ -363,36 +333,13 @@ export function CheckoutBlock() {
                 ))}
               </ul>
               <dl className="space-y-3 text-sm border-t border-[#ededf1] pt-4">
-                <div className="flex justify-between">
-                  <dt className="text-brand-muted">Subtotal</dt>
-                  <dd className="font-price text-brand-text">{money(subtotal)}</dd>
-                </div>
-                {coupon && discount > 0 && (
-                  <div className="flex justify-between text-[#c0392b]">
-                    <dt>Descuento ({coupon.code})</dt>
-                    <dd className="font-price">−{money(discount)}</dd>
-                  </div>
-                )}
-                {requiresShipping && (
-                  <div className="flex justify-between">
-                    <dt className="text-brand-muted">Envío{selectedShip ? ` (${selectedShip.name})` : ""}</dt>
-                    <dd className="font-price text-brand-text">{selectedShip ? (shippingCost > 0 ? money(shippingCost) : "Gratis") : "—"}</dd>
-                  </div>
-                )}
-                {rate && taxAmount > 0 && (
-                  <div className="flex justify-between">
-                    <dt className="text-brand-muted">{taxIncluded ? `${rate.name} incluido` : rate.name}</dt>
-                    <dd className="font-price text-brand-text">{money(taxAmount)}</dd>
-                  </div>
-                )}
-                <div className="pt-3 border-t border-[#ededf1] flex justify-between items-baseline">
-                  <dt className="font-semibold text-brand-text text-base">Total</dt>
-                  <dd className="font-price text-brand-orange text-xl font-bold">{money(grandTotal)}</dd>
-                </div>
+                <div className="flex justify-between"><dt className="text-brand-muted">Subtotal</dt><dd className="font-price text-brand-text">{money(subtotal)}</dd></div>
+                {coupon && discount > 0 && (<div className="flex justify-between text-[#c0392b]"><dt>Descuento ({coupon.code})</dt><dd className="font-price">−{money(discount)}</dd></div>)}
+                {requiresShipping && (<div className="flex justify-between"><dt className="text-brand-muted">Envío{selectedShip ? ` (${selectedShip.name})` : ""}</dt><dd className="font-price text-brand-text">{selectedShip ? (shippingCost > 0 ? money(shippingCost) : "Gratis") : "—"}</dd></div>)}
+                {rate && taxAmount > 0 && (<div className="flex justify-between"><dt className="text-brand-muted">{taxIncluded ? `${rate.name} incluido` : rate.name}</dt><dd className="font-price text-brand-text">{money(taxAmount)}</dd></div>)}
+                <div className="pt-3 border-t border-[#ededf1] flex justify-between items-baseline"><dt className="font-semibold text-brand-text text-base">Total</dt><dd className="font-price text-brand-orange text-xl font-bold">{money(grandTotal)}</dd></div>
               </dl>
-              <button type="submit" disabled={submitting} className="mt-6 w-full brand-gradient focus-ring text-white rounded-[30px] h-11 px-6 text-sm font-semibold flex items-center justify-center disabled:opacity-60">
-                {submitting ? "Procesando..." : "Realizar pedido"}
-              </button>
+              <button type="submit" disabled={submitting} className="mt-6 w-full brand-gradient focus-ring text-white rounded-[30px] h-11 px-6 text-sm font-semibold flex items-center justify-center disabled:opacity-60">{submitting ? "Procesando..." : "Realizar pedido"}</button>
             </div>
           </aside>
         </div>
