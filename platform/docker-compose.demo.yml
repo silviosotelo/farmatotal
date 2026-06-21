@@ -1,0 +1,70 @@
+# Stack de DEMO multitenant (api + store + admin + redis + cloudflared) en una red
+# propia. cloudflared llega a los servicios por nombre (api/store/admin). La DB se
+# reusa del host (192.168.41.34:5433/farmatotal_cms). El env del api va en
+# ./.env.demo.api (NO versionado). cloudflared usa ./cloudflared/{config.yml,creds}.
+name: farmatotal-demo
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: ft-demo-api
+    restart: unless-stopped
+    env_file:
+      - ./.env.demo.api
+    depends_on:
+      - redis
+    networks: [ftnet]
+
+  store:
+    build:
+      context: .
+      dockerfile: apps/store/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://api.rohekawebservices.online
+    container_name: ft-demo-store
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_URL: http://api:4000
+      NEXT_PUBLIC_API_URL: https://api.rohekawebservices.online
+      STORE_TENANT: default
+      NEXT_PUBLIC_STORE_TENANT: default
+    depends_on:
+      - api
+    networks: [ftnet]
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+      args:
+        VITE_API_URL: https://api.rohekawebservices.online
+        VITE_TENANT: default
+    container_name: ft-demo-admin
+    restart: unless-stopped
+    networks: [ftnet]
+
+  redis:
+    image: redis:7-alpine
+    container_name: ft-demo-redis
+    restart: unless-stopped
+    networks: [ftnet]
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: ft-demo-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    volumes:
+      - ./cloudflared:/etc/cloudflared:ro
+    depends_on:
+      - api
+      - store
+      - admin
+    networks: [ftnet]
+
+networks:
+  ftnet:
+    name: ft-demo-net

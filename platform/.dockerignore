@@ -1,0 +1,13 @@
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/.git
+.git
+docs/research
+**/*.log
+.env
+**/.env
+**/.env.*
+!**/.env.example
+cloudflared/*.json
