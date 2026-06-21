@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { LocationIcon } from "@/components/icons";
 import { useToast } from "@/components/providers/ToastContext";
 import { useSucursal } from "@/components/sucursal/SucursalContext";
+import { useFlags } from "@/components/providers/FeatureFlagsContext";
 import { cn } from "@/lib/utils";
 
 /**
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 export function SucursalesList() {
   const { toast } = useToast();
   const { sucursales, zonas, nearest } = useSucursal();
+  const flags = useFlags();
   const [zona, setZona] = useState<string>("Todas");
   const [nearestId, setNearestId] = useState<string | null>(null);
 
@@ -36,6 +38,13 @@ export function SucursalesList() {
       { enableHighAccuracy: true, timeout: 8000 },
     );
   };
+
+  // Tenant sin sucursales (branches=false): la sección no aplica.
+  if (!flags.branches) {
+    return (
+      <p className="text-sm text-brand-muted">La selección de sucursales no está disponible.</p>
+    );
+  }
 
   return (
     <div>

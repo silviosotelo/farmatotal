@@ -1,6 +1,6 @@
-import Spinner from '@ft/ui/ui/Spinner'
+import Spinner from '@platform/ui/ui/Spinner'
 import classNames from 'classnames'
-import type { CommonProps } from '@ft/ui/@types/common'
+import type { CommonProps } from '@platform/ui/@types/common'
 import type { ElementType, ReactNode } from 'react'
 
 interface BaseLoadingProps extends CommonProps {

@@ -4,10 +4,12 @@ import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/components/providers/CartContext";
-import { formatGs } from "@/lib/data";
+import { useMoney } from "@/components/providers/CurrencyContext";
+import { decQty, formatQty, stepQty, unitLabel } from "@/lib/units";
 import { useTheme, themeAccentVars } from "@/themes/ThemeProvider";
 
 export function MiniCart() {
+  const money = useMoney();
   const { isOpen, closeCart, lines, subtotal, count, setQty, removeItem } = useCart();
   const theme = useTheme();
 
@@ -44,7 +46,7 @@ export function MiniCart() {
         }
       >
         <div className="brand-gradient flex items-center justify-between px-5 py-4 text-white">
-          <h2 className="font-heading text-base font-bold">Tu carrito ({count})</h2>
+          <h2 className="font-heading text-base font-bold">Tu carrito ({formatQty(count)})</h2>
           <button type="button" onClick={closeCart} aria-label="Cerrar carrito" className="focus-ring rounded-full px-2 text-2xl leading-none">
             ×
           </button>
@@ -76,12 +78,12 @@ export function MiniCart() {
                     <Link href={`/productos/${l.product.slug}/`} onClick={closeCart} className="line-clamp-2 text-sm font-medium text-brand-text hover:text-brand-orange">
                       {l.product.title}
                     </Link>
-                    <span className="font-price mt-1 text-sm font-bold text-brand-orange">{formatGs(l.product.priceWeb)}</span>
+                    <span className="font-price mt-1 text-sm font-bold text-brand-orange">{money(l.product.priceWeb)}</span>
                     <div className="mt-1 flex items-center gap-2">
                       <div className="flex items-center rounded border border-[#ededf1] text-sm">
-                        <button onClick={() => setQty(l.product.id, l.quantity - 1)} aria-label="Restar" className="focus-ring px-2 leading-none">−</button>
-                        <span className="min-w-7 text-center tabular-nums">{l.quantity}</span>
-                        <button onClick={() => setQty(l.product.id, l.quantity + 1)} aria-label="Sumar" className="focus-ring px-2 leading-none">+</button>
+                        <button onClick={() => setQty(l.product.id, decQty(l.quantity, l.product.unitStep ?? 1))} aria-label="Restar" className="focus-ring px-2 leading-none">−</button>
+                        <span className="min-w-7 whitespace-nowrap px-1 text-center tabular-nums">{formatQty(l.quantity)} {unitLabel(l.product)}</span>
+                        <button onClick={() => setQty(l.product.id, stepQty(l.quantity, l.product.unitStep ?? 1, 1))} aria-label="Sumar" className="focus-ring px-2 leading-none">+</button>
                       </div>
                       <button onClick={() => removeItem(l.product.id)} className="focus-ring rounded text-xs text-brand-muted hover:text-[#c0392b]">
                         Quitar
@@ -94,7 +96,7 @@ export function MiniCart() {
             <div className="border-t border-[#ededf1] p-4">
               <div className="mb-3 flex items-center justify-between font-price text-base">
                 <span className="text-brand-muted">Subtotal</span>
-                <span className="font-bold text-brand-text">{formatGs(subtotal)}</span>
+                <span className="font-bold text-brand-text">{money(subtotal)}</span>
               </div>
               <div className="flex gap-2">
                 <Link href="/carrito" onClick={closeCart} className="focus-ring flex-1 rounded-[30px] border border-brand-orange py-2.5 text-center text-sm font-semibold text-brand-orange-ink">

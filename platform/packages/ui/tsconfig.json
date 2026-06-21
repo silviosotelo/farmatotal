@@ -14,7 +14,7 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@ft/ui/*": ["./src/*"]
+      "@platform/ui/*": ["./src/*"]
     }
   },
   "include": ["src"]

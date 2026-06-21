@@ -19,8 +19,10 @@
       }
     ],
     "paths": {
-      "@ft/ui": ["../../packages/ui/src/index.ts"],
-      "@ft/ui/*": ["../../packages/ui/src/*"],
+      "@platform/ui": ["../../packages/ui/src/index.ts"],
+      "@platform/ui/*": ["../../packages/ui/src/*"],
+      "@platform/engine": ["../../packages/engine/src/index.ts"],
+      "@platform/engine/*": ["../../packages/engine/src/*"],
       "@/*": ["./src/*"],
       "@payload-config": ["./src/payload.config.ts"]
     }

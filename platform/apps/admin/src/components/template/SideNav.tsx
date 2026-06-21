@@ -5,7 +5,7 @@ import VerticalMenuContent from '@/components/template/VerticalMenuContent'
 import { useThemeStore } from '@/store/themeStore'
 import { useSessionUser } from '@/store/authStore'
 import { useRouteKeyStore } from '@/store/routeKeyStore'
-import navigationConfig from '@/configs/navigation.config'
+import { useFilteredNavigation } from '@/services/features'
 import appConfig from '@/configs/app.config'
 import { Link } from 'react-router'
 import {
@@ -52,6 +52,8 @@ const SideNav = ({
 
     const userAuthority = useSessionUser((state) => state.user.authority)
 
+    const navigationTree = useFilteredNavigation()
+
     return (
         <div
             style={sideNavCollapse ? sideNavCollapseStyle : sideNavStyle}
@@ -83,7 +85,7 @@ const SideNav = ({
                 <ScrollBar style={{ height: '100%' }} direction={direction}>
                     <VerticalMenuContent
                         collapsed={sideNavCollapse}
-                        navigationTree={navigationConfig}
+                        navigationTree={navigationTree}
                         routeKey={currentRouteKey}
                         direction={direction}
                         translationSetup={translationSetup}

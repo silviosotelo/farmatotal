@@ -16,10 +16,11 @@ export default defineConfig({
   },
   resolve: {
     // Orden: específicos ANTES de '@' (el primero que matchea gana).
-    // @ft/ui extraído a packages/ui; los @/components/ui|shared, @/utils y los
+    // @platform/ui extraído a packages/ui; los @/components/ui|shared, @/utils y los
     // archivos de theme/store/configs/locales movidos se redirigen al paquete.
     alias: [
-      { find: '@ft/ui', replacement: path.join(__dirname, '../../packages/ui/src') },
+      { find: '@platform/ui', replacement: path.join(__dirname, '../../packages/ui/src') },
+      { find: '@platform/engine', replacement: path.join(__dirname, '../../packages/engine/src') },
       { find: '@/components/ui', replacement: path.join(__dirname, '../../packages/ui/src/ui') },
       { find: '@/components/shared', replacement: path.join(__dirname, '../../packages/ui/src/shared') },
       { find: '@/utils', replacement: path.join(__dirname, '../../packages/ui/src/utils') },

@@ -2,15 +2,32 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/providers/CartContext";
 import { useSucursal } from "@/components/sucursal/SucursalContext";
 import { useToast } from "@/components/providers/ToastContext";
-import { formatGs } from "@/lib/data";
+import { useMoney } from "@/components/providers/CurrencyContext";
+import { useFlags } from "@/components/providers/FeatureFlagsContext";
+import { formatQty, unitLabel } from "@/lib/units";
+import {
+  useShippingQuote,
+  useTaxConfig,
+  usePaymentMethods,
+  isPaymentEnabled,
+  defaultRate,
+  computeTax,
+} from "@/lib/checkout";
 
 type DeliveryMethod = "retiro" | "envio";
 type PaymentMethod = "Tarjeta de crédito/débito (Bancard)" | "Efectivo en sucursal" | "Transferencia bancaria";
+
+/** Medios de pago de la UI mapeados a la clave de config del backend (mod_payments). */
+const PAYMENT_OPTIONS: { label: PaymentMethod; key: string }[] = [
+  { label: "Tarjeta de crédito/débito (Bancard)", key: "bancard" },
+  { label: "Efectivo en sucursal", key: "cash" },
+  { label: "Transferencia bancaria", key: "transfer" },
+];
 
 const INPUT_CLS =
   "w-full bg-search-bg rounded-md h-11 px-3 text-sm outline-none border border-transparent focus-visible:ring-2 focus-visible:ring-brand-orange/40 text-brand-text placeholder:text-brand-muted";
@@ -23,10 +40,12 @@ const SECTION_CLS = "rounded-xl border border-[#ededf1] bg-white p-6";
  * Markup farmatotal pixel-perfect.
  */
 export function CheckoutBlock() {
+  const money = useMoney();
   const router = useRouter();
   const { lines, subtotal, coupon, discount, total, clear } = useCart();
   const { selected, open } = useSucursal();
   const { toast } = useToast();
+  const flags = useFlags();
 
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
@@ -34,9 +53,27 @@ export function CheckoutBlock() {
   const [telefono, setTelefono] = useState("");
   const [ciudad, setCiudad] = useState("");
   const [direccion, setDireccion] = useState("");
-  const [delivery, setDelivery] = useState<DeliveryMethod>("retiro");
+  // Tenant sin sucursales (branches=false): no hay "retiro en sucursal" → solo envío.
+  const [delivery, setDelivery] = useState<DeliveryMethod>(flags.branches ? "retiro" : "envio");
+  const deliveryOptions: DeliveryMethod[] = flags.branches ? ["retiro", "envio"] : ["envio"];
   const [payment, setPayment] = useState<PaymentMethod>("Tarjeta de crédito/débito (Bancard)");
   const [submitting, setSubmitting] = useState(false);
+
+  // Si todas las líneas son digitales/servicios (no físicas), el pedido no
+  // requiere envío: se oculta el selector y se fuerza retiro/pickup (costo 0).
+  const requiresShipping = lines.some((l) => (l.product.productType ?? "physical") === "physical");
+
+  // Config-driven: cotización de envío (por ciudad), impuestos y medios de pago.
+  const ship = useShippingQuote({ enabled: requiresShipping && delivery === "envio", city: ciudad, subtotal });
+  const taxCfg = useTaxConfig();
+  const paymentMethods = usePaymentMethods();
+  const rate = defaultRate(taxCfg);
+
+  // Si el medio de pago elegido queda deshabilitado por config, salta al primero visible.
+  useEffect(() => {
+    const visible = PAYMENT_OPTIONS.filter((o) => isPaymentEnabled(paymentMethods, o.key));
+    setPayment((prev) => (visible.some((o) => o.label === prev) ? prev : (visible[0]?.label ?? prev)));
+  }, [paymentMethods]);
 
   if (lines.length === 0) {
     return (
@@ -58,7 +95,7 @@ export function CheckoutBlock() {
     setSubmitting(true);
     try {
       const paymentMethod = payment === "Tarjeta de crédito/débito (Bancard)" ? "online" : "contraentrega";
-      const shippingMethod = delivery === "retiro" ? "pickup" : "delivery";
+      const shippingMethod = requiresShipping ? (delivery === "retiro" ? "pickup" : "delivery") : "pickup";
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,7 +110,9 @@ export function CheckoutBlock() {
           couponCode: coupon?.code,
           paymentMethod,
           shippingMethod,
-          branchId: shippingMethod === "pickup" ? selected?.branchId : undefined,
+          shippingMethodId: shippingMethod === "delivery" ? (ship.selectedId ?? undefined) : undefined,
+          taxRateId: rate?.id,
+          branchId: flags.branches && shippingMethod === "pickup" ? selected?.branchId : undefined,
           billing: { name: `${nombre} ${apellido}`.trim(), email, phone: telefono, address: direccion, city: ciudad },
         }),
       });
@@ -108,6 +147,14 @@ export function CheckoutBlock() {
       setSubmitting(false);
     }
   }
+
+  // Resumen config-driven: envío del método elegido + impuesto de la tasa default.
+  const selectedShip = ship.options.find((o) => o.id === ship.selectedId) ?? null;
+  const shippingCost = requiresShipping && delivery === "envio" ? (selectedShip?.cost ?? 0) : 0;
+  const taxIncluded = taxCfg?.pricesIncludeTax ?? true;
+  const taxAmount = rate ? computeTax(total, rate.percent, taxIncluded) : 0;
+  const grandTotal = total + shippingCost + (taxIncluded ? 0 : taxAmount);
+  const visiblePayments = PAYMENT_OPTIONS.filter((o) => isPaymentEnabled(paymentMethods, o.key));
 
   return (
     <div className="ft-container py-8">
@@ -147,8 +194,12 @@ export function CheckoutBlock() {
 
             <section className={SECTION_CLS}>
               <h3 className="font-heading text-lg text-brand-text mb-5">Entrega</h3>
+              {!requiresShipping ? (
+                <p className="text-sm text-brand-muted">Este pedido no requiere envío</p>
+              ) : (
+              <>
               <div className="flex flex-col gap-3">
-                {(["retiro", "envio"] as const).map((opt) => (
+                {deliveryOptions.map((opt) => (
                   <label key={opt} className={"flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors " + (delivery === opt ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}>
                     <input type="radio" name="delivery" value={opt} checked={delivery === opt} onChange={() => setDelivery(opt)} className="accent-brand-orange" />
                     <span className="text-sm font-medium text-brand-text">{opt === "retiro" ? "Retiro en sucursal" : "Envío a domicilio"}</span>
@@ -170,12 +221,33 @@ export function CheckoutBlock() {
                   )}
                 </div>
               )}
+              {delivery === "envio" && (
+                <div className="mt-4">
+                  {ship.loading ? (
+                    <p className="text-sm text-brand-muted">Cotizando envío…</p>
+                  ) : ship.options.length === 0 ? (
+                    <p className="text-sm text-brand-muted">Ingresá tu ciudad para ver los métodos de envío disponibles.</p>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      {ship.options.map((o) => (
+                        <label key={o.id} className={"flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors " + (ship.selectedId === o.id ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}>
+                          <input type="radio" name="shipMethod" value={o.id} checked={ship.selectedId === o.id} onChange={() => ship.setSelectedId(o.id)} className="accent-brand-orange" />
+                          <span className="flex-1 text-sm font-medium text-brand-text">{o.name}</span>
+                          <span className="font-price text-sm text-brand-text whitespace-nowrap">{o.cost > 0 ? money(o.cost) : "Gratis"}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              </>
+              )}
             </section>
 
             <section className={SECTION_CLS}>
               <h3 className="font-heading text-lg text-brand-text mb-5">Método de pago</h3>
               <div className="flex flex-col gap-3">
-                {(["Tarjeta de crédito/débito (Bancard)", "Efectivo en sucursal", "Transferencia bancaria"] as PaymentMethod[]).map((opt) => (
+                {visiblePayments.map(({ label: opt }) => (
                   <label key={opt} className={"flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors " + (payment === opt ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}>
                     <input type="radio" name="payment" value={opt} checked={payment === opt} onChange={() => setPayment(opt)} className="accent-brand-orange" />
                     <span className="text-sm font-medium text-brand-text">{opt}</span>
@@ -196,26 +268,38 @@ export function CheckoutBlock() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-brand-text line-clamp-2">{product.title}</p>
-                      <p className="text-xs text-brand-muted mt-0.5">×{quantity}</p>
+                      <p className="text-xs text-brand-muted mt-0.5">×{formatQty(quantity)} {unitLabel(product)}</p>
                     </div>
-                    <p className="font-price text-xs text-brand-text whitespace-nowrap">{formatGs(product.priceWeb * quantity)}</p>
+                    <p className="font-price text-xs text-brand-text whitespace-nowrap">{money(product.priceWeb * quantity)}</p>
                   </li>
                 ))}
               </ul>
               <dl className="space-y-3 text-sm border-t border-[#ededf1] pt-4">
                 <div className="flex justify-between">
                   <dt className="text-brand-muted">Subtotal</dt>
-                  <dd className="font-price text-brand-text">{formatGs(subtotal)}</dd>
+                  <dd className="font-price text-brand-text">{money(subtotal)}</dd>
                 </div>
                 {coupon && discount > 0 && (
                   <div className="flex justify-between text-[#c0392b]">
                     <dt>Descuento ({coupon.code})</dt>
-                    <dd className="font-price">−{formatGs(discount)}</dd>
+                    <dd className="font-price">−{money(discount)}</dd>
+                  </div>
+                )}
+                {requiresShipping && delivery === "envio" && (
+                  <div className="flex justify-between">
+                    <dt className="text-brand-muted">Envío{selectedShip ? ` (${selectedShip.name})` : ""}</dt>
+                    <dd className="font-price text-brand-text">{selectedShip ? (shippingCost > 0 ? money(shippingCost) : "Gratis") : "A cotizar"}</dd>
+                  </div>
+                )}
+                {rate && taxAmount > 0 && (
+                  <div className="flex justify-between">
+                    <dt className="text-brand-muted">{taxIncluded ? `${rate.name} incluido` : rate.name}</dt>
+                    <dd className="font-price text-brand-text">{money(taxAmount)}</dd>
                   </div>
                 )}
                 <div className="pt-3 border-t border-[#ededf1] flex justify-between items-baseline">
                   <dt className="font-semibold text-brand-text text-base">Total</dt>
-                  <dd className="font-price text-brand-orange text-xl font-bold">{formatGs(total)}</dd>
+                  <dd className="font-price text-brand-orange text-xl font-bold">{money(grandTotal)}</dd>
                 </div>
               </dl>
               <button type="submit" disabled={submitting} className="mt-6 w-full brand-gradient focus-ring text-white rounded-[30px] h-11 px-6 text-sm font-semibold flex items-center justify-center disabled:opacity-60">

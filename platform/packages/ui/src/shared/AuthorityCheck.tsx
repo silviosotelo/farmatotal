@@ -1,5 +1,5 @@
-import useAuthority from '@ft/ui/utils/hooks/useAuthority'
-import type { CommonProps } from '@ft/ui/@types/common'
+import useAuthority from '@platform/ui/utils/hooks/useAuthority'
+import type { CommonProps } from '@platform/ui/@types/common'
 
 interface AuthorityCheckProps extends CommonProps {
     userAuthority: string[]

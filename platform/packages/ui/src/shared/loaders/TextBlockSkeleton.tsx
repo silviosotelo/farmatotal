@@ -1,5 +1,5 @@
-import Skeleton from '@ft/ui/ui/Skeleton'
-import type { SkeletonProps } from '@ft/ui/ui/Skeleton'
+import Skeleton from '@platform/ui/ui/Skeleton'
+import type { SkeletonProps } from '@platform/ui/ui/Skeleton'
 
 interface TextBlockSkeletonProps extends SkeletonProps {
     rowCount?: number

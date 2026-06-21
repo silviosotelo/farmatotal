@@ -1,9 +1,9 @@
 import { sql } from "drizzle-orm";
 import { integer, text, timestamp, uuid, varchar, index } from "drizzle-orm/pg-core";
-import { farmatotalApp } from "./_pgSchema";
+import { appSchema } from "./_pgSchema";
 
 /** Biblioteca de medios: imágenes/archivos usables en logo, banners, slides, productos. */
-export const media = farmatotalApp.table(
+export const media = appSchema.table(
   "media",
   {
     id: uuid("id").primaryKey().defaultRandom(),

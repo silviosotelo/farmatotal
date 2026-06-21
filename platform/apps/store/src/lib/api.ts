@@ -23,6 +23,10 @@ type BackendProduct = {
   featured: boolean;
   status: "draft" | "published" | "archived";
   stockCached: number;
+  unit?: string;
+  unitStep?: number;
+  productType?: "physical" | "digital" | "service";
+  attributes?: { label: string; value: string }[] | null;
   custom: Record<string, unknown> | null;
   images?: BackendImage[];
 };
@@ -45,11 +49,40 @@ type Paginated<T> = {
   totalPages: number;
 };
 
+/** Tenant del storefront (multitenant).
+ * - MULTI_DOMAIN=true: reenvía el Host del usuario (`x-tenant-host`) → la API
+ *   resuelve el tenant por dominio (páginas dinámicas por host).
+ * - si no: tenant fijo por env `STORE_TENANT` (single-tenant, estático). */
+const STORE_TENANT = process.env.STORE_TENANT ?? "default";
+const MULTI_DOMAIN = process.env.MULTI_DOMAIN === "true";
+
+async function tenantHeaders(): Promise<Record<string, string>> {
+  if (MULTI_DOMAIN) {
+    try {
+      const { headers } = await import("next/headers");
+      const h = await headers();
+      // Detrás de proxy/CDN el host del usuario llega en x-forwarded-host (o el
+      // override de test x-tenant-host); si no, el Host propio.
+      const host = h.get("x-tenant-host") || h.get("x-forwarded-host") || h.get("host");
+      if (host) return { "x-tenant-host": host };
+    } catch {
+      /* fuera de contexto de request → cae al env */
+    }
+  }
+  return { "x-tenant": STORE_TENANT };
+}
+
 async function api<T>(path: string, init?: RequestInit & { revalidate?: number }): Promise<T> {
   const url = `${API}${path}`;
+  const th = await tenantHeaders();
+  // En multi-dominio el contenido varía por tenant (no por URL); la fetch-cache de
+  // Next clavea por URL e ignoraría el host → no-store por request. Single-tenant: ISR.
+  const cacheOpt: RequestInit & { next?: { revalidate: number } } = MULTI_DOMAIN
+    ? { cache: "no-store" }
+    : { next: { revalidate: init?.revalidate ?? 60 } };
   const res = await fetch(url, {
-    headers: { Accept: "application/json", ...(init?.headers ?? {}) },
-    next: { revalidate: init?.revalidate ?? 60 },
+    headers: { Accept: "application/json", ...th, ...(init?.headers ?? {}) },
+    ...cacheOpt,
     ...init,
   });
   if (!res.ok) {
@@ -78,6 +111,10 @@ function adaptProduct(p: BackendProduct): Product {
     stock: p.stockCached,
     description: p.description ?? undefined,
     gallery: p.images?.map((i) => i.url),
+    unit: p.unit,
+    unitStep: p.unitStep,
+    productType: p.productType ?? "physical",
+    attributes: p.attributes ?? null,
   };
 }
 
@@ -284,16 +321,16 @@ export type StoreConfig = {
 };
 
 const STORE_DEFAULTS: StoreConfig = {
-  brandName: "Farmatotal",
+  brandName: "Mi Tienda",
   tagline: "tu farmacia online",
   description:
-    "Farmatotal — tu farmacia online. Medicamentos, belleza, higiene y más.",
+    "Tu tienda online.",
   logoUrl: "/brand/logo-farmatotal.svg",
   faviconUrl: "/brand/isotipo.svg",
   currency: "PYG",
   locale: "es-PY",
   colors: {},
-  theme: "farmatotal",
+  theme: "base",
 };
 
 export async function getStoreConfig(): Promise<StoreConfig> {
@@ -309,6 +346,32 @@ export async function getStoreConfig(): Promise<StoreConfig> {
     colors: cfg?.colors ?? STORE_DEFAULTS.colors,
     theme: cfg?.theme || STORE_DEFAULTS.theme,
   };
+}
+
+/** Feature-flags / perfil de rubro del tenant (de tenant.config). Controlan qué
+ * UI muestra la tienda (sucursales, stock, variantes, unidades). */
+export type FeatureFlags = {
+  branches: boolean;
+  inventory: boolean;
+  variants: boolean;
+  units: boolean;
+};
+/** Defaults permisivos: ausencia de config = comportamiento actual (todo on salvo units). */
+const FLAGS_DEFAULTS: FeatureFlags = { branches: true, inventory: true, variants: true, units: false };
+
+export async function getTenantFlags(): Promise<FeatureFlags> {
+  try {
+    const res = await api<{ config?: Partial<FeatureFlags> }>("/tenant", { revalidate: 30 });
+    const c = res?.config ?? {};
+    return {
+      branches: c.branches ?? FLAGS_DEFAULTS.branches,
+      inventory: c.inventory ?? FLAGS_DEFAULTS.inventory,
+      variants: c.variants ?? FLAGS_DEFAULTS.variants,
+      units: c.units ?? FLAGS_DEFAULTS.units,
+    };
+  } catch {
+    return FLAGS_DEFAULTS;
+  }
 }
 
 /** Genera el CSS de override de tokens de marca (sólo para los colores provistos). */

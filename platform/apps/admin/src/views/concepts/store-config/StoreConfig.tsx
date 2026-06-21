@@ -28,7 +28,7 @@ type StoreConfigValue = {
 }
 
 const THEMES: { key: string; name: string; description: string }[] = [
-    { key: 'farmatotal', name: 'Farmatotal (Bacola)', description: 'Farmacia/grocery. Naranja, denso, orientado a catálogo.' },
+    { key: 'base', name: 'Base (Bacola)', description: 'Farmacia/grocery. Naranja, denso, orientado a catálogo.' },
     { key: 'ekomart', name: 'Ekomart', description: 'Market moderno (Bootstrap). Verde, amplio, con grillas.' },
     { key: 'anvogue', name: 'Anvogue', description: 'Multipropósito moderno (fashion/retail). Limpio, minimalista.' },
 ]
@@ -169,7 +169,7 @@ const StoreConfig = () => {
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {THEMES.map((t) => {
-                            const active = (cfg.theme ?? 'farmatotal') === t.key
+                            const active = (cfg.theme ?? 'base') === t.key
                             return (
                                 <button
                                     key={t.key}

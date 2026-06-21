@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams, usePathname } from "next/navigation";
 import { ProductCard } from "@/components/ProductCard";
 import { CatalogStockProvider } from "@/themes/CatalogStock";
+import { tenantHeaders } from "@/lib/tenant";
 import type { Product } from "@/types";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -38,13 +39,15 @@ function adapt(p: Record<string, unknown>): Product {
 export function CatalogBlock({
   perPage = 48,
   title,
-  categorySlug,
   columns = 5,
+  className,
+  query,
 }: {
   perPage?: number;
   title?: string;
-  categorySlug?: string;
   columns?: number;
+  className?: string;
+  query?: Record<string, string>;
 }) {
   const sp = useSearchParams();
   const pathname = usePathname();
@@ -53,11 +56,16 @@ export function CatalogBlock({
   const [total, setTotal] = useState(0);
   const [loaded, setLoaded] = useState(false);
 
+  const qkey = JSON.stringify(query || {});
   useEffect(() => {
-    const qs = new URLSearchParams({ page: String(page), perPage: String(perPage), status: "published" });
-    if (categorySlug) qs.set("category", categorySlug);
+    // La paginación (page/perPage) manda sobre el query del bloque; el resto de
+    // filtros (categoría, marca, orden, stock, precio…) vienen de `query`.
+    const qs = new URLSearchParams({ status: "published", ...(query || {}) });
+    qs.set("page", String(page));
+    qs.set("perPage", String(perPage));
+    qs.delete("offset"); // el catálogo pagina por `page`, ignora offset del bloque
     setLoaded(false);
-    fetch(`${API}/catalog/products?${qs.toString()}`)
+    fetch(`${API}/catalog/products?${qs.toString()}`, { headers: tenantHeaders() })
       .then((r) => r.json())
       .then((d) => {
         setItems(((d.data as Record<string, unknown>[]) || []).map(adapt));
@@ -65,7 +73,8 @@ export function CatalogBlock({
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
-  }, [page, perPage, categorySlug]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, perPage, qkey]);
 
   const pages = Math.max(1, Math.ceil(total / perPage));
   const skus = items.map((p) => p.sku).filter((s): s is string => !!s);
@@ -79,7 +88,7 @@ export function CatalogBlock({
 
   return (
     <CatalogStockProvider skus={skus}>
-      <section className="ft-container py-6">
+      <section className={className || "ft-container py-6"}>
         <h2 className="mb-4 font-heading text-xl font-bold text-brand-text">{heading}</h2>
         {loaded && items.length === 0 ? (
           <p className="py-12 text-center text-brand-muted">No hay productos para mostrar.</p>

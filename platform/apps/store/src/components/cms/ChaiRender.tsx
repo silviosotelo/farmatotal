@@ -23,8 +23,12 @@ import {
 } from "./HeaderBlocks";
 import { TailwindRuntime } from "./TailwindRuntime";
 import { ChaiProductGrid, ChaiCategoryShowcase } from "./chaiBlocks";
+import { buildProductQuery } from "./productQuery";
 import { getActiveTheme, themeAccentVars, type ThemeKey } from "@/themes/registry";
-import { listProducts, listCategories } from "@/lib/api";
+import { listProducts, listCategories, getStoreConfig } from "@/lib/api";
+import { renderEngineBlock, getWidget, compileCss, resolveBindings, extractSettings } from "@platform/engine";
+import { AuthGate } from "./AuthGate";
+import { ensureEngineBindings } from "./engineSetup";
 
 /**
  * Render SSR de páginas creadas con el editor visual (Chai Builder).
@@ -65,6 +69,16 @@ function str(v: unknown, fallback = ""): string {
 }
 function num(v: unknown, fallback: number): number {
   return typeof v === "number" ? v : fallback;
+}
+
+/** CSS para ocultar un elemento según el device (display conditions). */
+function deviceHideCss(cls: string, device?: string): string {
+  if (!device || device === "all") return "";
+  const sel = `.${cls}`;
+  if (device === "desktop") return `@media(max-width:1024px){${sel}{display:none!important}}`;
+  if (device === "tablet") return `@media(max-width:767px),(min-width:1025px){${sel}{display:none!important}}`;
+  if (device === "mobile") return `@media(min-width:768px){${sel}{display:none!important}}`;
+  return "";
 }
 
 /** lodash.get acotado: resuelve "a.b.c" sobre un objeto. */
@@ -112,7 +126,7 @@ function HeroBlock({ b }: { b: ChaiBlock }) {
   const align = str(b.align, "left") === "center" ? "center" : "left";
   return (
     <section
-      className="relative overflow-hidden rounded-2xl px-8 py-16 text-white"
+      className={cls(b.styles) || "relative overflow-hidden rounded-2xl px-8 py-16 text-white"}
       style={{
         background: image
           ? `linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)), url(${image}) center/cover`
@@ -141,7 +155,7 @@ function BannerBlock({ b }: { b: ChaiBlock }) {
   const align = str(b.align, "left") === "center" ? "center" : "left";
   return (
     <section
-      className="relative overflow-hidden rounded-2xl px-8 py-12 text-white"
+      className={cls(b.styles) || "relative overflow-hidden rounded-2xl px-8 py-12 text-white"}
       style={{
         background: image
           ? `linear-gradient(rgba(0,0,0,.4),rgba(0,0,0,.4)), url(${image}) center/cover`
@@ -172,7 +186,7 @@ function BrandsBlock({ b }: { b: ChaiBlock }) {
     .filter(Boolean);
   const cells: string[] = urls.length ? urls : Array.from({ length: 6 }, () => "");
   return (
-    <section className="py-6">
+    <section className={cls(b.styles) || "py-6"}>
       {str(b.title) && <h3 className="mb-4 text-xl font-bold">{str(b.title)}</h3>}
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
         {cells.map((u, i) => (
@@ -201,7 +215,7 @@ function BenefitsBlock({ b }: { b: ChaiBlock }) {
     { Icon: Headphones, t: "Atención", s: "Soporte dedicado" },
   ];
   return (
-    <section className="py-6">
+    <section className={cls(b.styles) || "py-6"}>
       {str(b.title) && <h3 className="mb-4 text-xl font-bold">{str(b.title)}</h3>}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {items.map(({ Icon, t, s }) => (
@@ -226,20 +240,83 @@ function RenderBlock({
   theme,
   item = null,
   repeaterData = {},
+  loopData = {},
+  ctx = {},
+  seen = new Set<string>(),
 }: {
   block: ChaiBlock;
   all: ChaiBlock[];
   theme: ThemeKey;
   item?: Record<string, unknown> | null;
   repeaterData?: Record<string, unknown[]>;
+  loopData?: Record<string, Record<string, unknown>[]>;
+  ctx?: Record<string, unknown>;
+  seen?: Set<string>;
 }): React.ReactNode {
   // Dentro de un Repeater, resolvemos los bindings {{$index.x}} contra el item.
   const block = bindBlock(rawBlock, item);
+
+  // Emite un <style> una sola vez por CSS único en todo el árbol (dedupe; clave en
+  // loops donde el template se repite por ítem y el CSS es idéntico).
+  const styleOnce = (css: string) => {
+    if (!css || seen.has(css)) return null;
+    seen.add(css);
+    return <style dangerouslySetInnerHTML={{ __html: css }} />;
+  };
+
   const kids = childrenOf(all, rawBlock._id);
   const renderKids = () =>
     kids.map((k) => (
-      <RenderBlock key={k._id} block={k} all={all} theme={theme} item={item} repeaterData={repeaterData} />
+      <RenderBlock key={k._id} block={k} all={all} theme={theme} item={item} repeaterData={repeaterData} loopData={loopData} ctx={ctx} seen={seen} />
     ));
+
+  // Loop del motor: repite el template (hijos) por cada ítem del query, inyectando
+  // ctx.item (los hijos resuelven sus bindings item.*). Datos pre-fetcheados por tenant.
+  if (str(block._type) === "loop") {
+    const items = loopData[rawBlock._id] || [];
+    const tmpl = childrenOf(all, rawBlock._id);
+    const schema = getWidget("loop");
+    const css = schema ? compileCss(schema, resolveBindings(extractSettings(block), ctx), rawBlock._id) : "";
+    const cols = num(block.columns, 4);
+    if (items.length === 0) return null;
+    return (
+      <>
+        {styleOnce(css)}
+        <div className={`ft-el-${rawBlock._id}`} style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+          {items.map((it, i) =>
+            tmpl.map((t) => (
+              <RenderBlock key={`${t._id}_${i}`} block={t} all={all} theme={theme} item={item} repeaterData={repeaterData} loopData={loopData} ctx={{ ...ctx, item: it }} seen={seen} />
+            )),
+          )}
+        </div>
+      </>
+    );
+  }
+
+  // Motor @platform/engine: si el _type es un widget del motor (schema-first), lo
+  // resolvemos acá (bindings → CSS scopeado → render). Los contenedores reciben sus
+  // hijos renderizados. Si no es del motor, cae al switch legacy.
+  if (getWidget(str(block._type))) {
+    // Display conditions (transversal): fechas (server) + device (CSS) + auth (cliente).
+    const cond = (block.conditions ?? {}) as { device?: string; from?: string; to?: string; auth?: string };
+    const now = Date.now();
+    if (cond.from && now < Date.parse(cond.from)) return null;
+    if (cond.to && now > Date.parse(cond.to)) return null;
+    const childNodes = getWidget(str(block._type))?.acceptsChildren ? renderKids() : undefined;
+    const engine = renderEngineBlock(block, ctx, undefined, childNodes);
+    if (engine) {
+      const dev = deviceHideCss(`ft-el-${rawBlock._id}`, cond.device);
+      const css = (engine.css || "") + dev;
+      const node =
+        cond.auth === "in" || cond.auth === "out" ? <AuthGate mode={cond.auth}>{engine.node}</AuthGate> : engine.node;
+      return (
+        <>
+          {styleOnce(css)}
+          {node}
+        </>
+      );
+    }
+  }
   const className = cls(block.styles);
   const html = str(block.content);
 
@@ -257,6 +334,7 @@ function RenderBlock({
             tmpl.map((t) => (
               <RenderBlock
                 key={`${t._id}_${i}`}
+                ctx={ctx}
                 block={t}
                 all={all}
                 theme={theme}
@@ -280,15 +358,16 @@ function RenderBlock({
       return (
         <ChaiProductGrid
           title={str(block.title, "Destacados")}
-          categorySlug={str(block.categorySlug) || undefined}
           limit={num(block.limit, 8)}
           columns={num(block.columns, 4)}
+          className={className || undefined}
+          query={buildProductQuery(block)}
         />
       );
     case "HomeDeals":
-      return <HomeDealsBlock limit={num(block.limit, 6)} theme={theme} />;
-    case "HeroSlider":
-      return (
+      return <HomeDealsBlock limit={num(block.limit, 6)} theme={theme} className={className || undefined} />;
+    case "HeroSlider": {
+      const slider = (
         <HeroSlider
           autoplayDelay={num(block.autoplayDelay, 4000)}
           showArrows={block.showArrows !== false}
@@ -297,11 +376,14 @@ function RenderBlock({
           fade={block.fade !== false}
         />
       );
+      return className ? <div className={className}>{slider}</div> : slider;
+    }
     case "CategoryCircles":
       return (
         <HomeCategoriesBlock
           title={str(block.title) || undefined}
           limit={block.limit ? num(block.limit, 0) : undefined}
+          className={className || undefined}
         />
       );
     case "Featured":
@@ -309,17 +391,19 @@ function RenderBlock({
         <HomeFeaturedBlock
           title={str(block.title) || undefined}
           limit={num(block.limit, 8)}
+          className={className || undefined}
         />
       );
     case "PromoBanner":
-      return <HomePromoBannerBlock index={num(block.index, 0)} />;
+      return <HomePromoBannerBlock index={num(block.index, 0)} className={className || undefined} />;
     case "Catalog":
       return (
         <CatalogBlock
           perPage={num(block.perPage, 48)}
           title={str(block.title) || undefined}
-          categorySlug={str(block.categorySlug) || undefined}
           columns={num(block.columns, 5)}
+          className={className || undefined}
+          query={buildProductQuery(block)}
         />
       );
     case "ProductDetail":
@@ -360,6 +444,7 @@ function RenderBlock({
         <ChaiCategoryShowcase
           title={str(block.title) || undefined}
           limit={num(block.limit, 8)}
+          className={className || undefined}
         />
       );
     case "Brands":
@@ -371,13 +456,15 @@ function RenderBlock({
       const Tag = (["h2", "h3", "h4"].includes(lvl) ? lvl : "h2") as React.ElementType;
       const size = lvl === "h3" ? "text-xl" : lvl === "h4" ? "text-lg" : "text-2xl";
       const align = str(block.align) === "center" ? "text-center" : "";
-      return <Tag className={`${size} mt-2 font-bold text-brand-text ${align}`}>{str(block.text, "Título de sección")}</Tag>;
+      const base = className || `${size} mt-2 font-bold text-brand-text`;
+      return <Tag className={`${base} ${align}`.trim()}>{str(block.text, "Título de sección")}</Tag>;
     }
     case "Texto": {
       const align = str(block.align) === "center" ? "text-center" : "";
+      const base = className || "text-[15px] leading-relaxed text-gray-600";
       return (
         <div
-          className={`text-[15px] leading-relaxed text-gray-600 ${align}`}
+          className={`${base} ${align}`.trim()}
           dangerouslySetInnerHTML={{ __html: str(block.html) }}
         />
       );
@@ -456,17 +543,58 @@ async function fetchRepeaterData(blocks: ChaiBlock[]): Promise<Record<string, un
   return out;
 }
 
+/** Datos de los bloques Loop del motor: ejecuta el query (por tenant) y mapea los
+ * productos a ítems para los bindings item.*. */
+async function fetchLoopData(blocks: ChaiBlock[]): Promise<Record<string, Record<string, unknown>[]>> {
+  const loops = blocks.filter((b) => b._type === "loop");
+  if (loops.length === 0) return {};
+  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  const tenant = process.env.STORE_TENANT || "default";
+  const out: Record<string, Record<string, unknown>[]> = {};
+  await Promise.all(
+    loops.map(async (b) => {
+      const query = buildProductQuery(b as Record<string, unknown>);
+      const qs = new URLSearchParams({ ...query });
+      qs.set("perPage", String(num(b.limit, 8)));
+      try {
+        const res = await fetch(`${API}/catalog/products?${qs.toString()}`, { headers: { "x-tenant": tenant }, cache: "no-store" });
+        const d = await res.json();
+        out[b._id] = ((d.data as Record<string, unknown>[]) || []).map((p) => ({
+          title: p.title,
+          slug: p.slug,
+          sku: p.sku,
+          priceWeb: p.priceWeb,
+          priceNormal: p.priceNormal,
+          image: (p.images as { url: string }[] | undefined)?.[0]?.url || "/products/no-img.webp",
+        }));
+      } catch {
+        out[b._id] = [];
+      }
+    }),
+  );
+  return out;
+}
+
 export default async function ChaiRender({ blocks }: { blocks: ChaiBlock[] }) {
   if (!Array.isArray(blocks) || blocks.length === 0) return null;
+  ensureEngineBindings();
   const roots = childrenOf(blocks, null);
   // Tema activo: re-tinta los bloques de comercio (Hero/precios via brand-*) para
-  // que las páginas del builder matcheen el storefront.
-  const [theme, repeaterData] = await Promise.all([getActiveTheme(), fetchRepeaterData(blocks)]);
+  // que las páginas del builder matcheen el storefront. `store` alimenta el ctx de
+  // los bindings dinámicos del motor (store.name/description).
+  const [theme, repeaterData, loopData, store] = await Promise.all([
+    getActiveTheme(),
+    fetchRepeaterData(blocks),
+    fetchLoopData(blocks),
+    getStoreConfig().catch(() => null),
+  ]);
+  const ctx = { store };
+  const seen = new Set<string>();
   return (
     <div className="flex flex-col gap-6" style={themeAccentVars(theme) as React.CSSProperties}>
       <TailwindRuntime />
       {roots.map((b) => (
-        <RenderBlock key={b._id} block={b} all={blocks} theme={theme} repeaterData={repeaterData} />
+        <RenderBlock key={b._id} block={b} all={blocks} theme={theme} repeaterData={repeaterData} loopData={loopData} ctx={ctx} seen={seen} />
       ))}
     </div>
   );

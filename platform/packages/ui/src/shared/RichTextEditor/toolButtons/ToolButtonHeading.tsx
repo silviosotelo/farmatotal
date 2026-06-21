@@ -8,7 +8,7 @@ import {
     LuHeading6,
 } from 'react-icons/lu'
 import ToolButton from './ToolButton'
-import Dropdown from '@ft/ui/ui/Dropdown'
+import Dropdown from '@platform/ui/ui/Dropdown'
 import type { BaseToolButtonProps, HeadingLevel } from './types'
 import type { ReactNode } from 'react'
 

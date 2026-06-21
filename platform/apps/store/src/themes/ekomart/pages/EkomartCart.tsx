@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useCart } from "@/components/providers/CartContext";
 import { useToast } from "@/components/providers/ToastContext";
-import { formatGs } from "@/lib/data";
+import { useMoney } from "@/components/providers/CurrencyContext";
 
 /**
  * Carrito en estilo Ekomart (markup rts-* + grilla Bootstrap, acentos verdes).
@@ -13,6 +13,7 @@ import { formatGs } from "@/lib/data";
  * reimplementa nada. Solo cambia la capa visual respecto al carrito farmatotal.
  */
 export function EkomartCart() {
+  const money = useMoney();
   const {
     lines,
     subtotal,
@@ -166,7 +167,7 @@ export function EkomartCart() {
                     </div>
 
                     <div className="price">
-                      <p>{formatGs(product.priceWeb)}</p>
+                      <p>{money(product.priceWeb)}</p>
                     </div>
 
                     <div className="quantity">
@@ -200,7 +201,7 @@ export function EkomartCart() {
                     </div>
 
                     <div className="subtotal">
-                      <p>{formatGs(product.priceWeb * quantity)}</p>
+                      <p>{money(product.priceWeb * quantity)}</p>
                     </div>
                   </div>
                 ))}
@@ -249,20 +250,20 @@ export function EkomartCart() {
 
                 <div className="subtotal">
                   <span>Subtotal</span>
-                  <h6 className="price">{formatGs(subtotal)}</h6>
+                  <h6 className="price">{money(subtotal)}</h6>
                 </div>
 
                 {coupon && (
                   <div className="subtotal">
                     <span>Descuento ({coupon.code})</span>
-                    <h6 className="price">−{formatGs(discount)}</h6>
+                    <h6 className="price">−{money(discount)}</h6>
                   </div>
                 )}
 
                 <div className="bottom">
                   <div className="wrapper">
                     <span>Total</span>
-                    <h6 className="price">{formatGs(total)}</h6>
+                    <h6 className="price">{money(total)}</h6>
                   </div>
                   <div className="button-area">
                     <Link href="/caja" className="rts-btn btn-primary">

@@ -6,19 +6,22 @@ import { useSucursal } from "./SucursalContext";
 import { LocationIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useTheme, themeAccentVars } from "@/themes/ThemeProvider";
+import { useFlags } from "@/components/providers/FeatureFlagsContext";
 
 type GeoState = { status: "idle" | "locating" | "ok" | "error"; nearestId?: string; message?: string };
 
 export function SucursalModal() {
   const { isOpen, close, select, selected, mandatory, sucursales, zonas, nearest } = useSucursal();
   const theme = useTheme();
+  const flags = useFlags();
   const [zona, setZona] = useState<string>("Todas");
   const [geo, setGeo] = useState<GeoState>({ status: "idle" });
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // Escape to close + body-scroll lock + focus trap + focus restore (a11y)
   useEffect(() => {
-    if (!isOpen) return;
+    // Tenant sin sucursales: no abrir/lockear scroll aunque el provider pidiera abrir.
+    if (!isOpen || !flags.branches) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
 
     const getFocusable = () =>
@@ -60,7 +63,7 @@ export function SucursalModal() {
       document.body.style.overflow = prev;
       previouslyFocused?.focus?.();
     };
-  }, [isOpen, close, mandatory]);
+  }, [isOpen, close, mandatory, flags.branches]);
 
   const list = useMemo(
     () => (zona === "Todas" ? sucursales : sucursales.filter((s) => s.zona === zona)),
@@ -88,7 +91,7 @@ export function SucursalModal() {
     );
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !flags.branches) return null;
 
   // order list so the nearest (if any) comes first
   const ordered: Sucursal[] =

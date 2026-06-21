@@ -1,8 +1,9 @@
-import type { FastifyInstance } from "fastify";
-import { desc, eq } from "drizzle-orm";
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
 import { orders, payments, settings } from "../../db/schema";
+import { tid } from "../../plugins/tenant";
 import { env } from "../../env.js";
 import {
   bancardJsUrl,
@@ -23,7 +24,10 @@ export async function paymentRoutes(app: FastifyInstance) {
     async (req, reply) => {
       if (!isBancardEnabled())
         return reply.serviceUnavailable("Bancard no configurado (claves vacías)");
-      const [order] = await db.select().from(orders).where(eq(orders.id, req.body.orderId));
+      const [order] = await db
+        .select()
+        .from(orders)
+        .where(and(eq(orders.tenantId, tid(req)), eq(orders.id, req.body.orderId)));
       if (!order) return reply.notFound("Orden no encontrada");
 
       const shopProcessId = genShopProcessId();
@@ -122,19 +126,26 @@ export async function paymentRoutes(app: FastifyInstance) {
   type PayCfg = Record<string, unknown> & {
     __custom?: { key: string; name: string; description: string; instructions?: string }[];
   };
-  const readPayCfg = async (): Promise<PayCfg> => {
-    const [row] = await db.select().from(settings).where(eq(settings.key, "mod_payments")).limit(1);
+  const readPayCfg = async (req: FastifyRequest): Promise<PayCfg> => {
+    const [row] = await db
+      .select()
+      .from(settings)
+      .where(and(eq(settings.tenantId, tid(req)), eq(settings.key, "mod_payments")))
+      .limit(1);
     return (row?.value as PayCfg) ?? {};
   };
-  const writePayCfg = async (cfg: PayCfg) => {
+  const writePayCfg = async (req: FastifyRequest, cfg: PayCfg) => {
     await db
       .insert(settings)
-      .values({ key: "mod_payments", value: cfg })
-      .onConflictDoUpdate({ target: settings.key, set: { value: cfg, updatedAt: new Date() } });
+      .values({ tenantId: tid(req), key: "mod_payments", value: cfg })
+      .onConflictDoUpdate({
+        target: [settings.tenantId, settings.key],
+        set: { value: cfg, updatedAt: new Date() },
+      });
   };
 
-  app.get("/payments/methods", async () => {
-    const cfg = await readPayCfg();
+  app.get("/payments/methods", async (req) => {
+    const cfg = await readPayCfg(req);
     const fixed = PAYMENT_METHODS.map((m) => ({
       ...m,
       custom: false,
@@ -158,12 +169,12 @@ export async function paymentRoutes(app: FastifyInstance) {
     "/payments/methods/:key",
     { schema: { params: z.object({ key: z.string() }), body: z.object({ enabled: z.boolean().optional(), values: z.record(z.unknown()) }) } },
     async (req, reply) => {
-      const cfg = await readPayCfg();
+      const cfg = await readPayCfg(req);
       const isFixed = PAYMENT_METHODS.some((x) => x.key === req.params.key);
       const isCustom = (cfg.__custom ?? []).some((c) => c.key === req.params.key);
       if (!isFixed && !isCustom) return reply.notFound("Método no encontrado");
       cfg[req.params.key] = { enabled: req.body.enabled ?? false, ...req.body.values };
-      await writePayCfg(cfg);
+      await writePayCfg(req, cfg);
       return reply.send({ ok: true, key: req.params.key });
     },
   );
@@ -173,7 +184,7 @@ export async function paymentRoutes(app: FastifyInstance) {
     "/payments/methods/custom",
     { schema: { body: z.object({ name: z.string().min(1).max(100), description: z.string().max(200).optional(), instructions: z.string().max(500).optional() }) } },
     async (req, reply) => {
-      const cfg = await readPayCfg();
+      const cfg = await readPayCfg(req);
       const list = cfg.__custom ?? [];
       const base = req.body.name.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "_").replace(/(^_|_$)/g, "").slice(0, 30) || "metodo";
       let key = `custom_${base}`;
@@ -182,18 +193,18 @@ export async function paymentRoutes(app: FastifyInstance) {
       list.push({ key, name: req.body.name, description: req.body.description ?? "", instructions: req.body.instructions ?? "" });
       cfg.__custom = list;
       cfg[key] = { enabled: true, instructions: req.body.instructions ?? "" };
-      await writePayCfg(cfg);
+      await writePayCfg(req, cfg);
       return reply.send({ ok: true, key });
     },
   );
 
   app.delete("/payments/methods/custom/:key", { schema: { params: z.object({ key: z.string() }) } }, async (req, reply) => {
-    const cfg = await readPayCfg();
+    const cfg = await readPayCfg(req);
     const list = cfg.__custom ?? [];
     if (!list.some((c) => c.key === req.params.key)) return reply.notFound("Método custom no encontrado");
     cfg.__custom = list.filter((c) => c.key !== req.params.key);
     delete cfg[req.params.key];
-    await writePayCfg(cfg);
+    await writePayCfg(req, cfg);
     return reply.send({ ok: true });
   });
 
@@ -217,6 +228,7 @@ export async function paymentRoutes(app: FastifyInstance) {
         })
         .from(payments)
         .leftJoin(orders, eq(orders.id, payments.orderId))
+        .where(eq(orders.tenantId, tid(req)))
         .orderBy(desc(payments.createdAt))
         .limit(perPage)
         .offset((page - 1) * perPage);

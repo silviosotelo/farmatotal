@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { Product, Category } from "@/types";
-import { getDeals, getFeatured, listProducts, listCategories } from "@/lib/api";
-import { formatGs } from "@/lib/format";
+import { getDeals, getFeatured, listProducts, listCategories, getStoreConfig } from "@/lib/api";
+import { formatMoney } from "@/lib/money";
 import { EkomartProductCard } from "./EkomartProductCard";
+import { InventoryGate } from "@/components/providers/InventoryGate";
 import EkomartProductCarousel from "./sections/EkomartProductCarousel";
 import EkomartWeeklyTabs, { type WeeklyTab } from "./sections/EkomartWeeklyTabs";
 
@@ -107,11 +108,11 @@ function FeatureRow() {
 }
 
 /* ---------------- DiscountProduct (ofertas + tarjetas con fondo) ---------------- */
-function DiscountSection({ deals }: { deals: Product[] }) {
+function DiscountSection({ deals, currency, locale }: { deals: Product[]; currency: string; locale: string }) {
   if (!deals.length) return null;
   const grid = deals.slice(0, 4);
   // Precio real "desde": el menor priceWeb de las ofertas vigentes (sin precio falso).
-  const fromPrice = formatGs(Math.min(...deals.map((p) => p.priceWeb)));
+  const fromPrice = formatMoney(Math.min(...deals.map((p) => p.priceWeb)), { currency, locale });
   return (
     <div className="rts-grocery-feature-area rts-section-gapBottom">
       <div className="container">
@@ -234,7 +235,7 @@ function FeatureDiscountSection() {
 }
 
 /* ---------------- TrandingProduct (grilla de tendencias) ---------------- */
-function TrendingSection({ products }: { products: Product[] }) {
+function TrendingSection({ products, currency, locale }: { products: Product[]; currency: string; locale: string }) {
   if (!products.length) return null;
   return (
     <div className="top-tranding-product rts-section-gap">
@@ -274,13 +275,15 @@ function TrendingSection({ products }: { products: Product[] }) {
                           <Link href={href}>
                             <h4 className="title">{product.title}</h4>
                           </Link>
-                          <span className="availability">
-                            {(product.stock ?? 0) > 0 ? "En stock" : "Sin stock"}
-                          </span>
+                          <InventoryGate>
+                            <span className="availability">
+                              {(product.stock ?? 0) > 0 ? "En stock" : "Sin stock"}
+                            </span>
+                          </InventoryGate>
                           <div className="price-area">
-                            <span className="current">{formatGs(product.priceWeb)}</span>
+                            <span className="current">{formatMoney(product.priceWeb, { currency, locale })}</span>
                             {hasDiscount && (
-                              <div className="previous">{formatGs(product.priceNormal)}</div>
+                              <div className="previous">{formatMoney(product.priceNormal, { currency, locale })}</div>
                             )}
                           </div>
                         </div>
@@ -304,6 +307,7 @@ function chunk<T>(arr: T[], size: number): T[][] {
 }
 
 export async function EkomartHome() {
+  const { currency, locale } = await getStoreConfig();
   const [featured, deals, latest, categories] = await Promise.all([
     safe(getFeatured(12), [] as Product[]),
     safe(getDeals(16), [] as Product[]),
@@ -331,10 +335,10 @@ export async function EkomartHome() {
     <div className="demo-one">
       <FeatureRow />
       <EkomartProductCarousel title="Destacados" products={featured} />
-      <DiscountSection deals={deals} />
+      <DiscountSection deals={deals} currency={currency} locale={locale} />
       <EkomartWeeklyTabs title="Lo más vendido" tabs={weeklyTabs} />
       <FeatureDiscountSection />
-      <TrendingSection products={products} />
+      <TrendingSection products={products} currency={currency} locale={locale} />
     </div>
   );
 }

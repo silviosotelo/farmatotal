@@ -1,4 +1,4 @@
-import classNames from '@ft/ui/utils/classNames'
+import classNames from '@platform/ui/utils/classNames'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'

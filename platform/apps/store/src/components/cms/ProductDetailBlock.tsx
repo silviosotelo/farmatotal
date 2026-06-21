@@ -4,8 +4,10 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductActions } from "@/components/product/ProductActions";
 import { ProductTabs } from "@/components/product/ProductTabs";
+import { ProductSpecs } from "@/components/product/ProductSpecs";
 import { BranchStock } from "@/components/product/BranchStock";
-import { formatGs } from "@/lib/format";
+import { useMoney } from "@/components/providers/CurrencyContext";
+import { useFlags } from "@/components/providers/FeatureFlagsContext";
 import { useProductData } from "./ProductDataContext";
 
 /**
@@ -23,6 +25,8 @@ export function ProductDetailBlock({
   showTabs?: boolean;
   relatedTitle?: string;
 }) {
+  const money = useMoney();
+  const flags = useFlags();
   const data = useProductData();
   if (!data) return null;
   const { product, related, reviews, variants } = data;
@@ -38,15 +42,17 @@ export function ProductDetailBlock({
 
           <div className="font-price mt-1 flex flex-col gap-0.5">
             <div className="text-sm text-price-muted">
-              Precio Normal: <span className="line-through">{formatGs(product.priceNormal)}</span>
+              Precio Normal: <span className="line-through">{money(product.priceNormal)}</span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-sm font-medium text-brand-muted">Precio Web:</span>
-              <span className="text-[28px] font-bold leading-none text-brand-orange">{formatGs(product.priceWeb)}</span>
+              <span className="text-[28px] font-bold leading-none text-brand-orange">{money(product.priceWeb)}</span>
             </div>
           </div>
 
-          {product.stock === 0 && <p className="text-sm font-medium text-[#c0392b]">Sin stock</p>}
+          {flags.inventory && product.stock === 0 && (
+            <p className="text-sm font-medium text-[#c0392b]">Sin stock</p>
+          )}
 
           <BranchStock productId={product.id} />
 
@@ -55,6 +61,8 @@ export function ProductDetailBlock({
           </div>
         </div>
       </div>
+
+      <ProductSpecs product={product} className="mt-12" />
 
       {showTabs && (
         <div className="mt-12">

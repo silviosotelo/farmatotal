@@ -12,7 +12,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client";
-import { categories, productImages, products, syncRuns } from "../db/schema";
+import { categories, productImages, products, syncRuns, tenants } from "../db/schema";
 
 const KEYS_FILE = "C:/Users/sotelos/FARMATOTAL/_recon/wc-rest-new.txt";
 const BASE = "https://www.farmatotal.com.py/wp-json/wc/v3";
@@ -62,6 +62,14 @@ async function catSlugMap(): Promise<Map<string, string>> {
 
 async function main() {
   const MAX = Number(process.argv[2] || 2000);
+  const tenantSlug = process.env.DEFAULT_TENANT ?? "default";
+  const [tenant] = await db
+    .select({ id: tenants.id })
+    .from(tenants)
+    .where(eq(tenants.slug, tenantSlug))
+    .limit(1);
+  if (!tenant) throw new Error(`Tenant '${tenantSlug}' no existe`);
+  const tenantId = tenant.id;
   const slugToCat = await catSlugMap();
   const [run] = await db.insert(syncRuns).values({ kind: "wc-rest", status: "running", startedAt: new Date() }).returning({ id: syncRuns.id });
   let done = 0, withCod = 0, controlled = 0, featured = 0, page = 1;
@@ -88,6 +96,7 @@ async function main() {
           };
           const slug = (p.slug || `woo-${p.id}`).slice(0, 240);
           const values = {
+            tenantId,
             sku: (p.sku || `woo-${p.id}`).trim(),
             codInterno,
             slug,

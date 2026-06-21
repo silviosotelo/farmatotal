@@ -10,10 +10,10 @@ import {
   index,
   unique,
 } from "drizzle-orm/pg-core";
-import { farmatotalApp } from "./_pgSchema";
+import { appSchema } from "./_pgSchema";
 
 /** Plantillas de email (con variables {{var}}). */
-export const emailTemplates = farmatotalApp.table(
+export const emailTemplates = appSchema.table(
   "email_templates",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -34,7 +34,7 @@ export const emailTemplates = farmatotalApp.table(
 export const emailStatus = ["pending", "sending", "sent", "failed"] as const;
 export type EmailStatus = (typeof emailStatus)[number];
 
-export const emailQueue = farmatotalApp.table(
+export const emailQueue = appSchema.table(
   "email_queue",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -55,7 +55,7 @@ export const emailQueue = farmatotalApp.table(
 );
 
 /** Log de entregas (append-only, auditoría). */
-export const emailLog = farmatotalApp.table(
+export const emailLog = appSchema.table(
   "email_log",
   {
     id: uuid("id").primaryKey().defaultRandom(),

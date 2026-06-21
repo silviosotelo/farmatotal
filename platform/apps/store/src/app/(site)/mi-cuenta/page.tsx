@@ -5,7 +5,9 @@ import Link from "next/link";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { useAuth } from "@/components/providers/AuthContext";
 import { useToast } from "@/components/providers/ToastContext";
-import { formatGs } from "@/lib/data";
+import { formatMoney } from "@/lib/money";
+import { useCurrency } from "@/components/providers/CurrencyContext";
+import { formatQty } from "@/lib/units";
 
 type Tab = "login" | "register";
 type Section = "escritorio" | "pedidos" | "direcciones" | "detalles";
@@ -35,6 +37,7 @@ interface OrderItem {
   number: string;
   status: string;
   total: number;
+  currency?: string;
   subtotal: number;
   discount: number;
   paymentMethod: string | null;
@@ -46,6 +49,9 @@ interface OrderItem {
 export default function MiCuentaPage() {
   const { user, isLoggedIn, login, register, logout } = useAuth();
   const { toast } = useToast();
+  // Órdenes históricas: se formatean con la moneda guardada de cada orden
+  // (order.currency), nunca con la moneda viva del store. El locale es el del tenant.
+  const { locale } = useCurrency();
 
   /* ── Guest state ── */
   const [tab, setTab] = useState<Tab>("login");
@@ -288,7 +294,7 @@ export default function MiCuentaPage() {
                                     {order.status}
                                   </span>
                                 </td>
-                                <td className="px-4 py-3 text-right font-semibold text-brand-text">{formatGs(order.total)}</td>
+                                <td className="px-4 py-3 text-right font-semibold text-brand-text">{formatMoney(order.total, { currency: order.currency ?? "PYG", locale })}</td>
                                 <td className="px-4 py-3 text-right">
                                   <button type="button" onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
                                     className="text-brand-orange-ink text-xs hover:underline">
@@ -307,13 +313,13 @@ export default function MiCuentaPage() {
                                       {order.lines.map((line, i) => (
                                         <div key={i} className="flex items-center gap-3 text-sm">
                                           <span className="flex-1 text-brand-text text-xs">{line.title}</span>
-                                          <span className="text-brand-muted text-xs">x{line.quantity}</span>
-                                          <span className="font-medium text-brand-text text-xs">{formatGs(line.subtotal)}</span>
+                                          <span className="text-brand-muted text-xs">x{formatQty(line.quantity)}</span>
+                                          <span className="font-medium text-brand-text text-xs">{formatMoney(line.subtotal, { currency: order.currency ?? "PYG", locale })}</span>
                                         </div>
                                       ))}
                                     </div>
                                     {order.discount > 0 && (
-                                      <p className="text-xs text-red-500 mt-2">Descuento: -{formatGs(order.discount)}</p>
+                                      <p className="text-xs text-red-500 mt-2">Descuento: -{formatMoney(order.discount, { currency: order.currency ?? "PYG", locale })}</p>
                                     )}
                                   </td>
                                 </tr>

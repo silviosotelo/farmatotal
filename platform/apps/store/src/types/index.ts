@@ -42,6 +42,14 @@ export interface Product {
   variantOf?: string;
   /** etiqueta de la variante (ej. "50 ml"). */
   variantLabel?: string;
+  /** unidad de medida de venta (ej. "unidad", "kg", "g", "l"). */
+  unit?: string;
+  /** incremento de cantidad para esta unidad (ej. 1, 0.25, 0.5). */
+  unitStep?: number;
+  /** tipo de producto — define si requiere envío. */
+  productType?: "physical" | "digital" | "service";
+  /** ficha técnica flexible (pares etiqueta/valor). */
+  attributes?: { label: string; value: string }[] | null;
 }
 
 export interface NavLink {
@@ -95,6 +103,8 @@ export interface Order {
   date: string; // ISO
   status: OrderStatus;
   total: number;
+  /** Moneda guardada de la orden (histórica). Si falta, fallback "PYG". */
+  currency?: string;
   sucursal?: string;
   paymentMethod?: string;
   lines: OrderLine[];

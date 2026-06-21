@@ -1,4 +1,4 @@
-import classNames from '@ft/ui/utils/classNames'
+import classNames from '@platform/ui/utils/classNames'
 import { TbChevronRight, TbChevronDown } from 'react-icons/tb'
 import type { Task } from 'gantt-task-react'
 import type { ReactNode } from 'react'

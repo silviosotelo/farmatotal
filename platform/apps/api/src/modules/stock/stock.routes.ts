@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "../../db/client";
 import { branches, products } from "../../db/schema";
 import { queryErpStock } from "../../services/erp-stock";
+import { tid } from "../../plugins/tenant";
 
 export async function stockRoutes(app: FastifyInstance) {
   // Stock en vivo de un SKU en una sucursal (por erpCode directo)
@@ -44,7 +45,7 @@ export async function stockRoutes(app: FastifyInstance) {
       const withErp = await db
         .select({ id: branches.id, name: branches.name, erpCode: branches.erpCode })
         .from(branches)
-        .where(and(eq(branches.active, true), isNotNull(branches.erpCode)))
+        .where(and(eq(branches.tenantId, tid(req)), eq(branches.active, true), isNotNull(branches.erpCode)))
         .limit(60);
 
       if (withErp.length === 0) {

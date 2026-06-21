@@ -1,4 +1,4 @@
-import classNames from '@ft/ui/utils/classNames'
+import classNames from '@platform/ui/utils/classNames'
 import Line from './Line'
 import Circle from './Circle'
 import { SIZES, DIRECTIONS } from '../utils/constants'

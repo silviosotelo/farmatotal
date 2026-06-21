@@ -1,5 +1,5 @@
-import classNames from '@ft/ui/utils/classNames'
-import type { CommonProps } from '@ft/ui/@types/common'
+import classNames from '@platform/ui/utils/classNames'
+import type { CommonProps } from '@platform/ui/@types/common'
 import type { ReactNode, ElementType } from 'react'
 
 export interface IconTextProps extends CommonProps {

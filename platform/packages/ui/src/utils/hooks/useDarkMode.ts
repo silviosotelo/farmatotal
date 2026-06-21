@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
-import { THEME_ENUM } from '@ft/ui/theme/theme.constant'
-import { useThemeStore } from '@ft/ui/store/themeStore'
-import type { Mode } from '@ft/ui/@types/theme'
+import { THEME_ENUM } from '@platform/ui/theme/theme.constant'
+import { useThemeStore } from '@platform/ui/store/themeStore'
+import type { Mode } from '@platform/ui/@types/theme'
 
 function useDarkMode(): [
     isEnabled: boolean,

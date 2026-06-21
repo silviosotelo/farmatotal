@@ -11,6 +11,7 @@ import {
     apiUpdateBranch,
     type Branch,
 } from '@/services/BranchService'
+import { useTenantFlags } from '@/services/features'
 import useSWR from 'swr'
 
 type BranchForm = {
@@ -43,6 +44,7 @@ const emptyForm: BranchForm = {
 }
 
 const Branches = () => {
+    const flags = useTenantFlags()
     const { data, isLoading, mutate } = useSWR(['/branches'], () => apiGetBranches(), {
         revalidateOnFocus: false,
     })
@@ -106,6 +108,15 @@ const Branches = () => {
         } finally {
             setBusyId(null)
         }
+    }
+
+    if (!flags.branches) {
+        return (
+            <Card>
+                <h3 className="mb-1">Sucursales</h3>
+                <p>Función no habilitada para esta tienda.</p>
+            </Card>
+        )
     }
 
     return (

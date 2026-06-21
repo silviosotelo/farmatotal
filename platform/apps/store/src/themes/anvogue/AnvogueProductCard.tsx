@@ -1,14 +1,18 @@
+"use client";
+
 import Link from "next/link";
 import { Eye } from "lucide-react";
 import type { Product } from "@/types";
-import { formatGs } from "@/lib/format";
+import { useMoney } from "@/components/providers/CurrencyContext";
 import { StockBadge } from "@/themes/CatalogStock";
 
 /**
  * Tarjeta de producto del tema Anvogue (fashion): imagen cuadrada sobre surface,
- * badge de descuento (rojo), título sobrio y precio con tachado. Server component.
+ * badge de descuento (rojo), título sobrio y precio con tachado. Componente cliente:
+ * se renderiza dentro de carruseles/tabs cliente y usa la moneda del tenant vía useMoney.
  */
 export function AnvogueProductCard({ product }: { product: Product }) {
+  const money = useMoney();
   const href = `/productos/${product.slug}/`;
   const hasDiscount = product.priceNormal > product.priceWeb && product.discount > 0;
 
@@ -45,11 +49,11 @@ export function AnvogueProductCard({ product }: { product: Product }) {
         </Link>
         <div className="mt-1.5 flex items-center gap-2">
           <span className="text-base font-semibold text-[#1F1F1F]">
-            {formatGs(product.priceWeb)}
+            {money(product.priceWeb)}
           </span>
           {hasDiscount && (
             <span className="text-sm text-[#A0A0A0] line-through">
-              {formatGs(product.priceNormal)}
+              {money(product.priceNormal)}
             </span>
           )}
         </div>

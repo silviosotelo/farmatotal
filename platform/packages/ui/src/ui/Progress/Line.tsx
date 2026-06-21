@@ -1,4 +1,4 @@
-import classNames from '@ft/ui/utils/classNames'
+import classNames from '@platform/ui/utils/classNames'
 import { SIZES } from '../utils/constants'
 import type { CommonProps } from '../@types/common'
 

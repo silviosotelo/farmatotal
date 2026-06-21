@@ -1,9 +1,9 @@
 import { sql } from "drizzle-orm";
 import { boolean, jsonb, text, timestamp, uuid, varchar, index } from "drizzle-orm/pg-core";
-import { farmatotalApp } from "./_pgSchema";
+import { appSchema } from "./_pgSchema";
 
 /** Plantillas de mensajes de WhatsApp (con variables {{var}}). */
-export const waTemplates = farmatotalApp.table("wa_templates", {
+export const waTemplates = appSchema.table("wa_templates", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 120 }).notNull(),
   category: varchar("category", { length: 60 }),
@@ -14,7 +14,7 @@ export const waTemplates = farmatotalApp.table("wa_templates", {
 });
 
 /** Workflows: disparador → plantilla (ej. "pedido confirmado" → template X). */
-export const waWorkflows = farmatotalApp.table("wa_workflows", {
+export const waWorkflows = appSchema.table("wa_workflows", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 120 }).notNull(),
   trigger: varchar("trigger", { length: 60 }).notNull(),
@@ -25,7 +25,7 @@ export const waWorkflows = farmatotalApp.table("wa_workflows", {
 });
 
 /** Log de mensajes enviados. */
-export const waLog = farmatotalApp.table(
+export const waLog = appSchema.table(
   "wa_log",
   {
     id: uuid("id").primaryKey().defaultRandom(),

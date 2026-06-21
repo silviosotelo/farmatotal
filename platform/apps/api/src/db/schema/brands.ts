@@ -1,11 +1,15 @@
 import { sql } from "drizzle-orm";
 import { boolean, text, timestamp, uuid, varchar, unique } from "drizzle-orm/pg-core";
-import { farmatotalApp } from "./_pgSchema";
+import { appSchema } from "./_pgSchema";
+import { tenants } from "./tenants";
 
-export const brands = farmatotalApp.table(
+export const brands = appSchema.table(
   "brands",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
     slug: varchar("slug", { length: 200 }).notNull(),
     name: varchar("name", { length: 200 }).notNull(),
     logoUrl: text("logo_url"),
@@ -18,7 +22,7 @@ export const brands = farmatotalApp.table(
       .default(sql`now()`),
   },
   (t) => ({
-    slugIdx: unique("brands_slug_uk").on(t.slug),
-    nameIdx: unique("brands_name_uk").on(t.name),
+    slugIdx: unique("brands_slug_uk").on(t.tenantId, t.slug),
+    nameIdx: unique("brands_name_uk").on(t.tenantId, t.name),
   }),
 );

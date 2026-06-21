@@ -5,6 +5,7 @@ import Button from '@/components/ui/Button'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
 import EmptyState from '@/components/shared/EmptyState'
+import { useTenantFlags } from '@/services/features'
 import {
     apiSearchProducts,
     apiGetProductInventory,
@@ -31,6 +32,7 @@ function parseInventoryCsv(text: string): { sku: string; branchCode: string; sto
 }
 
 const Inventory = () => {
+    const flags = useTenantFlags()
     const [q, setQ] = useState('')
     const [results, setResults] = useState<ProductLite[]>([])
     const [selected, setSelected] = useState<ProductLite | null>(null)
@@ -84,6 +86,15 @@ const Inventory = () => {
             setImporting(false)
             if (fileRef.current) fileRef.current.value = ''
         }
+    }
+
+    if (!flags.inventory) {
+        return (
+            <Card>
+                <h3 className="mb-1">Inventario</h3>
+                <p>Función no habilitada para esta tienda.</p>
+            </Card>
+        )
     }
 
     return (

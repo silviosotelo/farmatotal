@@ -1,4 +1,4 @@
-import classNames from '@ft/ui/utils/classNames'
+import classNames from '@platform/ui/utils/classNames'
 import ToolButtonBold from './toolButtons/ToolButtonBold'
 import ToolButtonItalic from './toolButtons/ToolButtonItalic'
 import ToolButtonStrike from './toolButtons/ToolButtonStrike'

@@ -3,9 +3,9 @@
  * Siembra sucursales reales de Farmatotal + cupones demo + inventario base.
  * Sucursales tomadas de farmatotal.com.py/sucursales (Asunción y Gran Asunción).
  */
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db, pool } from "../db/client";
-import { branches, coupons, inventory, products } from "../db/schema";
+import { branches, coupons, inventory, products, tenants } from "../db/schema";
 
 const SUCURSALES = [
   { code: "CASA-CENTRAL", name: "Casa Central - Eusebio Ayala", address: "Av. Eusebio Ayala c/ Tte. Zotti", city: "Asunción", phone: "021 555 000" },
@@ -25,12 +25,21 @@ const CUPONES = [
 ];
 
 async function main() {
+  const tenantSlug = process.env.DEFAULT_TENANT ?? "default";
+  const [tenant] = await db
+    .select({ id: tenants.id })
+    .from(tenants)
+    .where(eq(tenants.slug, tenantSlug))
+    .limit(1);
+  if (!tenant) throw new Error(`Tenant '${tenantSlug}' no existe`);
+  const tenantId = tenant.id;
+
   console.log("[seed] sucursales…");
   const branchIds: string[] = [];
   for (const s of SUCURSALES) {
     const [row] = await db
       .insert(branches)
-      .values({ ...s, pickupEnabled: true, deliveryEnabled: s.city === "Asunción" })
+      .values({ ...s, tenantId, pickupEnabled: true, deliveryEnabled: s.city === "Asunción" })
       .onConflictDoUpdate({ target: branches.code, set: { name: s.name, address: s.address, updatedAt: new Date() } })
       .returning({ id: branches.id });
     if (row) branchIds.push(row.id);
@@ -39,7 +48,7 @@ async function main() {
 
   console.log("[seed] cupones…");
   for (const c of CUPONES) {
-    await db.insert(coupons).values(c).onConflictDoUpdate({ target: coupons.code, set: { value: c.value, updatedAt: new Date() } });
+    await db.insert(coupons).values({ ...c, tenantId }).onConflictDoUpdate({ target: coupons.code, set: { value: c.value, updatedAt: new Date() } });
   }
   console.log(`[seed] ${CUPONES.length} cupones`);
 
@@ -58,7 +67,7 @@ async function main() {
       total += stock;
       await db
         .insert(inventory)
-        .values({ productId: p.id, branchId: targets[j]!, stock })
+        .values({ tenantId, productId: p.id, branchId: targets[j]!, stock })
         .onConflictDoUpdate({
           target: [inventory.productId, inventory.branchId],
           set: { stock, updatedAt: new Date() },

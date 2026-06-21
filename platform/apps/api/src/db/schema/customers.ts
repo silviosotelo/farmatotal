@@ -7,12 +7,12 @@ import {
   index,
   unique,
 } from "drizzle-orm/pg-core";
-import { farmatotalApp } from "./_pgSchema";
+import { appSchema } from "./_pgSchema";
 
 export const docType = ["CI", "RUC"] as const;
 export type DocType = (typeof docType)[number];
 
-export const customers = farmatotalApp.table(
+export const customers = appSchema.table(
   "customers",
   {
     id: uuid("id").primaryKey().defaultRandom(),

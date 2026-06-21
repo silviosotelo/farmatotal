@@ -9,14 +9,14 @@ import {
   varchar,
   index,
 } from "drizzle-orm/pg-core";
-import { farmatotalApp } from "./_pgSchema";
+import { appSchema } from "./_pgSchema";
 
 /**
  * Banners del home — replican la lógica del WP de Farmatotal:
  * cada slide se programa por día de la semana (days) y tiene imagen para
  * desktop y/o mobile. El endpoint /slides/today filtra por el día actual.
  */
-export const slides = farmatotalApp.table(
+export const slides = appSchema.table(
   "slides",
   {
     id: uuid("id").primaryKey().defaultRandom(),

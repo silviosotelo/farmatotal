@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import { LayoutType } from '@ft/ui/@types/theme'
+import { LayoutType } from '@platform/ui/@types/theme'
 import type { ComponentType, ReactNode } from 'react'
 
 // Tipos laxos del feature "reassemble": la implementación concreta de PageContainer

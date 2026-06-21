@@ -1,11 +1,11 @@
 import { sql } from "drizzle-orm";
 import { boolean, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
-import { farmatotalApp } from "./_pgSchema";
+import { appSchema } from "./_pgSchema";
 
 export const roles = ["admin", "editor", "viewer", "customer"] as const;
 export type Role = (typeof roles)[number];
 
-export const users = farmatotalApp.table("users", {
+export const users = appSchema.table("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: varchar("email", { length: 254 }).notNull().unique(),
   name: varchar("name", { length: 120 }),
@@ -19,7 +19,7 @@ export const users = farmatotalApp.table("users", {
     .default(sql`now()`),
 });
 
-export const refreshTokens = farmatotalApp.table("refresh_tokens", {
+export const refreshTokens = appSchema.table("refresh_tokens", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")
     .notNull()

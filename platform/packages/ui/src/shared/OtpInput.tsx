@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
-import Input from '@ft/ui/ui/Input'
-import classNames from '@ft/ui/utils/classNames'
+import Input from '@platform/ui/ui/Input'
+import classNames from '@platform/ui/utils/classNames'
 import type { ChangeEvent, KeyboardEvent, ClipboardEvent } from 'react'
 
 interface OTPInputProps {

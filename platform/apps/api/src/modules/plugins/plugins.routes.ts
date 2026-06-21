@@ -1,8 +1,9 @@
-import type { FastifyInstance } from "fastify";
-import { eq } from "drizzle-orm";
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
 import { settings } from "../../db/schema";
+import { tid } from "../../plugins/tenant";
 import { MODULES } from "../system/registry.js";
 
 /**
@@ -101,8 +102,12 @@ const PLUGIN_DEFS: Record<string, FieldDef[]> = {
 
 const STORE_KEY = (k: string) => `plugin_${k}`;
 
-async function readVals(key: string): Promise<Record<string, unknown>> {
-  const [row] = await db.select().from(settings).where(eq(settings.key, STORE_KEY(key))).limit(1);
+async function readVals(req: FastifyRequest, key: string): Promise<Record<string, unknown>> {
+  const [row] = await db
+    .select()
+    .from(settings)
+    .where(and(eq(settings.tenantId, tid(req)), eq(settings.key, STORE_KEY(key))))
+    .limit(1);
   return (row?.value as Record<string, unknown>) ?? {};
 }
 
@@ -111,7 +116,7 @@ export async function pluginRoutes(app: FastifyInstance) {
     const mod = MODULES.find((m) => m.key === req.params.key && m.kind === "plugin");
     if (!mod) return reply.notFound("Plugin no encontrado");
     const fields = PLUGIN_DEFS[mod.key] ?? [];
-    const values = await readVals(mod.key);
+    const values = await readVals(req, mod.key);
     return reply.send({
       key: mod.key,
       name: mod.name,
@@ -132,8 +137,11 @@ export async function pluginRoutes(app: FastifyInstance) {
       const value = { enabled: req.body.enabled ?? false, ...req.body.values };
       await db
         .insert(settings)
-        .values({ key: STORE_KEY(mod.key), value })
-        .onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: new Date() } });
+        .values({ tenantId: tid(req), key: STORE_KEY(mod.key), value })
+        .onConflictDoUpdate({
+          target: [settings.tenantId, settings.key],
+          set: { value, updatedAt: new Date() },
+        });
       return reply.send({ ok: true, key: mod.key });
     },
   );

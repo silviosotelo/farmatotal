@@ -1,28 +1,36 @@
-import type { FastifyInstance } from "fastify";
-import { eq } from "drizzle-orm";
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
 import { settings } from "../../db/schema";
+import { tid } from "../../plugins/tenant";
 import { MODULES } from "./registry.js";
 
 const STATE_KEY = "modules_state";
 
-async function readState(): Promise<Record<string, boolean>> {
-  const [row] = await db.select().from(settings).where(eq(settings.key, STATE_KEY)).limit(1);
+async function readState(req: FastifyRequest): Promise<Record<string, boolean>> {
+  const [row] = await db
+    .select()
+    .from(settings)
+    .where(and(eq(settings.tenantId, tid(req)), eq(settings.key, STATE_KEY)))
+    .limit(1);
   return (row?.value as Record<string, boolean>) ?? {};
 }
 
-async function writeState(state: Record<string, boolean>) {
+async function writeState(req: FastifyRequest, state: Record<string, boolean>) {
   await db
     .insert(settings)
-    .values({ key: STATE_KEY, value: state })
-    .onConflictDoUpdate({ target: settings.key, set: { value: state, updatedAt: new Date() } });
+    .values({ tenantId: tid(req), key: STATE_KEY, value: state })
+    .onConflictDoUpdate({
+      target: [settings.tenantId, settings.key],
+      set: { value: state, updatedAt: new Date() },
+    });
 }
 
 export async function moduleRoutes(app: FastifyInstance) {
   // Lista de módulos instalados + estado habilitado.
-  app.get("/modules", async () => {
-    const state = await readState();
+  app.get("/modules", async (req) => {
+    const state = await readState(req);
     return {
       data: MODULES.map((m) => ({
         ...m,
@@ -41,9 +49,9 @@ export async function moduleRoutes(app: FastifyInstance) {
       const mod = MODULES.find((m) => m.key === req.params.key);
       if (!mod) return reply.notFound("Módulo no encontrado");
       if (mod.kind === "native") return reply.badRequest("Un módulo nativo no se puede deshabilitar");
-      const state = await readState();
+      const state = await readState(req);
       state[mod.key] = req.body.enabled;
-      await writeState(state);
+      await writeState(req, state);
       return reply.send({ key: mod.key, enabled: req.body.enabled });
     },
   );
@@ -52,7 +60,7 @@ export async function moduleRoutes(app: FastifyInstance) {
   app.get("/modules/:key/status", { schema: { params: z.object({ key: z.string() }) } }, async (req) => {
     const mod = MODULES.find((m) => m.key === req.params.key);
     if (!mod) return { key: req.params.key, installed: false, enabled: false };
-    const state = await readState();
+    const state = await readState(req);
     return { key: mod.key, installed: true, enabled: mod.kind === "native" ? true : (state[mod.key] ?? true) };
   });
 }

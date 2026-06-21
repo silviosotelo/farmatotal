@@ -62,6 +62,14 @@ export type ProductMetaFields = {
     featured?: boolean
     onPromo?: boolean
     promoCode?: string
+    /** Unidad de medida de venta (ej. "unidad", "kg", "g", "l"). */
+    unit?: string
+    /** Incremento de cantidad para esta unidad (ej. 1, 0.25, 0.5). */
+    unitStep?: number | string
+    /** Tipo de producto (white-label): physical | digital | service. */
+    productType?: 'physical' | 'digital' | 'service'
+    /** Ficha técnica flexible: pares etiqueta/valor. */
+    attributes?: { label: string; value: string }[]
 }
 
 export type ProductFormSchema = GeneralFields &

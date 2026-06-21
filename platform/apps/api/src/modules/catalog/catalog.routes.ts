@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import {
   brandDTO,
   brandInput,
@@ -10,10 +10,11 @@ import {
   productInput,
   productListQuery,
   productListResponse,
-} from "@ft/shared-types";
+} from "@platform/shared-types";
 import { z } from "zod";
 import { db } from "../../db/client";
 import { brands, categories, productImages, products } from "../../db/schema";
+import { tid } from "../../plugins/tenant";
 
 const idParam = z.object({ id: z.string().uuid() });
 
@@ -31,8 +32,10 @@ export async function catalogRoutes(app: FastifyInstance) {
     },
     async (req) => {
       const { parentId } = req.query as { parentId?: string };
-      const where =
-        parentId === "null" ? isNull(categories.parentId) : parentId ? eq(categories.parentId, parentId) : undefined;
+      const where = and(
+        eq(categories.tenantId, tid(req)),
+        parentId === "null" ? isNull(categories.parentId) : parentId ? eq(categories.parentId, parentId) : undefined,
+      );
       const rows = await db
         .select()
         .from(categories)
@@ -49,8 +52,12 @@ export async function catalogRoutes(app: FastifyInstance) {
   );
 
   // Árbol jerárquico de categorías (departamentos → subcategorías).
-  app.get("/catalog/categories/tree", async () => {
-    const rows = await db.select().from(categories).orderBy(asc(categories.position), asc(categories.name));
+  app.get("/catalog/categories/tree", async (req) => {
+    const rows = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.tenantId, tid(req)))
+      .orderBy(asc(categories.position), asc(categories.name));
     type Node = ReturnType<typeof toCategoryDTO> & { children: Node[] };
     const byId = new Map<string, Node>(rows.map((r) => [r.id, { ...toCategoryDTO(r), children: [] }]));
     const roots: Node[] = [];
@@ -66,7 +73,7 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/categories",
     { schema: { body: categoryInput, response: { 200: categoryDTO } } },
     async (req, reply) => {
-      const [row] = await db.insert(categories).values(req.body).returning();
+      const [row] = await db.insert(categories).values({ ...req.body, tenantId: tid(req) }).returning();
       return reply.send(toCategoryDTO(row!));
     },
   );
@@ -98,8 +105,8 @@ export async function catalogRoutes(app: FastifyInstance) {
   app.get(
     "/catalog/brands",
     { schema: { response: { 200: paginated(brandDTO) } } },
-    async () => {
-      const rows = await db.select().from(brands).orderBy(asc(brands.name));
+    async (req) => {
+      const rows = await db.select().from(brands).where(eq(brands.tenantId, tid(req))).orderBy(asc(brands.name));
       return {
         data: rows.map(toBrandDTO),
         page: 1,
@@ -114,7 +121,7 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/brands",
     { schema: { body: brandInput, response: { 200: brandDTO } } },
     async (req, reply) => {
-      const [row] = await db.insert(brands).values(req.body).returning();
+      const [row] = await db.insert(brands).values({ ...req.body, tenantId: tid(req) }).returning();
       return reply.send(toBrandDTO(row!));
     },
   );
@@ -124,8 +131,81 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/products",
     { schema: { querystring: productListQuery, response: { 200: productListResponse } } },
     async (req) => {
-      const { page, perPage, q, categoryId, brandId, status, featured, onPromo, sort } = req.query;
+      const {
+        page,
+        perPage,
+        offset,
+        q,
+        categoryId,
+        brandId,
+        category,
+        brand,
+        ids: idsCsv,
+        status,
+        featured,
+        onPromo,
+        inStock,
+        priceMin,
+        priceMax,
+        sort,
+      } = req.query;
+
+      // Filtros por slug (los emite el constructor). Se resuelven a id.
+      let catId = categoryId;
+      if (!catId && category) {
+        const [c] = await db
+          .select({ id: categories.id })
+          .from(categories)
+          .where(and(eq(categories.tenantId, tid(req)), eq(categories.slug, category)))
+          .limit(1);
+        catId = c?.id;
+      }
+      let brId = brandId;
+      if (!brId && brand) {
+        const [b] = await db
+          .select({ id: brands.id })
+          .from(brands)
+          .where(and(eq(brands.tenantId, tid(req)), eq(brands.slug, brand)))
+          .limit(1);
+        brId = b?.id;
+      }
+
+      // Al filtrar por categoría, incluir sus descendientes: elegir un
+      // departamento (top-level) trae los productos de todas sus subcategorías.
+      let catIds: string[] | undefined;
+      if (catId) {
+        const all = await db
+          .select({ id: categories.id, parentId: categories.parentId })
+          .from(categories)
+          .where(eq(categories.tenantId, tid(req)));
+        const childrenOf = new Map<string, string[]>();
+        for (const c of all) {
+          if (c.parentId) {
+            const arr = childrenOf.get(c.parentId) ?? [];
+            arr.push(c.id);
+            childrenOf.set(c.parentId, arr);
+          }
+        }
+        const acc = [catId];
+        const stack = [catId];
+        while (stack.length) {
+          const cur = stack.pop()!;
+          for (const ch of childrenOf.get(cur) ?? []) {
+            acc.push(ch);
+            stack.push(ch);
+          }
+        }
+        catIds = acc;
+      }
+
+      // Selección manual (Elementor "Manual selection"): ids separados por coma.
+      const manualIds = (idsCsv || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
       const where = and(
+        eq(products.tenantId, tid(req)),
         q
           ? or(
               ilike(products.title, `%${q}%`),
@@ -133,11 +213,15 @@ export async function catalogRoutes(app: FastifyInstance) {
               ilike(products.codInterno, `%${q}%`),
             )
           : undefined,
-        categoryId ? eq(products.categoryId, categoryId) : undefined,
-        brandId ? eq(products.brandId, brandId) : undefined,
+        manualIds.length ? inArray(products.id, manualIds) : undefined,
+        catIds ? inArray(products.categoryId, catIds) : undefined,
+        brId ? eq(products.brandId, brId) : undefined,
         status ? eq(products.status, status) : undefined,
         featured !== undefined ? eq(products.featured, featured) : undefined,
         onPromo !== undefined ? eq(products.onPromo, onPromo) : undefined,
+        inStock ? gt(products.stockCached, 0) : undefined,
+        priceMin !== undefined ? gte(products.priceWeb, priceMin) : undefined,
+        priceMax !== undefined ? lte(products.priceWeb, priceMax) : undefined,
       );
 
       const [{ count } = { count: 0 }] = await db
@@ -151,22 +235,27 @@ export async function catalogRoutes(app: FastifyInstance) {
             return asc(products.createdAt);
           case "title:asc":
             return asc(products.title);
+          case "title:desc":
+            return desc(products.title);
           case "priceWeb:asc":
             return asc(products.priceWeb);
           case "priceWeb:desc":
             return desc(products.priceWeb);
+          case "random":
+            return sql`random()`;
           default:
             return desc(products.createdAt);
         }
       })();
 
+      const skip = offset ?? (page - 1) * perPage;
       const rows = await db
         .select()
         .from(products)
         .where(where)
         .orderBy(orderBy)
         .limit(perPage)
-        .offset((page - 1) * perPage);
+        .offset(skip);
 
       // Adjuntar la imagen primaria de cada producto al listado (1 query).
       const ids = rows.map((r) => r.id);
@@ -200,7 +289,11 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/products/:id",
     { schema: { params: idParam, response: { 200: productDTO } } },
     async (req, reply) => {
-      const [p] = await db.select().from(products).where(eq(products.id, req.params.id)).limit(1);
+      const [p] = await db
+        .select()
+        .from(products)
+        .where(and(eq(products.tenantId, tid(req)), eq(products.id, req.params.id)))
+        .limit(1);
       if (!p) return reply.notFound();
       const imgs = await db
         .select()
@@ -217,7 +310,11 @@ export async function catalogRoutes(app: FastifyInstance) {
       schema: { params: z.object({ slug: z.string() }), response: { 200: productDTO } },
     },
     async (req, reply) => {
-      const [p] = await db.select().from(products).where(eq(products.slug, req.params.slug)).limit(1);
+      const [p] = await db
+        .select()
+        .from(products)
+        .where(and(eq(products.tenantId, tid(req)), eq(products.slug, req.params.slug)))
+        .limit(1);
       if (!p) return reply.notFound();
       const imgs = await db
         .select()
@@ -232,7 +329,7 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/products",
     { schema: { body: productInput, response: { 200: productDTO } } },
     async (req, reply) => {
-      const [row] = await db.insert(products).values(req.body).returning();
+      const [row] = await db.insert(products).values({ ...req.body, tenantId: tid(req) }).returning();
       return reply.send(toProductDTO(row!));
     },
   );
@@ -244,7 +341,7 @@ export async function catalogRoutes(app: FastifyInstance) {
       const [row] = await db
         .update(products)
         .set({ ...req.body, updatedAt: new Date() })
-        .where(eq(products.id, req.params.id))
+        .where(and(eq(products.tenantId, tid(req)), eq(products.id, req.params.id)))
         .returning();
       if (!row) return reply.notFound();
       return reply.send(toProductDTO(row));
@@ -255,7 +352,7 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/products/:id",
     { schema: { params: idParam } },
     async (req, reply) => {
-      await db.delete(products).where(eq(products.id, req.params.id));
+      await db.delete(products).where(and(eq(products.tenantId, tid(req)), eq(products.id, req.params.id)));
       return reply.send({ ok: true });
     },
   );
@@ -298,11 +395,15 @@ function toProductDTO(r: typeof products.$inferSelect) {
     categoryId: r.categoryId ?? null,
     priceNormal: r.priceNormal,
     priceWeb: r.priceWeb,
+    unit: r.unit,
+    unitStep: r.unitStep,
     onPromo: r.onPromo,
     promoCode: r.promoCode ?? null,
     controlled: r.controlled,
     featured: r.featured,
     status: r.status,
+    productType: r.productType,
+    attributes: r.attributes ?? null,
     stockCached: r.stockCached,
     custom: r.custom ?? null,
     seo: r.seo ?? null,

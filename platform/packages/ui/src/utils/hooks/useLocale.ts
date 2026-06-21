@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import i18n from 'i18next'
-import { useLocaleStore } from '@ft/ui/store/localeStore'
+import { useLocaleStore } from '@platform/ui/store/localeStore'
 
 const useLocale = () => {
     const currentLang = useLocaleStore((state) => state.currentLang)

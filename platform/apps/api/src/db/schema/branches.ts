@@ -12,8 +12,9 @@ import {
   index,
   unique,
 } from "drizzle-orm/pg-core";
-import { farmatotalApp } from "./_pgSchema";
+import { appSchema } from "./_pgSchema";
 import { products } from "./products";
+import { tenants } from "./tenants";
 
 export type BranchSchedule = {
   weekday: number; // 0=domingo
@@ -21,10 +22,13 @@ export type BranchSchedule = {
   close: string;  // "22:00"
 }[];
 
-export const branches = farmatotalApp.table(
+export const branches = appSchema.table(
   "branches",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
     code: varchar("code", { length: 40 }).notNull(),
     /** Código de sucursal en el ERP (STK_SUCURSAL) para stock en vivo. */
     erpCode: varchar("erp_code", { length: 20 }),
@@ -44,7 +48,8 @@ export const branches = farmatotalApp.table(
       .default(sql`now()`),
   },
   (t) => ({
-    codeUk: unique("branches_code_uk").on(t.code),
+    codeUk: unique("branches_code_uk").on(t.tenantId, t.code),
+    tenantIdx: index("branches_tenant_idx").on(t.tenantId),
   }),
 );
 
@@ -52,7 +57,7 @@ export const branches = farmatotalApp.table(
  * Inventario por (producto, sucursal). Fuente de verdad del stock.
  * `products.stockCached` se calcula sumando esta tabla.
  */
-export const inventory = farmatotalApp.table(
+export const inventory = appSchema.table(
   "inventory",
   {
     productId: uuid("product_id")
@@ -61,6 +66,9 @@ export const inventory = farmatotalApp.table(
     branchId: uuid("branch_id")
       .notNull()
       .references(() => branches.id, { onDelete: "cascade" }),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
     stock: integer("stock").notNull().default(0),
     reserved: integer("reserved").notNull().default(0),
     updatedAt: timestamp("updated_at", { withTimezone: true })

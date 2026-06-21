@@ -1,8 +1,22 @@
 import { and, eq, lte, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { emailLog, emailQueue, emailTemplates, settings } from "../db/schema/index.js";
+import { emailLog, emailQueue, emailTemplates, settings, tenants } from "../db/schema/index.js";
 
 const SETTINGS_KEY = "mod_mailer";
+
+/**
+ * NOTA multitenant: la config `mod_mailer` vive en `settings` (scopeada por tenant),
+ * pero las tablas `email_queue` / `email_templates` / `email_log` son GLOBALES (no
+ * tienen tenant_id todavía). Por eso el worker procesa una cola única y usa la config
+ * del tenant por defecto. Hacer la cola multitenant requiere migración de schema
+ * (agregar tenant_id a esas 3 tablas) y threadear el tenant en cada `enqueueEmail`.
+ */
+async function defaultTenantId(): Promise<string> {
+  const slug = process.env.DEFAULT_TENANT ?? "default";
+  const [t] = await db.select({ id: tenants.id }).from(tenants).where(eq(tenants.slug, slug)).limit(1);
+  if (!t) throw new Error(`Tenant '${slug}' no existe (mailer)`);
+  return t.id;
+}
 
 export type MailerConfig = {
   provider: "log" | "sendgrid" | "smtp";
@@ -14,8 +28,12 @@ export type MailerConfig = {
 
 const DEFAULTS: MailerConfig = { provider: "log", fromName: "Tienda", fromEmail: "no-reply@localhost" };
 
-export async function getMailerConfig(): Promise<MailerConfig> {
-  const [row] = await db.select().from(settings).where(eq(settings.key, SETTINGS_KEY)).limit(1);
+export async function getMailerConfig(tenantId: string): Promise<MailerConfig> {
+  const [row] = await db
+    .select()
+    .from(settings)
+    .where(and(eq(settings.tenantId, tenantId), eq(settings.key, SETTINGS_KEY)))
+    .limit(1);
   return { ...DEFAULTS, ...((row?.value as Partial<MailerConfig>) ?? {}) };
 }
 
@@ -119,7 +137,8 @@ const MAX_ATTEMPTS = 3;
 
 /** Procesa hasta `limit` emails pendientes. Devuelve cuántos envió/falló. */
 export async function processQueue(limit = 10): Promise<{ sent: number; failed: number }> {
-  const cfg = await getMailerConfig();
+  // Cola global → usa la config del tenant por defecto (ver NOTA arriba).
+  const cfg = await getMailerConfig(await defaultTenantId());
   // Comparar contra now() de la DB (evita skew de reloj app↔DB).
   const pending = await db
     .select()

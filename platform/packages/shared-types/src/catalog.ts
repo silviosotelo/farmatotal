@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 export const productStatusEnum = z.enum(["draft", "published", "archived"]);
+export const productTypeEnum = z.enum(["physical", "digital", "service"]);
+export const productAttributeSchema = z.object({ label: z.string(), value: z.string() });
 
 export const categoryDTO = z.object({
   id: z.string().uuid(),
@@ -67,11 +69,15 @@ export const productDTO = z.object({
   categoryId: z.string().uuid().nullable(),
   priceNormal: z.number().int(),
   priceWeb: z.number().int(),
+  unit: z.string().default("unidad"),
+  unitStep: z.number().positive().default(1),
   onPromo: z.boolean(),
   promoCode: z.string().nullable(),
   controlled: z.boolean(),
   featured: z.boolean(),
   status: productStatusEnum,
+  productType: productTypeEnum.default("physical"),
+  attributes: z.array(productAttributeSchema).nullable().default(null),
   stockCached: z.number().int(),
   custom: z.record(z.string(), z.unknown()).nullable(),
   seo: z.object({ title: z.string().optional(), description: z.string().optional() }).nullable(),
@@ -96,11 +102,15 @@ export const productInput = z.object({
   categoryId: z.string().uuid().nullable().optional(),
   priceNormal: z.number().int().nonnegative(),
   priceWeb: z.number().int().nonnegative(),
+  unit: z.string().max(20).optional(),
+  unitStep: z.number().positive().optional(),
   onPromo: z.boolean().optional(),
   promoCode: z.string().nullable().optional(),
   controlled: z.boolean().optional(),
   featured: z.boolean().optional(),
   status: productStatusEnum.optional(),
+  productType: productTypeEnum.optional(),
+  attributes: z.array(productAttributeSchema).nullable().optional(),
   stockCached: z.number().int().optional(),
   custom: z.record(z.string(), z.unknown()).nullable().optional(),
   seo: z.object({ title: z.string().optional(), description: z.string().optional() }).optional(),
@@ -113,14 +123,36 @@ export type ProductInput = z.infer<typeof productInput>;
 export const productListQuery = z.object({
   page: z.coerce.number().int().min(1).default(1),
   perPage: z.coerce.number().int().min(1).max(100).default(20),
+  /** Salto de registros (Elementor "Offset"). */
+  offset: z.coerce.number().int().min(0).optional(),
+  /** Búsqueda libre (título / sku / cód. interno). */
   q: z.string().optional(),
+  /** Filtros por id (uso interno/admin). */
   categoryId: z.string().uuid().optional(),
   brandId: z.string().uuid().optional(),
+  /** Filtros por slug (los emite el constructor; incluyen descendientes en categoría). */
+  category: z.string().optional(),
+  brand: z.string().optional(),
+  /** Selección manual: ids de producto separados por coma (Elementor "Manual selection"). */
+  ids: z.string().optional(),
   status: productStatusEnum.optional(),
   featured: z.coerce.boolean().optional(),
   onPromo: z.coerce.boolean().optional(),
+  /** Solo con stock (stockCached > 0). */
+  inStock: z.coerce.boolean().optional(),
+  /** Rango de precio web (Gs). */
+  priceMin: z.coerce.number().int().min(0).optional(),
+  priceMax: z.coerce.number().int().min(0).optional(),
   sort: z
-    .enum(["createdAt:desc", "createdAt:asc", "title:asc", "priceWeb:asc", "priceWeb:desc"])
+    .enum([
+      "createdAt:desc",
+      "createdAt:asc",
+      "title:asc",
+      "title:desc",
+      "priceWeb:asc",
+      "priceWeb:desc",
+      "random",
+    ])
     .default("createdAt:desc"),
 });
 export type ProductListQuery = z.infer<typeof productListQuery>;

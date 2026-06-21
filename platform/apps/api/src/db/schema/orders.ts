@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  doublePrecision,
   integer,
   jsonb,
   text,
@@ -9,10 +10,11 @@ import {
   index,
   unique,
 } from "drizzle-orm/pg-core";
-import { farmatotalApp } from "./_pgSchema";
+import { appSchema } from "./_pgSchema";
 import { branches } from "./branches";
 import { products } from "./products";
 import { users } from "./users";
+import { tenants } from "./tenants";
 
 export const orderStatus = [
   "pending",
@@ -37,10 +39,13 @@ export type OrderEvent = {
   amount?: number;
 };
 
-export const orders = farmatotalApp.table(
+export const orders = appSchema.table(
   "orders",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
     number: varchar("number", { length: 30 }).notNull(),
     userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
 
@@ -57,9 +62,19 @@ export const orders = farmatotalApp.table(
     paymentMethod: varchar("payment_method", { length: 20, enum: paymentMethod }).notNull(),
     status: varchar("status", { length: 20, enum: orderStatus }).notNull().default("pending"),
 
+    /** Moneda ISO 4217 de la orden (snapshot al checkout; no se re-formatea con
+     * la config viva del store). Montos en la unidad MENOR de esta moneda. */
+    currency: varchar("currency", { length: 3 }).notNull().default("PYG"),
     subtotal: integer("subtotal").notNull().default(0),
     discount: integer("discount").notNull().default(0),
     shippingCost: integer("shipping_cost").notNull().default(0),
+    /** Nombre del método de envío aplicado (snapshot para el comprobante). */
+    shippingMethodName: varchar("shipping_method_name", { length: 120 }),
+    /** Impuesto total (snapshot). Si la config es "precios incluyen impuesto" es
+     * informativo (ya está en el total); si no, está sumado al total. */
+    taxTotal: integer("tax_total").notNull().default(0),
+    taxRateName: varchar("tax_rate_name", { length: 60 }),
+    taxRatePercent: doublePrecision("tax_rate_percent").notNull().default(0),
     total: integer("total").notNull().default(0),
 
     couponCode: varchar("coupon_code", { length: 60 }),
@@ -79,7 +94,7 @@ export const orders = farmatotalApp.table(
   }),
 );
 
-export const orderLines = farmatotalApp.table(
+export const orderLines = appSchema.table(
   "order_lines",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -90,7 +105,8 @@ export const orderLines = farmatotalApp.table(
     sku: varchar("sku", { length: 80 }).notNull(),
     title: varchar("title", { length: 300 }).notNull(),
     unitPrice: integer("unit_price").notNull(),
-    quantity: integer("quantity").notNull(),
+    /** Cantidad (doble precisión para soportar decimales: 1.5 kg, 0.25 m, etc.). */
+    quantity: doublePrecision("quantity").notNull(),
     lineTotal: integer("line_total").notNull(),
   },
   (t) => ({

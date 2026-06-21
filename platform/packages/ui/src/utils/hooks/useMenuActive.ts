@@ -2,7 +2,7 @@
 // eslint-disable  @typescript-eslint/no-explicit-any
 import { useMemo } from 'react'
 import isPlainObject from 'lodash/isPlainObject'
-import type { NavigationTree } from '@ft/ui/@types/navigation'
+import type { NavigationTree } from '@platform/ui/@types/navigation'
 
 interface NavInfo extends NavigationTree {
     parentKey?: string

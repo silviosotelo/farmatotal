@@ -1,7 +1,7 @@
-import Input from '@ft/ui/ui/Input'
-import useDebounce from '@ft/ui/utils/hooks/useDebounce'
+import Input from '@platform/ui/ui/Input'
+import useDebounce from '@platform/ui/utils/hooks/useDebounce'
 import type { ChangeEvent, Ref } from 'react'
-import type { InputProps } from '@ft/ui/ui/Input'
+import type { InputProps } from '@platform/ui/ui/Input'
 
 type DebouceInputProps = InputProps & {
     wait?: number

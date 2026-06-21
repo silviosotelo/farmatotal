@@ -11,6 +11,7 @@ import {
 import { loadWebBlocks } from '@chaibuilder/sdk/web-blocks'
 import '@chaibuilder/sdk/styles'
 import { registerCommerceBlocks } from '@/components/chai/blocks'
+import { registerEngineWidgets } from '@/components/chai/engineAdapter'
 import { apiGetPages, apiUpdatePage } from '@/services/CmsService'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
@@ -35,6 +36,7 @@ const PaletteIcon = ({ size = 18 }: { size?: number }) => (
 //    defecto; lo poblamos con dispositivos + undo/redo + guardar, y agregamos el panel de Tema.
 loadWebBlocks()
 registerCommerceBlocks()
+registerEngineWidgets()
 
 function ChaiTopBar() {
     const { savePageAsync, saveState } = useSavePage()
@@ -92,15 +94,19 @@ type SaveArgs = { blocks: ChaiBlock[]; autoSave?: boolean }
  * bloques, el Outline y el panel Settings/Style. Montado dentro del chrome de
  * Ecme, el SDK recorta su top-bar.
  */
+const STORE_URL = (import.meta as any).env?.VITE_STORE_URL || 'http://localhost:3000'
+
 const PageBuilder = () => {
     const { id } = useParams()
     const navigate = useNavigate()
     const [blocks, setBlocks] = useState<ChaiBlock[] | null>(null)
+    const [slug, setSlug] = useState<string>('')
 
     useEffect(() => {
         apiGetPages().then((res) => {
             const page = res.data.find((p) => p.id === id)
             const raw = page?.blocks as unknown
+            setSlug((page?.slug as string) || '')
             setBlocks(Array.isArray(raw) ? (raw as ChaiBlock[]) : [])
         })
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,7 +134,7 @@ const PageBuilder = () => {
 
     return (
         <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: '#fff' }}>
-            <Editor pageId={id} blocks={initialBlocks} onSave={save} />
+            <Editor pageId={id} blocks={initialBlocks} onSave={save} autoSave autoSaveActionsCount={3} />
             <button
                 type="button"
                 onClick={() => navigate('/concepts/cms')}
@@ -150,6 +156,32 @@ const PageBuilder = () => {
             >
                 ← Volver
             </button>
+            {slug && (
+                <a
+                    href={`${STORE_URL}/preview/${slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Ver la página real (render del store: componentes + CSS del template)"
+                    style={{
+                        position: 'fixed',
+                        left: 150,
+                        bottom: 12,
+                        zIndex: 9999,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        padding: '6px 12px',
+                        borderRadius: 8,
+                        border: '1px solid #e5e7eb',
+                        background: '#111827',
+                        color: '#fff',
+                        textDecoration: 'none',
+                        boxShadow: '0 2px 8px rgba(0,0,0,.12)',
+                        cursor: 'pointer',
+                    }}
+                >
+                    Ver página real ↗
+                </a>
+            )}
         </div>
     )
 }

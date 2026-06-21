@@ -43,12 +43,13 @@ const ProducEdit = () => {
                 productCode,
                 taxRate,
                 price,
+                priceNormal,
                 bulkDiscountPrice,
                 costPerItem,
                 imgList,
                 category,
                 brand,
-            } = data
+            } = data as typeof data & { priceNormal?: number | string }
 
             return {
                 name,
@@ -56,6 +57,7 @@ const ProducEdit = () => {
                 productCode,
                 taxRate,
                 price,
+                priceNormal,
                 bulkDiscountPrice,
                 costPerItem,
                 imgList,

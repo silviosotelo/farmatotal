@@ -1,7 +1,7 @@
 import { useState, useImperativeHandle } from 'react'
-import Drawer from '@ft/ui/ui/Drawer'
+import Drawer from '@platform/ui/ui/Drawer'
 import NavToggle from './NavToggle'
-import type { DrawerProps } from '@ft/ui/ui/Drawer'
+import type { DrawerProps } from '@platform/ui/ui/Drawer'
 import type { Ref } from 'react'
 
 export type ToggleDrawerProps = Omit<DrawerProps, 'isOpen'> & {

@@ -1,8 +1,8 @@
-import appConfig from '@ft/ui/configs/app.config'
+import appConfig from '@platform/ui/configs/app.config'
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 import i18n from 'i18next'
-import { dateLocales } from '@ft/ui/locales'
+import { dateLocales } from '@platform/ui/locales'
 import dayjs from 'dayjs'
 
 type LocaleState = {

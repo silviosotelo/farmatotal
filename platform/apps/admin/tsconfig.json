@@ -16,7 +16,7 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
-      "@ft/ui/*": ["../../packages/ui/src/*"],
+      "@platform/ui/*": ["../../packages/ui/src/*"],
       "@/components/ui/*": ["../../packages/ui/src/ui/*"],
       "@/components/ui": ["../../packages/ui/src/ui"],
       "@/components/shared/*": ["../../packages/ui/src/shared/*"],
@@ -35,7 +35,9 @@
       "@/locales": ["../../packages/ui/src/locales"],
       "@/locales/*": ["../../packages/ui/src/locales/*"],
       "@/*": ["./src/*"],
-      "@ft/shared-types": ["../../packages/shared-types/src/index.ts"],
+      "@platform/shared-types": ["../../packages/shared-types/src/index.ts"],
+      "@platform/engine": ["../../packages/engine/src/index.ts"],
+      "@platform/engine/*": ["../../packages/engine/src/*"],
       "@chaibuilder/sdk/runtime": ["./node_modules/@chaibuilder/sdk/dist/runtime.d.ts"],
       "@chaibuilder/sdk/web-blocks": ["./node_modules/@chaibuilder/sdk/dist/web-blocks.d.ts"]
     }

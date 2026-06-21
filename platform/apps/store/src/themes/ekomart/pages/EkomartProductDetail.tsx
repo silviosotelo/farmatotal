@@ -1,10 +1,13 @@
 import Link from "next/link";
 import type { ThemeProductDetailProps } from "@/themes/types";
-import { formatGs } from "@/lib/format";
+import { formatMoney } from "@/lib/money";
+import { getStoreConfig } from "@/lib/api";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductActions } from "@/components/product/ProductActions";
 import { ProductTabs } from "@/components/product/ProductTabs";
+import { ProductSpecs } from "@/components/product/ProductSpecs";
 import { BranchStock } from "@/components/product/BranchStock";
+import { InventoryGate } from "@/components/providers/InventoryGate";
 import { EkomartProductCard } from "../EkomartProductCard";
 
 /**
@@ -12,7 +15,8 @@ import { EkomartProductCard } from "../EkomartProductCard";
  * Server component: la interactividad (carrito, qty, variantes, tabs, stock por
  * sucursal) la aportan los componentes cliente compartidos que se envuelven aquí.
  */
-export function EkomartProductDetail({ product, related, reviews, variants }: ThemeProductDetailProps) {
+export async function EkomartProductDetail({ product, related, reviews, variants }: ThemeProductDetailProps) {
+  const { currency, locale } = await getStoreConfig();
   const hasDiscount = product.priceNormal > product.priceWeb && product.discount > 0;
   const inStock = (product.stock ?? 0) > 0;
   const categoryHref = product.category ? `/productos/?categoria=${product.category}` : "/productos/";
@@ -78,9 +82,9 @@ export function EkomartProductDetail({ product, related, reviews, variants }: Th
                     className="product-price mb--15 d-block"
                     style={{ color: "var(--brand-orange)", fontWeight: 600 }}
                   >
-                    {formatGs(product.priceWeb)}
+                    {formatMoney(product.priceWeb, { currency, locale })}
                     {hasDiscount && (
-                      <span className="old-price ml--15">{formatGs(product.priceNormal)}</span>
+                      <span className="old-price ml--15">{formatMoney(product.priceNormal, { currency, locale })}</span>
                     )}
                   </span>
 
@@ -89,10 +93,12 @@ export function EkomartProductDetail({ product, related, reviews, variants }: Th
                       <span style={{ fontWeight: 400, marginRight: 10 }}>SKU:</span>
                       {product.sku ?? "—"}
                     </span>
-                    <span className="tags product-unipue mb--10">
-                      <span style={{ fontWeight: 400, marginRight: 10 }}>Disponibilidad:</span>
-                      {inStock ? "En stock" : "Sin stock"}
-                    </span>
+                    <InventoryGate>
+                      <span className="tags product-unipue mb--10">
+                        <span style={{ fontWeight: 400, marginRight: 10 }}>Disponibilidad:</span>
+                        {inStock ? "En stock" : "Sin stock"}
+                      </span>
+                    </InventoryGate>
                   </div>
 
                   {product.description && <p className="mb--20">{product.description}</p>}
@@ -105,6 +111,9 @@ export function EkomartProductDetail({ product, related, reviews, variants }: Th
                 </div>
               </div>
             </div>
+
+            {/* Ficha técnica */}
+            <ProductSpecs product={product} className="mt--50" />
 
             {/* Descripción / Información / Valoraciones */}
             <div className="product-discription-tab-shop mt--50">

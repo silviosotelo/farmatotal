@@ -2,19 +2,34 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/providers/CartContext";
 import { useSucursal } from "@/components/sucursal/SucursalContext";
 import { useToast } from "@/components/providers/ToastContext";
-import { formatGs } from "@/lib/data";
-import type { Order } from "@/types";
+import { useMoney } from "@/components/providers/CurrencyContext";
+import { useFlags } from "@/components/providers/FeatureFlagsContext";
+import {
+  useShippingQuote,
+  useTaxConfig,
+  usePaymentMethods,
+  isPaymentEnabled,
+  defaultRate,
+  computeTax,
+} from "@/lib/checkout";
 
 type DeliveryMethod = "retiro" | "envio";
 type PaymentMethod =
   | "Tarjeta de crédito/débito (Bancard)"
   | "Efectivo en sucursal"
   | "Transferencia bancaria";
+
+/** Medios de pago de la UI mapeados a la clave de config del backend (mod_payments). */
+const PAYMENT_OPTIONS: { value: PaymentMethod; key: string }[] = [
+  { value: "Tarjeta de crédito/débito (Bancard)", key: "bancard" },
+  { value: "Efectivo en sucursal", key: "cash" },
+  { value: "Transferencia bancaria", key: "transfer" },
+];
 
 /**
  * Checkout en estilo Ekomart (markup rts-* + grilla Bootstrap, acentos verdes).
@@ -23,10 +38,12 @@ type PaymentMethod =
  * capa visual. No reimplementa ni altera el flujo de orden.
  */
 export function EkomartCheckout() {
+  const money = useMoney();
   const router = useRouter();
   const { lines, subtotal, coupon, discount, total, clear } = useCart();
   const { selected, open } = useSucursal();
   const { toast } = useToast();
+  const flags = useFlags();
 
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
@@ -34,11 +51,28 @@ export function EkomartCheckout() {
   const [telefono, setTelefono] = useState("");
   const [ciudad, setCiudad] = useState("");
   const [direccion, setDireccion] = useState("");
-  const [delivery, setDelivery] = useState<DeliveryMethod>("retiro");
+  // Tenant sin sucursales (branches=false): no hay "retiro en sucursal" → solo envío.
+  const [delivery, setDelivery] = useState<DeliveryMethod>(flags.branches ? "retiro" : "envio");
+  const deliveryOptions: DeliveryMethod[] = flags.branches ? ["retiro", "envio"] : ["envio"];
   const [payment, setPayment] = useState<PaymentMethod>(
     "Tarjeta de crédito/débito (Bancard)",
   );
   const [submitting, setSubmitting] = useState(false);
+
+  // Pedido sin productos físicos (digital/servicio) → no requiere envío.
+  const requiresShipping = lines.some((l) => (l.product.productType ?? "physical") === "physical");
+
+  // Config-driven: cotización de envío, impuestos y medios de pago.
+  const ship = useShippingQuote({ enabled: requiresShipping && delivery === "envio", city: ciudad, subtotal });
+  const taxCfg = useTaxConfig();
+  const paymentMethods = usePaymentMethods();
+  const rate = defaultRate(taxCfg);
+
+  // Si el medio elegido queda deshabilitado por config, salta al primero visible.
+  useEffect(() => {
+    const visible = PAYMENT_OPTIONS.filter((o) => isPaymentEnabled(paymentMethods, o.key));
+    setPayment((prev) => (visible.some((o) => o.value === prev) ? prev : (visible[0]?.value ?? prev)));
+  }, [paymentMethods]);
 
   /* ── Empty cart ── */
   if (lines.length === 0) {
@@ -95,7 +129,7 @@ export function EkomartCheckout() {
         payment === "Tarjeta de crédito/débito (Bancard)"
           ? "online"
           : "contraentrega";
-      const shippingMethod = delivery === "retiro" ? "pickup" : "delivery";
+      const shippingMethod = requiresShipping ? (delivery === "retiro" ? "pickup" : "delivery") : "pickup";
 
       const res = await fetch("/api/checkout", {
         method: "POST",
@@ -111,9 +145,12 @@ export function EkomartCheckout() {
           couponCode: coupon?.code,
           paymentMethod,
           shippingMethod,
-          branchId: shippingMethod === "pickup" ? selected?.branchId : undefined,
+          shippingMethodId: shippingMethod === "delivery" ? (ship.selectedId ?? undefined) : undefined,
+          taxRateId: rate?.id,
+          branchId: flags.branches && shippingMethod === "pickup" ? selected?.branchId : undefined,
           billing: {
             name: `${nombre} ${apellido}`.trim(),
+            email,
             phone: telefono,
             address: direccion,
             city: ciudad,
@@ -168,6 +205,16 @@ export function EkomartCheckout() {
       setSubmitting(false);
     }
   }
+
+  // Medios de pago visibles (gateados por la config del tenant).
+  const visiblePayments = PAYMENT_OPTIONS.filter((o) => isPaymentEnabled(paymentMethods, o.key));
+
+  // Resumen config-driven: envío del método elegido + impuesto de la tasa default.
+  const selectedShip = ship.options.find((o) => o.id === ship.selectedId) ?? null;
+  const shippingCost = requiresShipping && delivery === "envio" ? (selectedShip?.cost ?? 0) : 0;
+  const taxIncluded = taxCfg?.pricesIncludeTax ?? true;
+  const taxAmount = rate ? computeTax(total, rate.percent, taxIncluded) : 0;
+  const grandTotal = total + shippingCost + (taxIncluded ? 0 : taxAmount);
 
   return (
     <div className="shop-page">
@@ -285,9 +332,12 @@ export function EkomartCheckout() {
                 {/* Delivery */}
                 <div className="rts-billing-details-area mt--30">
                   <h3 className="title">Entrega</h3>
+                  {!requiresShipping ? (
+                    <p>Este pedido no requiere envío</p>
+                  ) : (
                   <div className="cottom-cart-right-area">
                     <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                      {(["retiro", "envio"] as const).map((opt) => (
+                      {deliveryOptions.map((opt) => (
                         <li
                           key={opt}
                           style={{
@@ -360,7 +410,46 @@ export function EkomartCheckout() {
                         )}
                       </div>
                     )}
+
+                    {delivery === "envio" && (
+                      <div className="mt--15">
+                        {ship.loading ? (
+                          <p>Cotizando envío…</p>
+                        ) : ship.options.length === 0 ? (
+                          <p>Ingresá tu ciudad para ver los métodos de envío disponibles.</p>
+                        ) : (
+                          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                            {ship.options.map((o) => (
+                              <li
+                                key={o.id}
+                                style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}
+                              >
+                                <input
+                                  type="radio"
+                                  id={`ship-${o.id}`}
+                                  name="shipMethod"
+                                  value={o.id}
+                                  checked={ship.selectedId === o.id}
+                                  onChange={() => ship.setSelectedId(o.id)}
+                                  style={{ accentColor: "var(--brand-orange)", width: 18, height: 18, margin: 0 }}
+                                />
+                                <label
+                                  htmlFor={`ship-${o.id}`}
+                                  style={{ margin: 0, cursor: "pointer", color: "#2C3C28", fontWeight: 500, flex: 1 }}
+                                >
+                                  {o.name}
+                                </label>
+                                <span style={{ fontWeight: 600, color: "#2C3C28" }}>
+                                  {o.cost > 0 ? money(o.cost) : "Gratis"}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
                   </div>
+                  )}
                 </div>
 
                 {/* Payment */}
@@ -368,13 +457,7 @@ export function EkomartCheckout() {
                   <h3 className="title">Método de pago</h3>
                   <div className="cottom-cart-right-area">
                     <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                      {(
-                        [
-                          "Tarjeta de crédito/débito (Bancard)",
-                          "Efectivo en sucursal",
-                          "Transferencia bancaria",
-                        ] as PaymentMethod[]
-                      ).map((opt) => (
+                      {visiblePayments.map(({ value: opt }) => (
                         <li
                           key={opt}
                           style={{
@@ -441,7 +524,7 @@ export function EkomartCheckout() {
                         </span>
                       </div>
                       <span className="price">
-                        {formatGs(product.priceWeb * quantity)}
+                        {money(product.priceWeb * quantity)}
                       </span>
                     </div>
                   ))}
@@ -450,7 +533,7 @@ export function EkomartCheckout() {
                     <div className="left-area">
                       <span>Subtotal</span>
                     </div>
-                    <span className="price">{formatGs(subtotal)}</span>
+                    <span className="price">{money(subtotal)}</span>
                   </div>
 
                   {coupon && discount > 0 && (
@@ -458,7 +541,25 @@ export function EkomartCheckout() {
                       <div className="left-area">
                         <span>Descuento ({coupon.code})</span>
                       </div>
-                      <span className="price">−{formatGs(discount)}</span>
+                      <span className="price">−{money(discount)}</span>
+                    </div>
+                  )}
+
+                  {requiresShipping && delivery === "envio" && (
+                    <div className="single-shop-list">
+                      <div className="left-area">
+                        <span>Envío{selectedShip ? ` (${selectedShip.name})` : ""}</span>
+                      </div>
+                      <span className="price">{selectedShip ? (shippingCost > 0 ? money(shippingCost) : "Gratis") : "A cotizar"}</span>
+                    </div>
+                  )}
+
+                  {rate && taxAmount > 0 && (
+                    <div className="single-shop-list">
+                      <div className="left-area">
+                        <span>{taxIncluded ? `${rate.name} incluido` : rate.name}</span>
+                      </div>
+                      <span className="price">{money(taxAmount)}</span>
                     </div>
                   )}
 
@@ -472,7 +573,7 @@ export function EkomartCheckout() {
                       className="price"
                       style={{ color: "var(--brand-orange)", fontWeight: 700 }}
                     >
-                      {formatGs(total)}
+                      {money(grandTotal)}
                     </span>
                   </div>
 

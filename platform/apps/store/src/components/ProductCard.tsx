@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { formatGs } from "@/lib/data";
+import { useMoney } from "@/components/providers/CurrencyContext";
 import type { Product } from "@/types";
 import { HeartIcon } from "@/components/icons";
 import { useCart } from "@/components/providers/CartContext";
@@ -10,14 +10,18 @@ import { useWishlist } from "@/components/providers/WishlistContext";
 import { useToast } from "@/components/providers/ToastContext";
 import { cn } from "@/lib/utils";
 import { StockBadge } from "@/themes/CatalogStock";
+import { useFlags } from "@/components/providers/FeatureFlagsContext";
 
 export function ProductCard({ product }: { product: Product }) {
+  const money = useMoney();
   const href = `/productos/${product.slug}/`;
   const { addItem } = useCart();
   const { has, toggle } = useWishlist();
   const { toast } = useToast();
+  const flags = useFlags();
   const fav = has(product.id);
-  const out = product.stock === 0;
+  // Inventario oculto (inventory=false): nunca "agotado" ni tope de stock.
+  const out = flags.inventory ? product.stock === 0 : false;
 
   const onAdd = () => {
     addItem(product);
@@ -93,11 +97,11 @@ export function ProductCard({ product }: { product: Product }) {
 
         <div className="mt-auto font-price">
           <div className="text-[13px] leading-tight text-price-muted">
-            Precio Normal: <span className="line-through">{formatGs(product.priceNormal)}</span>
+            Precio Normal: <span className="line-through">{money(product.priceNormal)}</span>
           </div>
           <div className="flex items-baseline gap-1.5 leading-snug">
             <span className="text-xs font-medium text-brand-muted">Precio Web:</span>
-            <span className="text-[22px] font-bold text-brand-orange">{formatGs(product.priceWeb)}</span>
+            <span className="text-[22px] font-bold text-brand-orange">{money(product.priceWeb)}</span>
           </div>
           <div className="mt-1.5">
             <StockBadge sku={product.sku ?? ""} />

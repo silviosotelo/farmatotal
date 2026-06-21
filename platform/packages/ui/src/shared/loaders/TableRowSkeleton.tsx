@@ -1,6 +1,6 @@
-import Skeleton from '@ft/ui/ui/Skeleton'
-import Table from '@ft/ui/ui/Table'
-import type { SkeletonProps } from '@ft/ui/ui/Skeleton'
+import Skeleton from '@platform/ui/ui/Skeleton'
+import Table from '@platform/ui/ui/Table'
+import type { SkeletonProps } from '@platform/ui/ui/Skeleton'
 
 type TableRowSkeletonProps = {
     columns?: number

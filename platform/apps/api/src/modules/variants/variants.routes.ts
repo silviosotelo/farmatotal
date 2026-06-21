@@ -3,6 +3,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
 import { productVariants, products } from "../../db/schema";
+import { tid } from "../../plugins/tenant";
 
 const variantInput = z.object({
   productId: z.string().uuid(),
@@ -31,6 +32,7 @@ export async function variantRoutes(app: FastifyInstance) {
         .from(productVariants)
         .where(
           and(
+            eq(productVariants.tenantId, tid(req)),
             eq(productVariants.productId, req.params.id),
             onlyActive ? eq(productVariants.active, true) : undefined,
           ),
@@ -45,10 +47,13 @@ export async function variantRoutes(app: FastifyInstance) {
     const [parent] = await db
       .select({ id: products.id })
       .from(products)
-      .where(eq(products.id, req.body.productId))
+      .where(and(eq(products.id, req.body.productId), eq(products.tenantId, tid(req))))
       .limit(1);
     if (!parent) return reply.notFound("Producto no encontrado");
-    const [row] = await db.insert(productVariants).values(req.body).returning();
+    const [row] = await db
+      .insert(productVariants)
+      .values({ ...req.body, tenantId: tid(req) })
+      .returning();
     return reply.send(row);
   });
 
@@ -60,7 +65,7 @@ export async function variantRoutes(app: FastifyInstance) {
       const [row] = await db
         .update(productVariants)
         .set({ ...req.body, updatedAt: new Date() })
-        .where(eq(productVariants.id, req.params.id))
+        .where(and(eq(productVariants.id, req.params.id), eq(productVariants.tenantId, tid(req))))
         .returning();
       if (!row) return reply.notFound();
       return reply.send(row);
@@ -69,7 +74,10 @@ export async function variantRoutes(app: FastifyInstance) {
 
   // Admin: borrar.
   app.delete("/catalog/variants/:id", { schema: { params: idParam } }, async (req, reply) => {
-    const [row] = await db.delete(productVariants).where(eq(productVariants.id, req.params.id)).returning();
+    const [row] = await db
+      .delete(productVariants)
+      .where(and(eq(productVariants.id, req.params.id), eq(productVariants.tenantId, tid(req))))
+      .returning();
     if (!row) return reply.notFound();
     return reply.send({ ok: true });
   });

@@ -6,10 +6,10 @@ import {
     apexAreaChartDefaultOption,
     apexDonutChartDefaultOption,
     apexRadarChartDefultOption,
-} from '@ft/ui/theme/chart.config'
-import { DIR_RTL } from '@ft/ui/theme/theme.constant'
+} from '@platform/ui/theme/chart.config'
+import { DIR_RTL } from '@platform/ui/theme/theme.constant'
 import type { ApexOptions } from 'apexcharts'
-import type { Direction } from '@ft/ui/@types/theme'
+import type { Direction } from '@platform/ui/@types/theme'
 import type { ReactNode } from 'react'
 
 const notDonut = ['line', 'bar', 'area']

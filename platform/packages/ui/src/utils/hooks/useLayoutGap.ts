@@ -1,9 +1,9 @@
-import { useThemeStore } from '@ft/ui/store/themeStore'
+import { useThemeStore } from '@platform/ui/store/themeStore'
 import {
     HEADER_HEIGHT,
     LAYOUT_COLLAPSIBLE_SIDE,
     LAYOUT_FRAMELESS_SIDE,
-} from '@ft/ui/theme/theme.constant'
+} from '@platform/ui/theme/theme.constant'
 
 const useLayoutGap = () => {
     const layoutType = useThemeStore((state) => state.layout.type)

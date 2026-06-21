@@ -12,7 +12,7 @@ import {
     FloatingFocusManager,
     FloatingPortal,
 } from '@floating-ui/react'
-import Input, { InputProps } from '@ft/ui/ui/Input'
+import Input, { InputProps } from '@platform/ui/ui/Input'
 
 interface ItemProps {
     children: React.ReactNode

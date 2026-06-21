@@ -1,11 +1,11 @@
 import { sql } from "drizzle-orm";
 import { integer, jsonb, text, timestamp, uuid, varchar, index } from "drizzle-orm/pg-core";
-import { farmatotalApp } from "./_pgSchema";
+import { appSchema } from "./_pgSchema";
 
 export const syncJobKind = ["wc.products.full", "wc.products.delta", "erp.products", "erp.stock"] as const;
 export type SyncJobKind = (typeof syncJobKind)[number];
 
-export const syncRuns = farmatotalApp.table(
+export const syncRuns = appSchema.table(
   "sync_runs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -26,7 +26,7 @@ export const syncRuns = farmatotalApp.table(
   }),
 );
 
-export const syncErrors = farmatotalApp.table(
+export const syncErrors = appSchema.table(
   "sync_errors",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -44,7 +44,7 @@ export const syncErrors = farmatotalApp.table(
   }),
 );
 
-export const syncCursors = farmatotalApp.table(
+export const syncCursors = appSchema.table(
   "sync_cursors",
   {
     kind: varchar("kind", { length: 40, enum: syncJobKind }).notNull().primaryKey(),

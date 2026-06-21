@@ -8,15 +8,19 @@ import {
   index,
   unique,
 } from "drizzle-orm/pg-core";
-import { farmatotalApp } from "./_pgSchema";
+import { appSchema } from "./_pgSchema";
+import { tenants } from "./tenants";
 
 export const couponType = ["percent", "fixed"] as const;
 export type CouponType = (typeof couponType)[number];
 
-export const coupons = farmatotalApp.table(
+export const coupons = appSchema.table(
   "coupons",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
     code: varchar("code", { length: 60 }).notNull(),
     type: varchar("type", { length: 20, enum: couponType }).notNull().default("percent"),
     /** percent: 0-100. fixed: monto en Gs. */
@@ -33,12 +37,12 @@ export const coupons = farmatotalApp.table(
       .default(sql`now()`),
   },
   (t) => ({
-    codeUk: unique("coupons_code_uk").on(t.code),
+    codeUk: unique("coupons_code_uk").on(t.tenantId, t.code),
     activeIdx: index("coupons_active_idx").on(t.active),
   }),
 );
 
-export const payments = farmatotalApp.table(
+export const payments = appSchema.table(
   "payments",
   {
     id: uuid("id").primaryKey().defaultRandom(),

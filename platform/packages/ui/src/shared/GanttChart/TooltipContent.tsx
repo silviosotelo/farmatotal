@@ -1,4 +1,4 @@
-import Progress from '@ft/ui/ui/Progress'
+import Progress from '@platform/ui/ui/Progress'
 import { TbClock } from 'react-icons/tb'
 import dayjs from 'dayjs'
 import type { Task } from 'gantt-task-react'

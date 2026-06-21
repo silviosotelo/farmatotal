@@ -5,12 +5,23 @@ import Select from '@/components/ui/Select'
 import { FormItem } from '@/components/ui/Form'
 import NumericInput from '@/components/shared/NumericInput'
 import { Controller } from 'react-hook-form'
+import { useTenantCurrency } from '@/services/currency'
 import type { FormSectionBaseProps } from '../types'
 
 const statusOptions = [
     { value: 'published', label: 'Publicado' },
     { value: 'draft', label: 'Borrador' },
     { value: 'archived', label: 'Archivado' },
+]
+
+const unitOptions = [
+    { value: 'unidad', label: 'Unidad' },
+    { value: 'kg', label: 'Kilogramo (kg)' },
+    { value: 'g', label: 'Gramo (g)' },
+    { value: 'l', label: 'Litro (l)' },
+    { value: 'ml', label: 'Mililitro (ml)' },
+    { value: 'm', label: 'Metro (m)' },
+    { value: 'm2', label: 'Metro cuadrado (m²)' },
 ]
 
 const ToggleRow = ({
@@ -32,6 +43,8 @@ const ToggleRow = ({
 )
 
 const ProductDetailsSection = ({ control }: FormSectionBaseProps) => {
+    // Moneda del tenant (white-label): decimales del input + código de afijo.
+    const { currency, decimals } = useTenantCurrency()
     return (
         <Card>
             <h4 className="mb-6">Detalles del producto</h4>
@@ -66,7 +79,7 @@ const ProductDetailsSection = ({ control }: FormSectionBaseProps) => {
                 </FormItem>
             </div>
 
-            <FormItem label="Precio normal (₲) — se muestra tachado">
+            <FormItem label="Precio normal — se muestra tachado">
                 <Controller
                     name="priceNormal"
                     control={control}
@@ -74,9 +87,10 @@ const ProductDetailsSection = ({ control }: FormSectionBaseProps) => {
                         <NumericInput
                             thousandSeparator
                             type="text"
-                            inputPrefix="₲ "
+                            inputSuffix={` ${currency}`}
+                            decimalScale={decimals}
                             autoComplete="off"
-                            placeholder="0"
+                            placeholder={decimals > 0 ? (0).toFixed(decimals) : '0'}
                             value={field.value}
                             onChange={field.onChange}
                         />
@@ -128,6 +142,51 @@ const ProductDetailsSection = ({ control }: FormSectionBaseProps) => {
                     )}
                 />
             </FormItem>
+
+            <h5 className="mt-8 mb-4">Venta por unidad de medida</h5>
+            <p className="text-xs text-gray-400 mb-4">
+                Permite vender cantidades fraccionadas (ej. 1.5 kg). Dejá
+                &quot;Unidad&quot; e incremento 1 para el comportamiento estándar.
+            </p>
+            <div className="md:flex gap-4">
+                <FormItem label="Unidad de medida" className="w-full">
+                    <Controller
+                        name="unit"
+                        control={control}
+                        render={({ field }) => (
+                            <Select
+                                options={unitOptions}
+                                value={unitOptions.find(
+                                    (o) => o.value === (field.value ?? 'unidad'),
+                                )}
+                                onChange={(o) =>
+                                    field.onChange(o?.value ?? 'unidad')
+                                }
+                            />
+                        )}
+                    />
+                </FormItem>
+                <FormItem
+                    label="Incremento de cantidad"
+                    className="w-full"
+                >
+                    <Controller
+                        name="unitStep"
+                        control={control}
+                        render={({ field }) => (
+                            <Input
+                                type="number"
+                                step="0.01"
+                                min="0.001"
+                                placeholder="1"
+                                autoComplete="off"
+                                value={field.value ?? ''}
+                                onChange={field.onChange}
+                            />
+                        )}
+                    />
+                </FormItem>
+            </div>
         </Card>
     )
 }

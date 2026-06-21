@@ -1,4 +1,5 @@
 import ApiService from './ApiService'
+import { getTenantCurrency, toMajor, toMinor } from './currency'
 
 /** Shape de TableQueries de Ecme: pageIndex 1-based, pageSize, sort. */
 type EcmeQueries = Record<string, unknown> & {
@@ -25,6 +26,10 @@ type BackendProduct = {
     featured: boolean
     status: 'draft' | 'published' | 'archived'
     stockCached: number
+    unit?: string
+    unitStep?: number
+    productType?: 'physical' | 'digital' | 'service'
+    attributes?: { label: string; value: string }[] | null
     images?: { url: string; isPrimary?: boolean }[]
 }
 
@@ -100,13 +105,17 @@ export async function apiGetProduct<T, U extends Record<string, unknown>>({
         method: 'get',
         params,
     })
+    // Los precios llegan en unidad MENOR (entero). Para mostrarlos en el form
+    // se convierten a unidad MAYOR según los decimales de la moneda del tenant.
+    // Para PYG (0 decimales) la conversión es identidad.
+    const currency = await getTenantCurrency()
     // Shape para ProductForm (no el de lista).
     const form = {
         id: res.id,
         name: res.title,
         productCode: res.sku,
         description: res.description ?? '',
-        price: res.priceWeb,
+        price: toMajor(res.priceWeb, currency),
         taxRate: 10,
         costPerItem: 0,
         bulkDiscountPrice: 0,
@@ -120,12 +129,16 @@ export async function apiGetProduct<T, U extends Record<string, unknown>>({
         })),
         // Campos adicionales del catálogo
         codInterno: res.codInterno ?? '',
-        priceNormal: res.priceNormal,
+        priceNormal: toMajor(res.priceNormal, currency),
         status: res.status,
         controlled: res.controlled,
         featured: res.featured,
         onPromo: res.onPromo,
         promoCode: res.promoCode ?? '',
+        unit: res.unit ?? 'unidad',
+        unitStep: res.unitStep ?? 1,
+        productType: res.productType ?? 'physical',
+        attributes: res.attributes ?? [],
     }
     return form as unknown as T
 }
@@ -156,16 +169,25 @@ type ProductFormValues = {
     featured?: boolean
     onPromo?: boolean
     promoCode?: string
+    unit?: string
+    unitStep?: number | string
+    productType?: 'physical' | 'digital' | 'service'
+    attributes?: { label: string; value: string }[]
     [k: string]: unknown
 }
 
-function toBackendInput(v: ProductFormValues) {
-    const priceWeb = Number(v.price) || 0
+function toBackendInput(v: ProductFormValues, currency: string) {
+    // Resolver ambos valores en unidad MAYOR primero (lo que tipeó el admin),
+    // y recién después convertir cada uno a unidad MENOR exactamente UNA vez.
+    // Así el fallback de priceNormal nunca produce doble conversión.
+    const priceWebMajor = Number(v.price) || 0
     // priceNormal: si no se especifica, igual al web (sin descuento tachado).
-    const priceNormal =
+    const priceNormalMajor =
         v.priceNormal !== undefined && v.priceNormal !== ''
             ? Number(v.priceNormal) || 0
-            : priceWeb
+            : priceWebMajor
+    const priceWeb = toMinor(priceWebMajor, currency)
+    const priceNormal = toMinor(priceNormalMajor, currency)
     const input: Record<string, unknown> = {
         sku: v.productCode,
         slug: slugify(v.name) || v.productCode,
@@ -181,22 +203,42 @@ function toBackendInput(v: ProductFormValues) {
         promoCode: v.promoCode?.trim() ? v.promoCode.trim() : null,
     }
     if (v.category && UUID_RE.test(v.category)) input.categoryId = v.category
+    // Unidad de medida (backend: unit max 20, unitStep positive). Sólo se
+    // envían valores válidos; vacío => default del backend (unidad / 1).
+    const unit = v.unit?.trim()
+    if (unit) input.unit = unit.slice(0, 20)
+    const unitStep = Number(v.unitStep)
+    if (Number.isFinite(unitStep) && unitStep > 0) input.unitStep = unitStep
+    // Tipo de producto: siempre se envía (default physical).
+    input.productType = v.productType ?? 'physical'
+    // Ficha técnica: se descartan filas sin etiqueta; array vacío => null.
+    const attrs = Array.isArray(v.attributes)
+        ? v.attributes
+              .map((a) => ({
+                  label: (a?.label ?? '').trim(),
+                  value: (a?.value ?? '').trim(),
+              }))
+              .filter((a) => a.label !== '')
+        : []
+    input.attributes = attrs.length > 0 ? attrs : null
     return input
 }
 
 export async function apiCreateProduct(values: ProductFormValues) {
+    const currency = await getTenantCurrency()
     return ApiService.fetchDataWithAxios({
         url: '/catalog/products',
         method: 'post',
-        data: toBackendInput(values),
+        data: toBackendInput(values, currency),
     })
 }
 
 export async function apiUpdateProduct(id: string, values: ProductFormValues) {
+    const currency = await getTenantCurrency()
     return ApiService.fetchDataWithAxios({
         url: `/catalog/products/${id}`,
         method: 'patch',
-        data: toBackendInput(values),
+        data: toBackendInput(values, currency),
     })
 }
 

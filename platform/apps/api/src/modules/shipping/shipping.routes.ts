@@ -1,10 +1,9 @@
 import type { FastifyInstance } from "fastify";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
 import { settings } from "../../db/schema";
-
-const SETTINGS_KEY = "mod_shipping";
+import { tid } from "../../plugins/tenant";
+import { SHIPPING_SETTINGS_KEY, readShippingConfig, quoteOptions } from "../../services/shipping.js";
 
 /** Un método de envío dentro de una zona. */
 const methodSchema = z.object({
@@ -28,21 +27,18 @@ const zoneSchema = z.object({
 });
 
 const configSchema = z.object({ zones: z.array(zoneSchema).default([]) });
-type ShippingConfig = z.infer<typeof configSchema>;
-
-async function readConfig(): Promise<ShippingConfig> {
-  const [row] = await db.select().from(settings).where(eq(settings.key, SETTINGS_KEY)).limit(1);
-  return (row?.value as ShippingConfig) ?? { zones: [] };
-}
 
 export async function shippingRoutes(app: FastifyInstance) {
-  app.get("/shipping/config", async () => readConfig());
+  app.get("/shipping/config", async (req) => readShippingConfig(tid(req)));
 
   app.put("/shipping/config", { schema: { body: configSchema } }, async (req, reply) => {
     await db
       .insert(settings)
-      .values({ key: SETTINGS_KEY, value: req.body })
-      .onConflictDoUpdate({ target: settings.key, set: { value: req.body, updatedAt: new Date() } });
+      .values({ tenantId: tid(req), key: SHIPPING_SETTINGS_KEY, value: req.body })
+      .onConflictDoUpdate({
+        target: [settings.tenantId, settings.key],
+        set: { value: req.body, updatedAt: new Date() },
+      });
     return reply.send({ ok: true });
   });
 
@@ -52,23 +48,8 @@ export async function shippingRoutes(app: FastifyInstance) {
     { schema: { querystring: z.object({ city: z.string().optional(), subtotal: z.coerce.number().default(0), weight: z.coerce.number().default(0) }) } },
     async (req) => {
       const { city, subtotal, weight } = req.query;
-      const cfg = await readConfig();
-      const cityLc = (city ?? "").trim().toLowerCase();
-      // Zona que matchea la ciudad, o la primera como fallback.
-      const zone =
-        cfg.zones.find((z) => z.cities.some((c) => c.toLowerCase() === cityLc)) ?? cfg.zones[0];
-      if (!zone) return { zone: null, options: [] };
-      const options = zone.methods
-        .filter((m) => m.active)
-        .map((m) => {
-          let cost = 0;
-          if (m.type === "flat") cost = m.cost;
-          else if (m.type === "free") cost = m.freeFrom > 0 && subtotal < m.freeFrom ? m.cost : 0;
-          else if (m.type === "pickup") cost = 0;
-          else if (m.type === "weight") cost = Math.round(m.perKg * weight);
-          return { id: m.id, name: m.name, type: m.type, cost };
-        });
-      return { zone: { id: zone.id, name: zone.name }, options };
+      const cfg = await readShippingConfig(tid(req));
+      return quoteOptions(cfg, { city, subtotal, weight });
     },
   );
 }

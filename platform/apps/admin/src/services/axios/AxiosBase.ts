@@ -4,10 +4,14 @@ import AxiosRequestIntrceptorConfigCallback from './AxiosRequestIntrceptorConfig
 import appConfig from '@/configs/app.config'
 import type { AxiosError } from 'axios'
 
+// Multitenant: el admin opera sobre un tenant (por env; a futuro selector).
+const ADMIN_TENANT = (import.meta as { env?: Record<string, string> }).env?.VITE_TENANT || 'default'
+
 const AxiosBase = axios.create({
     timeout: 60000,
     baseURL: appConfig.apiPrefix,
     withCredentials: true,
+    headers: { 'x-tenant': ADMIN_TENANT },
 })
 
 AxiosBase.interceptors.request.use(

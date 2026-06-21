@@ -5,9 +5,9 @@
  *
  * Uso: NODE_TLS_REJECT_UNAUTHORIZED=0 pnpm exec tsx src/scripts/seed-branches-real.ts
  */
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db, pool } from "../db/client";
-import { branches } from "../db/schema";
+import { branches, tenants } from "../db/schema";
 
 const URL =
   "https://www.farmatotal.com.py/wp-admin/admin-ajax.php?action=asl_load_stores";
@@ -36,6 +36,15 @@ function parseHours(raw: string): unknown {
 }
 
 async function main() {
+  const tenantSlug = process.env.DEFAULT_TENANT ?? "default";
+  const [tenant] = await db
+    .select({ id: tenants.id })
+    .from(tenants)
+    .where(eq(tenants.slug, tenantSlug))
+    .limit(1);
+  if (!tenant) throw new Error(`Tenant '${tenantSlug}' no existe`);
+  const tenantId = tenant.id;
+
   const res = await fetch(URL, {
     headers: { "User-Agent": "FarmatotalSeed/1.0", Accept: "application/json" },
   });
@@ -55,6 +64,7 @@ async function main() {
     await db
       .insert(branches)
       .values({
+        tenantId,
         code,
         name: s.title,
         address: s.street || null,

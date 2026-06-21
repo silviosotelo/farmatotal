@@ -1,9 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // @ft/ui es un paquete del workspace que se consume como fuente TS/JSX;
+  // @platform/ui es un paquete del workspace que se consume como fuente TS/JSX;
   // Next debe transpilarlo.
-  transpilePackages: ["@ft/ui"],
+  transpilePackages: ["@platform/ui", "@platform/engine"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "www.farmatotal.com.py" },

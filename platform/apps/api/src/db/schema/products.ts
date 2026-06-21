@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  doublePrecision,
   integer,
   jsonb,
   text,
@@ -10,18 +11,28 @@ import {
   index,
   unique,
 } from "drizzle-orm/pg-core";
-import { farmatotalApp, type SeoMeta } from "./_pgSchema";
+import { appSchema, type SeoMeta } from "./_pgSchema";
 import { brands } from "./brands";
 import { categories } from "./categories";
+import { tenants } from "./tenants";
 
 /** Estado del producto en la tienda. */
 export const productStatus = ["draft", "published", "archived"] as const;
 export type ProductStatus = (typeof productStatus)[number];
 
+/** Tipo de producto (multi-rubro): físico (envía/stock), digital (descarga, sin
+ * envío) o servicio (sin envío ni stock físico). */
+export const productType = ["physical", "digital", "service"] as const;
+export type ProductType = (typeof productType)[number];
+
 /** Datos arbitrarios por producto (origen ERP / vademecum / Woo meta). */
 export type ProductCustom = Record<string, unknown>;
 
-export const products = farmatotalApp.table(
+/** Ficha técnica flexible (white-label, sin naming por rubro): pares etiqueta/valor
+ * que el admin define por producto (ej. "Principio activo: Ibuprofeno"). */
+export type ProductAttribute = { label: string; value: string };
+
+export const products = appSchema.table(
   "products",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -32,12 +43,20 @@ export const products = farmatotalApp.table(
     /** Descripcion plana (texto). Para rich text usar descriptionRich. */
     description: text("description"),
     descriptionRich: jsonb("description_rich"),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
     brandId: uuid("brand_id").references(() => brands.id, { onDelete: "set null" }),
     categoryId: uuid("category_id").references(() => categories.id, { onDelete: "set null" }),
 
     /** Precios en Gs (entero, sin decimales). */
     priceNormal: integer("price_normal").notNull().default(0),
     priceWeb: integer("price_web").notNull().default(0),
+
+    /** Unidad de medida de venta (multi-rubro): 'unidad', 'kg', 'g', 'l', 'm', etc. */
+    unit: varchar("unit", { length: 20 }).notNull().default("unidad"),
+    /** Incremento de cantidad para la venta (1 = enteros; 0.25/0.5/0.1 = decimales). */
+    unitStep: doublePrecision("unit_step").notNull().default(1),
 
     onPromo: boolean("on_promo").notNull().default(false),
     promoCode: varchar("promo_code", { length: 60 }),
@@ -48,12 +67,19 @@ export const products = farmatotalApp.table(
       .notNull()
       .default("published"),
 
+    /** Tipo de producto: physical | digital | service (multi-rubro). */
+    productType: varchar("product_type", { length: 10, enum: productType })
+      .notNull()
+      .default("physical"),
+
     /** Stock agregado cacheado (suma de inventory por sucursal).
      * Lo recalcula el job de sync o un trigger. NO es fuente de verdad. */
     stockCached: integer("stock_cached").notNull().default(0),
 
     seo: jsonb("seo").$type<SeoMeta>(),
     custom: jsonb("custom").$type<ProductCustom>(),
+    /** Ficha técnica flexible (pares etiqueta/valor) editable por el admin. */
+    attributes: jsonb("attributes").$type<ProductAttribute[]>(),
 
     /** Overrides editoriales que no se pisan al re-sync. */
     titleOverride: varchar("title_override", { length: 300 }),
@@ -72,10 +98,11 @@ export const products = farmatotalApp.table(
       .default(sql`now()`),
   },
   (t) => ({
-    skuUk: unique("products_sku_uk").on(t.sku),
-    codInternoUk: unique("products_cod_interno_uk").on(t.codInterno),
-    slugUk: unique("products_slug_uk").on(t.slug),
-    sourceUk: unique("products_source_uk").on(t.sourceSystem, t.sourceId),
+    skuUk: unique("products_sku_uk").on(t.tenantId, t.sku),
+    codInternoUk: unique("products_cod_interno_uk").on(t.tenantId, t.codInterno),
+    slugUk: unique("products_slug_uk").on(t.tenantId, t.slug),
+    sourceUk: unique("products_source_uk").on(t.tenantId, t.sourceSystem, t.sourceId),
+    tenantIdx: index("products_tenant_idx").on(t.tenantId),
     categoryIdx: index("products_category_idx").on(t.categoryId),
     brandIdx: index("products_brand_idx").on(t.brandId),
     statusIdx: index("products_status_idx").on(t.status),
@@ -83,7 +110,7 @@ export const products = farmatotalApp.table(
   }),
 );
 
-export const productImages = farmatotalApp.table(
+export const productImages = appSchema.table(
   "product_images",
   {
     id: uuid("id").primaryKey().defaultRandom(),

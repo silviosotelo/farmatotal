@@ -1,6 +1,6 @@
 import { useEffect, createRef } from 'react'
 import classNames from 'classnames'
-import type { CommonProps } from '@ft/ui/@types/common'
+import type { CommonProps } from '@platform/ui/@types/common'
 
 type AffixStyles = {
     position: string

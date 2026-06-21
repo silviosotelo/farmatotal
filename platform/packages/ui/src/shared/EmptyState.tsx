@@ -1,4 +1,4 @@
-import NoDataFound from '@ft/ui/assets/svg/NoDataFound'
+import NoDataFound from '@platform/ui/assets/svg/NoDataFound'
 import type { ReactNode } from 'react'
 
 /**

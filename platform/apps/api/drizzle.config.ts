@@ -8,7 +8,7 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
-  schemaFilter: ["farmatotal_app"],
+  schemaFilter: ["app"],
   verbose: true,
   strict: true,
 });

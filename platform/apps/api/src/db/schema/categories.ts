@@ -1,13 +1,17 @@
 import { sql } from "drizzle-orm";
 import { boolean, integer, jsonb, text, timestamp, uuid, varchar, index, unique } from "drizzle-orm/pg-core";
-import { farmatotalApp } from "./_pgSchema";
+import { appSchema } from "./_pgSchema";
+import { tenants } from "./tenants";
 
 export type SeoMeta = { title?: string; description?: string };
 
-export const categories = farmatotalApp.table(
+export const categories = appSchema.table(
   "categories",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
     slug: varchar("slug", { length: 200 }).notNull(),
     name: varchar("name", { length: 200 }).notNull(),
     parentId: uuid("parent_id"),
@@ -24,8 +28,9 @@ export const categories = farmatotalApp.table(
       .default(sql`now()`),
   },
   (t) => ({
-    slugIdx: unique("categories_slug_uk").on(t.slug),
-    fliaIdx: unique("categories_flia_uk").on(t.fliaCodigo),
+    slugIdx: unique("categories_slug_uk").on(t.tenantId, t.slug),
+    fliaIdx: unique("categories_flia_uk").on(t.tenantId, t.fliaCodigo),
+    tenantIdx: index("categories_tenant_idx").on(t.tenantId),
     parentIdx: index("categories_parent_idx").on(t.parentId),
   }),
 );

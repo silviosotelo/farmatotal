@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useSucursal } from "@/components/sucursal/SucursalContext";
+import { useFlags } from "@/components/providers/FeatureFlagsContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -135,7 +136,10 @@ export function useCatalogStock(): CatalogStockCtx {
  */
 export function StockBadge({ sku }: { sku: string }) {
   const { stockBySku, branchName } = useCatalogStock();
+  const flags = useFlags();
 
+  // Inventario oculto (inventory=false) → no se muestra badge de stock.
+  if (!flags.inventory) return null;
   // Sin sucursal elegida (o branch no mapeable) → no afirmamos nada.
   if (!branchName) return null;
 

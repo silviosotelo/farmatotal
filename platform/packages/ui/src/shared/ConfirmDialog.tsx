@@ -4,12 +4,12 @@ import {
     HiOutlineExclamation,
     HiOutlineExclamationCircle,
 } from 'react-icons/hi'
-import Avatar from '@ft/ui/ui/Avatar'
-import Button from '@ft/ui/ui/Button'
-import Dialog from '@ft/ui/ui/Dialog'
+import Avatar from '@platform/ui/ui/Avatar'
+import Button from '@platform/ui/ui/Button'
+import Dialog from '@platform/ui/ui/Dialog'
 import type { ReactNode } from 'react'
-import type { DialogProps } from '@ft/ui/ui/Dialog'
-import type { ButtonProps } from '@ft/ui/ui/Button'
+import type { DialogProps } from '@platform/ui/ui/Dialog'
+import type { ButtonProps } from '@platform/ui/ui/Button'
 
 type StatusType = 'info' | 'success' | 'warning' | 'danger'
 

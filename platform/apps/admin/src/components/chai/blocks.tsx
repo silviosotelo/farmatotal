@@ -5,13 +5,24 @@
  * expone su schema de props (configurable desde el panel del editor) y, los que
  * son data-bound, traen datos reales del catálogo vía la API.
  *
+ * Dos capacidades transversales de edición:
+ *  1. ESTILOS por bloque: cada bloque declara `styles: StylesProp(<clases>)`, y su
+ *     componente vuelca `{...styles}` sobre la raíz → la pestaña de Estilos del
+ *     editor re-estiliza el contenedor (padding, fondo, bordes, etc.).
+ *  2. SELECCIÓN por query: los campos de catálogo (p. ej. categoría) usan widgets
+ *     que consultan el backend real en vez de texto libre (ver CategoryPicker).
+ *
  * IMPORTANTE: este archivo es genérico (white-label). Los mismos bloques deben
- * registrarse en el storefront (clone) para el render SSR — ver
+ * reflejarse en el storefront (store) para el render SSR — ver
  * docs/research/visual-editor-comparison.md.
  */
-import { registerChaiBlock, registerChaiCollection } from '@chaibuilder/sdk/runtime'
+import { registerChaiBlock, registerChaiCollection, registerChaiBlockProps, StylesProp } from '@chaibuilder/sdk/runtime'
+import { registerChaiBlockSettingWidget } from '@chaibuilder/sdk'
+import { useMemo, useState } from 'react'
 import useSWR from 'swr'
 import ApiService from '@/services/ApiService'
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 type ApiProduct = {
     id: string
@@ -23,11 +34,31 @@ type ApiProduct = {
     images?: { url: string; isPrimary?: boolean }[]
 }
 
+type ApiCategory = { id: string; slug: string; name: string; parentId?: string | null }
+
+/** styles inyectado por el runtime de Chai: `{ className, style }`. */
+type ChaiStyles = { className?: string; style?: React.CSSProperties }
+
 const money = (n: number) =>
     new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG', maximumFractionDigits: 0 }).format(n || 0)
 
 function imgOf(p: ApiProduct) {
     return p.images?.find((i) => i.isPrimary)?.url || p.images?.[0]?.url || ''
+}
+
+/**
+ * Props de la raíz del bloque. Esparce el objeto `styles` COMPLETO (no solo
+ * className/style): trae además los `data-style-*` que el editor usa para anclar
+ * la pestaña de Estilos al elemento. Mismo patrón que los web-blocks nativos
+ * (`{...styles, ...blockProps}`). `extraStyle` mezcla estilos dinámicos (fondo,
+ * grilla) sobre los inline del bloque.
+ */
+function root(styles?: ChaiStyles, blockProps?: any, extraStyle?: React.CSSProperties) {
+    const s: any = styles || {}
+    const bp: any = blockProps || {}
+    const merged: any = { ...s, ...bp }
+    if (extraStyle) merged.style = { ...(s.style || {}), ...(bp.style || {}), ...extraStyle }
+    return merged
 }
 
 async function fetchProducts(params: Record<string, string | number | boolean>) {
@@ -43,6 +74,22 @@ function useProducts(params: Record<string, string | number | boolean>) {
     const { data } = useSWR(['chai-products', JSON.stringify(params)], () => fetchProducts(params), {
         revalidateOnFocus: false,
     })
+    return data || []
+}
+
+/** Catálogo plano de categorías (para el selector por query). */
+function useAllCategories(): ApiCategory[] {
+    const { data } = useSWR(
+        'chai-all-cats',
+        async () => {
+            const res = await ApiService.fetchDataWithAxios<{ data: ApiCategory[] }>({
+                url: '/catalog/categories',
+                method: 'get',
+            })
+            return res.data || []
+        },
+        { revalidateOnFocus: false },
+    )
     return data || []
 }
 
@@ -73,6 +120,267 @@ type PromoBannerData = { image?: string; title?: string; href?: string }
 function usePromoBanner(index: number) {
     const { data } = useSWR(['chai-promo', index], () => fetchSetting<PromoBannerData[]>('promo_banners'), { revalidateOnFocus: false })
     return (data || [])[index] || null
+}
+
+// ─────────────────────────── Widget: selector de categoría (por query) ───────────────────────────
+/**
+ * Widget RJSF que reemplaza el texto libre del slug de categoría por un buscador
+ * sobre las categorías reales del backend. Guarda el `slug` seleccionado.
+ */
+function CategoryPicker(props: { value?: string; onChange?: (v: string) => void }) {
+    const { value, onChange } = props
+    const cats = useAllCategories()
+    const [q, setQ] = useState('')
+    const current = cats.find((c) => c.slug === value)
+    const filtered = useMemo(() => {
+        const t = q.trim().toLowerCase()
+        const base = t ? cats.filter((c) => c.name.toLowerCase().includes(t) || c.slug.includes(t)) : cats
+        return base.slice(0, 50)
+    }, [q, cats])
+
+    return (
+        <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between rounded border border-gray-200 bg-white px-2 py-1 text-xs">
+                <span className={current || value ? 'text-gray-800' : 'text-gray-400'}>
+                    {current ? current.name : value || 'Todas las categorías'}
+                </span>
+                {value ? (
+                    <button type="button" onClick={() => onChange?.('')} className="text-gray-400 hover:text-gray-700">
+                        limpiar
+                    </button>
+                ) : null}
+            </div>
+            <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Buscar categoría…"
+                className="rounded border border-gray-200 px-2 py-1 text-xs outline-none focus:border-gray-400"
+            />
+            {q ? (
+                <div className="max-h-44 overflow-auto rounded border border-gray-100 bg-white">
+                    {filtered.length ? (
+                        filtered.map((c) => (
+                            <button
+                                type="button"
+                                key={c.slug}
+                                onClick={() => {
+                                    onChange?.(c.slug)
+                                    setQ('')
+                                }}
+                                className="block w-full px-2 py-1 text-left text-xs hover:bg-gray-50"
+                            >
+                                {c.name}
+                                {c.parentId ? <span className="ml-1 text-gray-300">· sub</span> : null}
+                            </button>
+                        ))
+                    ) : (
+                        <div className="px-2 py-1 text-xs text-gray-400">Sin resultados</div>
+                    )}
+                </div>
+            ) : null}
+        </div>
+    )
+}
+
+/** Helper de schema: campo de categoría editado con el widget por query. */
+const categoryField = (title = 'Categoría'): any => ({
+    type: 'string',
+    title,
+    default: '',
+    ui: { 'ui:widget': 'categoryPicker' },
+})
+
+// ─────────────────────────── Widget: selector de marca (por query) ───────────────────────────
+type ApiBrand = { id: string; slug: string; name: string }
+function useAllBrands(): ApiBrand[] {
+    const { data } = useSWR(
+        'chai-all-brands',
+        async () => {
+            const res = await ApiService.fetchDataWithAxios<{ data: ApiBrand[] }>({ url: '/catalog/brands', method: 'get' })
+            return res.data || []
+        },
+        { revalidateOnFocus: false },
+    )
+    return data || []
+}
+
+function BrandPicker(props: { value?: string; onChange?: (v: string) => void }) {
+    const { value, onChange } = props
+    const brands = useAllBrands()
+    const [q, setQ] = useState('')
+    const current = brands.find((b) => b.slug === value)
+    const filtered = useMemo(() => {
+        const t = q.trim().toLowerCase()
+        return (t ? brands.filter((b) => b.name.toLowerCase().includes(t) || b.slug.includes(t)) : brands).slice(0, 50)
+    }, [q, brands])
+    return (
+        <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between rounded border border-gray-200 bg-white px-2 py-1 text-xs">
+                <span className={current || value ? 'text-gray-800' : 'text-gray-400'}>
+                    {current ? current.name : value || 'Todas las marcas'}
+                </span>
+                {value ? (
+                    <button type="button" onClick={() => onChange?.('')} className="text-gray-400 hover:text-gray-700">
+                        limpiar
+                    </button>
+                ) : null}
+            </div>
+            <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Buscar marca…"
+                className="rounded border border-gray-200 px-2 py-1 text-xs outline-none focus:border-gray-400"
+            />
+            {q ? (
+                <div className="max-h-44 overflow-auto rounded border border-gray-100 bg-white">
+                    {filtered.length ? (
+                        filtered.map((b) => (
+                            <button
+                                type="button"
+                                key={b.slug}
+                                onClick={() => {
+                                    onChange?.(b.slug)
+                                    setQ('')
+                                }}
+                                className="block w-full px-2 py-1 text-left text-xs hover:bg-gray-50"
+                            >
+                                {b.name}
+                            </button>
+                        ))
+                    ) : (
+                        <div className="px-2 py-1 text-xs text-gray-400">Sin resultados</div>
+                    )}
+                </div>
+            ) : null}
+        </div>
+    )
+}
+
+// ─────────────────────────── Widget: selección manual de productos (multi, por query) ───────────────────────────
+function ProductPicker(props: { value?: string; onChange?: (v: string) => void }) {
+    const { value, onChange } = props
+    const ids = (value || '').split(',').map((s) => s.trim()).filter(Boolean)
+    const [q, setQ] = useState('')
+    const { data: results } = useSWR(
+        q.trim() ? ['chai-prod-search', q] : null,
+        async () => fetchProducts({ perPage: 12, page: 1, q: q.trim() }),
+        { revalidateOnFocus: false },
+    )
+    const { data: selected } = useSWR(
+        ids.length ? ['chai-prod-byids', value] : null,
+        async () => fetchProducts({ perPage: 50, page: 1, ids: ids.join(',') }),
+        { revalidateOnFocus: false },
+    )
+    const add = (id: string) => {
+        if (!ids.includes(id)) onChange?.([...ids, id].join(','))
+        setQ('')
+    }
+    const remove = (id: string) => onChange?.(ids.filter((x) => x !== id).join(','))
+    return (
+        <div className="flex flex-col gap-1.5">
+            {(selected || []).length ? (
+                <div className="flex flex-wrap gap-1">
+                    {(selected || []).map((p) => (
+                        <span key={p.id} className="flex items-center gap-1 rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-700">
+                            {p.title.slice(0, 22)}
+                            <button type="button" onClick={() => remove(p.id)} className="text-gray-400 hover:text-gray-700">
+                                ×
+                            </button>
+                        </span>
+                    ))}
+                </div>
+            ) : (
+                <div className="text-[11px] text-gray-400">Sin productos seleccionados</div>
+            )}
+            <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Buscar producto…"
+                className="rounded border border-gray-200 px-2 py-1 text-xs outline-none focus:border-gray-400"
+            />
+            {q ? (
+                <div className="max-h-44 overflow-auto rounded border border-gray-100 bg-white">
+                    {(results || []).length ? (
+                        (results || []).map((p) => (
+                            <button
+                                type="button"
+                                key={p.id}
+                                onClick={() => add(p.id)}
+                                className="block w-full px-2 py-1 text-left text-xs hover:bg-gray-50"
+                            >
+                                {p.title}
+                            </button>
+                        ))
+                    ) : (
+                        <div className="px-2 py-1 text-xs text-gray-400">Sin resultados</div>
+                    )}
+                </div>
+            ) : null}
+        </div>
+    )
+}
+
+/**
+ * Grupo de propiedades de QUERY reutilizable (equivalente al "Query" de Elementor).
+ * Se aplica a los bloques de listado (ProductGrid, Catálogo). Filtros respaldados
+ * por columnas reales del catálogo. NO incluidos (sin columna que los respalde):
+ * etiquetas, popularidad/best-selling, rating/top-rated.
+ */
+/** Filtros de query (subconjunto reutilizable en ProductGrid y Catálogo). */
+const filterProps = (): Record<string, any> => ({
+    source: {
+        type: 'string',
+        title: 'Origen',
+        enum: ['all', 'onPromo', 'featured', 'newest', 'manual'],
+        enumNames: ['Todos', 'En oferta', 'Destacados', 'Más nuevos', 'Selección manual'],
+        default: 'all',
+    },
+    ids: { type: 'string', title: 'Productos (selección manual)', default: '', ui: { 'ui:widget': 'productPicker' } },
+    categorySlug: categoryField('Categoría'),
+    brand: { type: 'string', title: 'Marca', default: '', ui: { 'ui:widget': 'brandPicker' } },
+    q: { type: 'string', title: 'Búsqueda (palabra clave)', default: '' },
+    orderBy: {
+        type: 'string',
+        title: 'Ordenar por',
+        enum: ['createdAt', 'title', 'priceWeb', 'random'],
+        enumNames: ['Fecha', 'Nombre', 'Precio', 'Aleatorio'],
+        default: 'createdAt',
+    },
+    order: { type: 'string', title: 'Dirección', enum: ['desc', 'asc'], enumNames: ['Descendente', 'Ascendente'], default: 'desc' },
+    inStock: { type: 'boolean', title: 'Solo con stock', default: false },
+    priceMin: { type: 'number', title: 'Precio mínimo (Gs)', default: 0 },
+    priceMax: { type: 'number', title: 'Precio máximo (Gs, 0 = sin límite)', default: 0 },
+})
+
+/** Query completa (Elementor-equivalente) para listados con cantidad/offset propios. */
+const queryProps = (): Record<string, any> => ({
+    ...filterProps(),
+    limit: { type: 'number', title: 'Cantidad', default: 8 },
+    offset: { type: 'number', title: 'Saltar (offset)', default: 0 },
+    columns: { type: 'number', title: 'Columnas', default: 4 },
+})
+
+/** Traduce las props de query del bloque a los params de la API (admin preview + store comparten la idea). */
+function buildProductParams(b: Record<string, any>): Record<string, string | number | boolean> {
+    const p: Record<string, string | number | boolean> = { page: 1, perPage: Number(b.perPage ?? b.limit) || 8 }
+    const source = b.source || 'all'
+    if (source === 'onPromo') p.onPromo = true
+    if (source === 'featured') p.featured = true
+    if (source === 'manual' && b.ids) p.ids = String(b.ids)
+    if (b.categorySlug) p.category = String(b.categorySlug)
+    if (b.brand) p.brand = String(b.brand)
+    if (b.q) p.q = String(b.q)
+    if (b.inStock) p.inStock = true
+    if (Number(b.priceMin) > 0) p.priceMin = Number(b.priceMin)
+    if (Number(b.priceMax) > 0) p.priceMax = Number(b.priceMax)
+    if (Number(b.offset) > 0) p.offset = Number(b.offset)
+    p.sort =
+        source === 'newest'
+            ? 'createdAt:desc'
+            : b.orderBy === 'random'
+              ? 'random'
+              : `${b.orderBy || 'createdAt'}:${b.order || 'desc'}`
+    return p
 }
 
 // ─────────────────────────── Card reutilizable ───────────────────────────
@@ -109,7 +417,8 @@ function Grid({ products, cols }: { products: ApiProduct[]; cols: number }) {
 }
 
 // ─────────────────────────── Hero ───────────────────────────
-type HeroProps = {
+type CommonProps = { styles?: ChaiStyles; blockProps?: any }
+type HeroProps = CommonProps & {
     title?: string
     subtitle?: string
     ctaLabel?: string
@@ -118,16 +427,12 @@ type HeroProps = {
     align?: 'left' | 'center'
 }
 
-function Hero({ title, subtitle, ctaLabel, ctaHref, image, align = 'left' }: HeroProps) {
+function Hero({ title, subtitle, ctaLabel, ctaHref, image, align = 'left', styles, blockProps }: HeroProps) {
+    const bg: React.CSSProperties = image
+        ? { backgroundImage: `linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),url(${image})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+        : { background: 'linear-gradient(135deg,#111827,#374151)' }
     return (
-        <section
-            className="relative overflow-hidden rounded-2xl bg-gray-900 px-8 py-16 text-white"
-            style={
-                image
-                    ? { backgroundImage: `linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),url(${image})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                    : undefined
-            }
-        >
+        <section {...root(styles, blockProps, bg)}>
             <div className={align === 'center' ? 'mx-auto max-w-2xl text-center' : 'max-w-2xl'}>
                 <h2 className="text-3xl font-bold sm:text-4xl">{title || 'Título del hero'}</h2>
                 {subtitle && <p className="mt-3 text-lg text-gray-200">{subtitle}</p>}
@@ -144,15 +449,12 @@ function Hero({ title, subtitle, ctaLabel, ctaHref, image, align = 'left' }: Her
     )
 }
 
-// ─────────────────────────── ProductGrid ───────────────────────────
-type ProductGridProps = { title?: string; categorySlug?: string; limit?: number; columns?: number; inBuilder?: boolean }
-
-function ProductGrid({ title, categorySlug, limit = 8, columns = 4 }: ProductGridProps) {
-    const params: Record<string, string | number | boolean> = { perPage: limit, page: 1 }
-    if (categorySlug) params.category = categorySlug
-    const products = useProducts(params)
+// ─────────────────────────── ProductGrid (query Elementor-equivalente) ───────────────────────────
+function ProductGrid(props: any) {
+    const { title, columns = 4, limit = 8, styles, blockProps } = props
+    const products = useProducts({ ...buildProductParams(props), status: 'published' })
     return (
-        <section className="py-6">
+        <section {...root(styles, blockProps)}>
             {title && <h3 className="mb-4 text-xl font-semibold text-gray-900">{title}</h3>}
             {products.length ? (
                 <Grid products={products.slice(0, limit)} cols={columns} />
@@ -166,29 +468,31 @@ function ProductGrid({ title, categorySlug, limit = 8, columns = 4 }: ProductGri
 }
 
 // ─────────────────────────── HomeDeals (ofertas) ───────────────────────────
-type HomeDealsProps = { title?: string; limit?: number; columns?: number }
+type HomeDealsProps = CommonProps & { title?: string; limit?: number; columns?: number }
 
-function HomeDeals({ title = 'Ofertas', limit = 6, columns = 6 }: HomeDealsProps) {
+function HomeDeals({ title = 'Ofertas', limit = 6, columns = 6, styles, blockProps }: HomeDealsProps) {
     const products = useProducts({ perPage: limit, page: 1, onPromo: true })
     return (
-        <section className="rounded-2xl bg-red-50 p-5">
-            <div className="mb-4 flex items-center gap-2">
-                <span className="rounded bg-red-600 px-2 py-1 text-xs font-bold uppercase text-white">Oferta</span>
-                <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
-            </div>
-            {products.length ? (
-                <Grid products={products.slice(0, limit)} cols={columns} />
-            ) : (
-                <div className="rounded-xl border border-dashed border-red-200 p-8 text-center text-sm text-red-300">
-                    Sin ofertas activas
+        <section {...root(styles, blockProps)}>
+            <div className="rounded-2xl bg-red-50 p-5">
+                <div className="mb-4 flex items-center gap-2">
+                    <span className="rounded bg-red-600 px-2 py-1 text-xs font-bold uppercase text-white">Oferta</span>
+                    <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
                 </div>
-            )}
+                {products.length ? (
+                    <Grid products={products.slice(0, limit)} cols={columns} />
+                ) : (
+                    <div className="rounded-xl border border-dashed border-red-200 p-8 text-center text-sm text-red-300">
+                        Sin ofertas activas
+                    </div>
+                )}
+            </div>
         </section>
     )
 }
 
 // ─────────────────────────── Banner ───────────────────────────
-type BannerProps = {
+type BannerProps = CommonProps & {
     title?: string
     subtitle?: string
     ctaLabel?: string
@@ -197,16 +501,12 @@ type BannerProps = {
     align?: 'left' | 'center'
 }
 
-function Banner({ title, subtitle, ctaLabel, image, align = 'left' }: BannerProps) {
+function Banner({ title, subtitle, ctaLabel, image, align = 'left', styles, blockProps }: BannerProps) {
+    const bg = image
+        ? { backgroundImage: `linear-gradient(rgba(0,0,0,.4),rgba(0,0,0,.4)),url(${image})`, backgroundSize: 'cover', backgroundPosition: 'center' as const }
+        : { background: 'linear-gradient(135deg,#1f2937,#374151)' }
     return (
-        <section
-            className="relative overflow-hidden rounded-2xl px-6 py-10 text-white"
-            style={
-                image
-                    ? { backgroundImage: `linear-gradient(rgba(0,0,0,.4),rgba(0,0,0,.4)),url(${image})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                    : { background: 'linear-gradient(135deg,#1f2937,#374151)' }
-            }
-        >
+        <section {...root(styles, blockProps, bg)}>
             <div className={align === 'center' ? 'mx-auto max-w-xl text-center' : 'max-w-xl'}>
                 <h3 className="text-2xl font-bold">{title || 'Banner promocional'}</h3>
                 {subtitle && <p className="mt-2 text-sm text-gray-200">{subtitle}</p>}
@@ -221,12 +521,12 @@ function Banner({ title, subtitle, ctaLabel, image, align = 'left' }: BannerProp
 }
 
 // ─────────────────────────── CategoryShowcase ───────────────────────────
-type CategoryShowcaseProps = { title?: string; limit?: number }
+type CategoryShowcaseProps = CommonProps & { title?: string; limit?: number }
 
-function CategoryShowcase({ title = 'Categorías', limit = 8 }: CategoryShowcaseProps) {
+function CategoryShowcase({ title = 'Categorías', limit = 8, styles, blockProps }: CategoryShowcaseProps) {
     const tiles = Array.from({ length: Math.max(1, Math.min(limit, 12)) })
     return (
-        <section className="py-4">
+        <section {...root(styles, blockProps)}>
             {title && <h3 className="mb-4 text-xl font-semibold text-gray-900">{title}</h3>}
             <div className="grid grid-cols-4 gap-3">
                 {tiles.map((_, i) => (
@@ -243,13 +543,13 @@ function CategoryShowcase({ title = 'Categorías', limit = 8 }: CategoryShowcase
 }
 
 // ─────────────────────────── Brands ───────────────────────────
-type BrandsProps = { title?: string; logos?: string }
+type BrandsProps = CommonProps & { title?: string; logos?: string }
 
-function Brands({ title = 'Marcas', logos }: BrandsProps) {
+function Brands({ title = 'Marcas', logos, styles, blockProps }: BrandsProps) {
     const urls = (logos || '').split(',').map((s) => s.trim()).filter(Boolean)
     const cells = urls.length ? urls : Array.from({ length: 6 }).map(() => '')
     return (
-        <section className="py-4">
+        <section {...root(styles, blockProps)}>
             {title && <h3 className="mb-4 text-xl font-semibold text-gray-900">{title}</h3>}
             <div className="grid grid-cols-6 gap-3">
                 {cells.map((u, i) => (
@@ -271,9 +571,9 @@ function Brands({ title = 'Marcas', logos }: BrandsProps) {
 }
 
 // ─────────────────────────── Benefits ───────────────────────────
-type BenefitsProps = { title?: string }
+type BenefitsProps = CommonProps & { title?: string }
 
-function Benefits({ title }: BenefitsProps) {
+function Benefits({ title, styles, blockProps }: BenefitsProps) {
     const items = [
         { t: 'Envío a domicilio', s: 'En todo el país' },
         { t: 'Devoluciones', s: 'Hasta 30 días' },
@@ -281,7 +581,7 @@ function Benefits({ title }: BenefitsProps) {
         { t: 'Atención', s: 'Soporte dedicado' },
     ]
     return (
-        <section className="py-4">
+        <section {...root(styles, blockProps)}>
             {title && <h3 className="mb-4 text-xl font-semibold text-gray-900">{title}</h3>}
             <div className="grid grid-cols-4 gap-3">
                 {items.map((it) => (
@@ -299,30 +599,32 @@ function Benefits({ title }: BenefitsProps) {
 }
 
 // ─────────────────────────── HeroSlider (slider del home) ───────────────────────────
-function SliderBlock() {
+function SliderBlock({ styles, blockProps }: CommonProps) {
     const slides = useSlides()
     const first = slides[0]
     const img = first?.imageDesktop || first?.imageMobile
     return (
-        <section className="overflow-hidden rounded-2xl bg-gray-100">
-            {img ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={img} alt={first?.title || ''} className="w-full object-cover" />
-            ) : (
-                <div className="flex h-56 items-center justify-center text-sm text-gray-400">
-                    Slider del home (banners por día — se editan en “Slider y banners”)
-                </div>
-            )}
+        <section {...root(styles, blockProps)}>
+            <div className="overflow-hidden rounded-2xl bg-gray-100">
+                {img ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={img} alt={first?.title || ''} className="w-full object-cover" />
+                ) : (
+                    <div className="flex h-56 items-center justify-center text-sm text-gray-400">
+                        Slider del home (banners por día — se editan en “Slider y banners”)
+                    </div>
+                )}
+            </div>
         </section>
     )
 }
 
 // ─────────────────────────── CategoryCircles (círculos de categorías) ───────────────────────────
-function CirclesBlock() {
+function CirclesBlock({ styles, blockProps }: CommonProps) {
     const cats = useHomeCategories()
     const cells: (HomeCat | null)[] = cats.length ? cats : Array.from({ length: 8 }).map(() => null)
     return (
-        <section className="py-4">
+        <section {...root(styles, blockProps)}>
             <div className="grid grid-cols-8 gap-3">
                 {cells.map((c, i) => (
                     <div key={i} className="flex flex-col items-center gap-2">
@@ -341,10 +643,10 @@ function CirclesBlock() {
 }
 
 // ─────────────────────────── Featured (selección para vos) ───────────────────────────
-function FeaturedBlock({ title = 'Selección para vos', limit = 8, columns = 4 }: { title?: string; limit?: number; columns?: number }) {
+function FeaturedBlock({ title = 'Selección para vos', limit = 8, columns = 4, styles, blockProps }: CommonProps & { title?: string; limit?: number; columns?: number }) {
     const products = useProducts({ perPage: limit, page: 1, featured: true })
     return (
-        <section className="py-6">
+        <section {...root(styles, blockProps)}>
             {title && <h3 className="mb-4 text-xl font-semibold text-gray-900">{title}</h3>}
             {products.length ? (
                 <Grid products={products.slice(0, limit)} cols={columns} />
@@ -358,24 +660,28 @@ function FeaturedBlock({ title = 'Selección para vos', limit = 8, columns = 4 }
 }
 
 // ─────────────────────────── PromoBanner (banner promocional CMS) ───────────────────────────
-function PromoBlock({ index = 0 }: { index?: number }) {
+function PromoBlock({ index = 0, styles, blockProps }: CommonProps & { index?: number }) {
     const banner = usePromoBanner(index)
     return banner?.image ? (
-        <section className="overflow-hidden rounded-2xl">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={banner.image} alt={banner.title || ''} className="w-full object-cover" />
+        <section {...root(styles, blockProps)}>
+            <div className="overflow-hidden rounded-2xl">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={banner.image} alt={banner.title || ''} className="w-full object-cover" />
+            </div>
         </section>
     ) : (
-        <section className="flex h-32 items-center justify-center rounded-2xl bg-gray-100 text-sm text-gray-400">
-            Banner promocional (slot #{index} — se edita en “Slider y banners”)
+        <section {...root(styles, blockProps)}>
+            <div className="flex h-32 items-center justify-center rounded-2xl bg-gray-100 text-sm text-gray-400">
+                Banner promocional (slot #{index} — se edita en “Slider y banners”)
+            </div>
         </section>
     )
 }
 
 // ─────────────────────────── SiteHeader / SiteFooter (chrome) ───────────────────────────
-function SiteHeaderPv() {
+function SiteHeaderPv({ styles, blockProps }: CommonProps) {
     return (
-        <header>
+        <header {...root(styles, blockProps)}>
             <div className="flex items-center justify-between bg-gray-50 px-6 py-1.5 text-[11px] text-gray-400">
                 <span>Sucursales · Trabajá con nosotros · ¿Dónde está mi pedido?</span>
                 <span>Sucursal más cercana</span>
@@ -390,9 +696,9 @@ function SiteHeaderPv() {
     )
 }
 
-function SiteFooterPv() {
+function SiteFooterPv({ styles, blockProps }: CommonProps) {
     return (
-        <footer className="mt-6 border-t border-gray-100 px-6 py-8 text-sm text-gray-400">
+        <footer {...root(styles, blockProps)}>
             <div className="grid grid-cols-4 gap-6">
                 {['Información', 'Comprar', 'Atención', 'Newsletter'].map((c) => (
                     <div key={c}>
@@ -407,37 +713,37 @@ function SiteFooterPv() {
 }
 
 // ─────────────────────────── Bloques de Header (chrome construible) ───────────────────────────
-function HdTopBarPv() {
+function HdTopBarPv({ styles, blockProps }: CommonProps) {
     return (
-        <div className="flex items-center justify-between bg-gray-50 px-4 py-1.5 text-[11px] text-gray-400">
+        <div {...root(styles, blockProps)}>
             <span>Sucursales · Trabajá con nosotros · ¿Dónde está mi pedido?</span>
             <span>Sucursal más cercana</span>
         </div>
     )
 }
-function HdLogoPv({ brandName = 'Farmatotal' }: { brandName?: string }) {
-    return <span className="text-xl font-bold text-white">{brandName}</span>
+function HdLogoPv({ brandName = 'Farmatotal', styles, blockProps }: CommonProps & { brandName?: string }) {
+    return <span {...root(styles, blockProps)}>{brandName}</span>
 }
-function HdSearchPv() {
-    return <div className="h-10 w-full min-w-[200px] rounded-full bg-white/90" />
+function HdSearchPv({ styles, blockProps }: CommonProps) {
+    return <div {...root(styles, blockProps)} />
 }
-function HdCategoriesPv() {
-    return <span className="rounded-md bg-white/20 px-3 py-1.5 text-sm text-white">≡ Categorías ▾</span>
+function HdCategoriesPv({ styles, blockProps }: CommonProps) {
+    return <span {...root(styles, blockProps)}>≡ Categorías ▾</span>
 }
-function HdAccountPv() {
-    return <span className="rounded-full bg-white/20 px-3 py-1.5 text-xs text-white">Cuenta</span>
+function HdAccountPv({ styles, blockProps }: CommonProps) {
+    return <span {...root(styles, blockProps)}>Cuenta</span>
 }
-function HdCartPv() {
-    return <span className="rounded-full bg-white/20 px-3 py-1.5 text-xs text-white">Carrito</span>
+function HdCartPv({ styles, blockProps }: CommonProps) {
+    return <span {...root(styles, blockProps)}>Carrito</span>
 }
-function HdSucursalPv() {
-    return <span className="text-sm text-white">Sucursal: <b>elegir</b></span>
+function HdSucursalPv({ styles, blockProps }: CommonProps) {
+    return <span {...root(styles, blockProps)}>Sucursal: <b>elegir</b></span>
 }
 
 // ─────────────────────────── Cart (carrito funcional) ───────────────────────────
-function CartPv() {
+function CartPv({ styles, blockProps }: CommonProps) {
     return (
-        <section className="py-8">
+        <section {...root(styles, blockProps)}>
             <h2 className="mb-6 text-2xl font-bold text-gray-900">Carrito</h2>
             <div className="flex flex-col gap-8 lg:flex-row">
                 <div className="flex-1">
@@ -465,9 +771,9 @@ function CartPv() {
 }
 
 // ─────────────────────────── Checkout (checkout funcional) ───────────────────────────
-function CheckoutPv() {
+function CheckoutPv({ styles, blockProps }: CommonProps) {
     return (
-        <section className="py-8">
+        <section {...root(styles, blockProps)}>
             <h2 className="mb-6 text-2xl font-bold text-gray-900">Finalizar compra</h2>
             <div className="flex flex-col gap-8 lg:flex-row">
                 <div className="flex flex-1 flex-col gap-6">
@@ -492,12 +798,12 @@ function CheckoutPv() {
 }
 
 // ─────────────────────────── ProductDetail (ficha de producto data-bound) ───────────────────────────
-function ProductDetailPv({ showRelated = true }: { showRelated?: boolean }) {
+function ProductDetailPv({ showRelated = true, styles, blockProps }: CommonProps & { showRelated?: boolean }) {
     const products = useProducts({ perPage: 5, page: 1 })
     const p = products[0]
     const related = products.slice(1, 5)
     return (
-        <section className="py-8">
+        <section {...root(styles, blockProps)}>
             <div className="grid items-start gap-10 lg:grid-cols-2">
                 <div className="flex aspect-square items-center justify-center rounded-2xl border border-gray-100 bg-gray-50">
                     {p && imgOf(p) ? (
@@ -509,7 +815,7 @@ function ProductDetailPv({ showRelated = true }: { showRelated?: boolean }) {
                 </div>
                 <div className="flex flex-col gap-3">
                     <h1 className="text-2xl font-bold text-gray-900">{p?.title || 'Nombre del producto'}</h1>
-                    <div className="text-sm text-gray-400">SKU: {p ? '—' : '—'}</div>
+                    <div className="text-sm text-gray-400">SKU: —</div>
                     <div className="text-3xl font-bold text-gray-900">{p ? money(p.priceWeb) : '₲ 0'}</div>
                     <button className="mt-2 w-fit rounded-lg bg-gray-900 px-6 py-3 text-sm font-semibold text-white">Agregar al carrito</button>
                     <div className="mt-4 text-xs text-gray-400">(galería · precio · variantes · stock por sucursal · add-to-cart — bloque funcional)</div>
@@ -532,15 +838,14 @@ function ProductDetailPv({ showRelated = true }: { showRelated?: boolean }) {
 }
 
 // ─────────────────────────── Catalog (página de catálogo data-bound) ───────────────────────────
-function CatalogPv({ perPage = 10, title, categorySlug }: { perPage?: number; title?: string; categorySlug?: string }) {
-    const params: Record<string, string | number | boolean> = { perPage, page: 1 }
-    if (categorySlug) params.category = categorySlug
-    const products = useProducts(params)
+function CatalogPv(props: any) {
+    const { title, columns = 5, styles, blockProps } = props
+    const products = useProducts({ ...buildProductParams(props), status: 'published' })
     return (
-        <section className="py-6">
+        <section {...root(styles, blockProps)}>
             <h2 className="mb-4 text-xl font-bold text-gray-900">{title || 'Catálogo'}</h2>
             {products.length ? (
-                <Grid products={products} cols={5} />
+                <Grid products={products} cols={columns} />
             ) : (
                 <div className="rounded-xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400">Catálogo (grilla paginada de todos los productos)</div>
             )}
@@ -554,25 +859,29 @@ function CatalogPv({ perPage = 10, title, categorySlug }: { perPage?: number; ti
 }
 
 // ─────────────────────────── Título (encabezado) ───────────────────────────
-type TituloProps = { text?: string; level?: 'h2' | 'h3' | 'h4'; align?: 'left' | 'center' }
+type TituloProps = CommonProps & { text?: string; level?: 'h2' | 'h3' | 'h4'; align?: 'left' | 'center' }
 
-function Titulo({ text, level = 'h2', align = 'left' }: TituloProps) {
+function Titulo({ text, level = 'h2', align = 'left', styles, blockProps }: TituloProps) {
     const Tag = (['h2', 'h3', 'h4'].includes(level || '') ? level : 'h2') as 'h2' | 'h3' | 'h4'
-    const size = Tag === 'h2' ? 'text-2xl' : Tag === 'h3' ? 'text-xl' : 'text-lg'
+    const r = root(styles, blockProps)
+    const alignCls = align === 'center' ? 'text-center' : ''
     return (
-        <Tag className={`${size} mt-2 font-bold text-gray-900 ${align === 'center' ? 'text-center' : ''}`}>
+        <Tag {...r} className={[r.className, alignCls].filter(Boolean).join(' ')}>
             {text || 'Título de sección'}
         </Tag>
     )
 }
 
 // ─────────────────────────── Texto (cuerpo) ───────────────────────────
-type TextoProps = { html?: string; align?: 'left' | 'center' }
+type TextoProps = CommonProps & { html?: string; align?: 'left' | 'center' }
 
-function Texto({ html, align = 'left' }: TextoProps) {
+function Texto({ html, align = 'left', styles, blockProps }: TextoProps) {
+    const r = root(styles, blockProps)
+    const alignCls = align === 'center' ? 'text-center' : ''
     return (
         <div
-            className={`text-[15px] leading-relaxed text-gray-600 ${align === 'center' ? 'text-center' : ''}`}
+            {...r}
+            className={[r.className, alignCls].filter(Boolean).join(' ')}
             dangerouslySetInnerHTML={{ __html: html || 'Escribí aquí el contenido del párrafo…' }}
         />
     )
@@ -586,11 +895,13 @@ export function registerCommerceBlocks() {
     if (registered) return
     registered = true
 
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+    // Widgets por query (Elementor-equivalentes): selección de categoría, marca y
+    // productos sobre el catálogo real del backend.
+    registerChaiBlockSettingWidget('categoryPicker', CategoryPicker as any)
+    registerChaiBlockSettingWidget('brandPicker', BrandPicker as any)
+    registerChaiBlockSettingWidget('productPicker', ProductPicker as any)
 
     // Colecciones data-bound para el bloque Repeater (tarjeta-template editable).
-    // El editor lista estas colecciones en el binding del Repeater; los hijos
-    // atan con {{$index.campo}} (title/image/priceWeb/slug…).
     registerChaiCollection('products', {
         name: 'Productos',
         filters: [{ id: 'category', name: 'Categoría' }],
@@ -612,24 +923,23 @@ export function registerCommerceBlocks() {
             return { items: res.data || [], totalItems: res.total ?? (res.data?.length ?? 0) }
         },
     } as any)
+
     registerChaiBlock(Hero as any, {
         type: 'Hero',
         label: 'Hero / Banner',
         group: 'Comercio',
         description: 'Banner principal con título, subtítulo y CTA.',
-        props: {
-            schema: {
-                properties: {
-                    title: { type: 'string', title: 'Título', default: 'Bienvenido a la tienda' },
-                    subtitle: { type: 'string', title: 'Subtítulo', default: '' },
-                    ctaLabel: { type: 'string', title: 'Texto del botón', default: 'Ver productos' },
-                    ctaHref: { type: 'string', title: 'Enlace del botón', default: '/productos' },
-                    image: { type: 'string', title: 'Imagen de fondo (URL)', default: '' },
-                    align: { type: 'string', title: 'Alineación', enum: ['left', 'center'], default: 'left' },
-                },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('relative overflow-hidden rounded-2xl px-8 py-16 text-white'),
+                title: { type: 'string', title: 'Título', default: 'Bienvenido a la tienda' },
+                subtitle: { type: 'string', title: 'Subtítulo', default: '' },
+                ctaLabel: { type: 'string', title: 'Texto del botón', default: 'Ver productos' },
+                ctaHref: { type: 'string', title: 'Enlace del botón', default: '/productos' },
+                image: { type: 'string', title: 'Imagen de fondo (URL)', default: '' },
+                align: { type: 'string', title: 'Alineación', enum: ['left', 'center'], default: 'left' },
             },
-            uiSchema: {},
-        },
+        }) as any,
         i18nProps: ['title', 'subtitle', 'ctaLabel'],
     } as any)
 
@@ -638,17 +948,13 @@ export function registerCommerceBlocks() {
         label: 'Grilla de productos',
         group: 'Comercio',
         description: 'Lista de productos del catálogo (filtrable por categoría).',
-        props: {
-            schema: {
-                properties: {
-                    title: { type: 'string', title: 'Título', default: 'Destacados' },
-                    categorySlug: { type: 'string', title: 'Categoría (slug, opcional)', default: '' },
-                    limit: { type: 'number', title: 'Cantidad', default: 8 },
-                    columns: { type: 'number', title: 'Columnas', default: 4 },
-                },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('py-6'),
+                title: { type: 'string', title: 'Título', default: 'Destacados' },
+                ...queryProps(),
             },
-            uiSchema: {},
-        },
+        }) as any,
         i18nProps: ['title'],
     } as any)
 
@@ -657,16 +963,14 @@ export function registerCommerceBlocks() {
         label: 'Ofertas del día',
         group: 'Comercio',
         description: 'Productos en promoción (onPromo).',
-        props: {
-            schema: {
-                properties: {
-                    title: { type: 'string', title: 'Título', default: 'Ofertas' },
-                    limit: { type: 'number', title: 'Cantidad', default: 6 },
-                    columns: { type: 'number', title: 'Columnas', default: 6 },
-                },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp(''),
+                title: { type: 'string', title: 'Título', default: 'Ofertas' },
+                limit: { type: 'number', title: 'Cantidad', default: 6 },
+                columns: { type: 'number', title: 'Columnas', default: 6 },
             },
-            uiSchema: {},
-        },
+        }) as any,
         i18nProps: ['title'],
     } as any)
 
@@ -675,19 +979,17 @@ export function registerCommerceBlocks() {
         label: 'Banner promocional',
         group: 'Comercio',
         description: 'Banner con imagen o degradado de marca, título, subtítulo y CTA.',
-        props: {
-            schema: {
-                properties: {
-                    title: { type: 'string', title: 'Título', default: 'Banner promocional' },
-                    subtitle: { type: 'string', title: 'Subtítulo', default: '' },
-                    ctaLabel: { type: 'string', title: 'Texto del botón', default: '' },
-                    ctaHref: { type: 'string', title: 'Enlace del botón', default: '#' },
-                    image: { type: 'string', title: 'Imagen de fondo (URL)', default: '' },
-                    align: { type: 'string', title: 'Alineación', enum: ['left', 'center'], default: 'left' },
-                },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('relative overflow-hidden rounded-2xl px-8 py-12 text-white'),
+                title: { type: 'string', title: 'Título', default: 'Banner promocional' },
+                subtitle: { type: 'string', title: 'Subtítulo', default: '' },
+                ctaLabel: { type: 'string', title: 'Texto del botón', default: '' },
+                ctaHref: { type: 'string', title: 'Enlace del botón', default: '#' },
+                image: { type: 'string', title: 'Imagen de fondo (URL)', default: '' },
+                align: { type: 'string', title: 'Alineación', enum: ['left', 'center'], default: 'left' },
             },
-            uiSchema: {},
-        },
+        }) as any,
         i18nProps: ['title', 'subtitle', 'ctaLabel'],
     } as any)
 
@@ -696,15 +998,13 @@ export function registerCommerceBlocks() {
         label: 'Vitrina de categorías',
         group: 'Comercio',
         description: 'Grilla de categorías del catálogo enlazadas.',
-        props: {
-            schema: {
-                properties: {
-                    title: { type: 'string', title: 'Título', default: 'Categorías' },
-                    limit: { type: 'number', title: 'Cantidad', default: 8 },
-                },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('py-6'),
+                title: { type: 'string', title: 'Título', default: 'Categorías' },
+                limit: { type: 'number', title: 'Cantidad', default: 8 },
             },
-            uiSchema: {},
-        },
+        }) as any,
         i18nProps: ['title'],
     } as any)
 
@@ -713,15 +1013,13 @@ export function registerCommerceBlocks() {
         label: 'Marcas',
         group: 'Comercio',
         description: 'Tira de logos de marcas (URLs separadas por coma, opcional).',
-        props: {
-            schema: {
-                properties: {
-                    title: { type: 'string', title: 'Título', default: 'Marcas' },
-                    logos: { type: 'string', title: 'Logos (URLs separadas por coma)', default: '' },
-                },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('py-6'),
+                title: { type: 'string', title: 'Título', default: 'Marcas' },
+                logos: { type: 'string', title: 'Logos (URLs separadas por coma)', default: '' },
             },
-            uiSchema: {},
-        },
+        }) as any,
         i18nProps: ['title'],
     } as any)
 
@@ -730,14 +1028,12 @@ export function registerCommerceBlocks() {
         label: 'Beneficios',
         group: 'Comercio',
         description: 'Fila de beneficios (envío, devoluciones, pago seguro, atención).',
-        props: {
-            schema: {
-                properties: {
-                    title: { type: 'string', title: 'Título', default: '' },
-                },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('py-6'),
+                title: { type: 'string', title: 'Título', default: '' },
             },
-            uiSchema: {},
-        },
+        }) as any,
         i18nProps: ['title'],
     } as any)
 
@@ -746,18 +1042,16 @@ export function registerCommerceBlocks() {
         label: 'Slider del home',
         group: 'Comercio',
         description: 'Carrusel principal con los banners del home (filtrados por día). Se editan en “Slider y banners”.',
-        props: {
-            schema: {
-                properties: {
-                    autoplayDelay: { type: 'number', title: 'Autoplay (ms, 0 = off)', default: 4000 },
-                    showArrows: { type: 'boolean', title: 'Mostrar flechas', default: true },
-                    showDots: { type: 'boolean', title: 'Mostrar puntos', default: true },
-                    loop: { type: 'boolean', title: 'Loop infinito', default: true },
-                    fade: { type: 'boolean', title: 'Transición fade', default: true },
-                },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp(''),
+                autoplayDelay: { type: 'number', title: 'Autoplay (ms, 0 = off)', default: 4000 },
+                showArrows: { type: 'boolean', title: 'Mostrar flechas', default: true },
+                showDots: { type: 'boolean', title: 'Mostrar puntos', default: true },
+                loop: { type: 'boolean', title: 'Loop infinito', default: true },
+                fade: { type: 'boolean', title: 'Transición fade', default: true },
             },
-            uiSchema: {},
-        },
+        }) as any,
     } as any)
 
     registerChaiBlock(CirclesBlock as any, {
@@ -765,15 +1059,13 @@ export function registerCommerceBlocks() {
         label: 'Círculos de categorías',
         group: 'Comercio',
         description: 'Categorías destacadas en círculos (setting home_categories).',
-        props: {
-            schema: {
-                properties: {
-                    title: { type: 'string', title: 'Título (opcional)', default: '' },
-                    limit: { type: 'number', title: 'Máx. categorías (0 = todas)', default: 0 },
-                },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp(''),
+                title: { type: 'string', title: 'Título (opcional)', default: '' },
+                limit: { type: 'number', title: 'Máx. categorías (0 = todas)', default: 0 },
             },
-            uiSchema: {},
-        },
+        }) as any,
         i18nProps: ['title'],
     } as any)
 
@@ -782,16 +1074,14 @@ export function registerCommerceBlocks() {
         label: 'Selección para vos (destacados)',
         group: 'Comercio',
         description: 'Productos destacados (featured) en grilla.',
-        props: {
-            schema: {
-                properties: {
-                    title: { type: 'string', title: 'Título', default: 'Selección para vos' },
-                    limit: { type: 'number', title: 'Cantidad', default: 8 },
-                    columns: { type: 'number', title: 'Columnas', default: 4 },
-                },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp(''),
+                title: { type: 'string', title: 'Título', default: 'Selección para vos' },
+                limit: { type: 'number', title: 'Cantidad', default: 8 },
+                columns: { type: 'number', title: 'Columnas', default: 4 },
             },
-            uiSchema: {},
-        },
+        }) as any,
         i18nProps: ['title'],
     } as any)
 
@@ -800,14 +1090,12 @@ export function registerCommerceBlocks() {
         label: 'Banner promocional (CMS)',
         group: 'Comercio',
         description: 'Banner promocional desde el setting promo_banners (por índice).',
-        props: {
-            schema: {
-                properties: {
-                    index: { type: 'number', title: 'Índice del banner', default: 0 },
-                },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp(''),
+                index: { type: 'number', title: 'Índice del banner', default: 0 },
             },
-            uiSchema: {},
-        },
+        }) as any,
     } as any)
 
     registerChaiBlock(SiteHeaderPv as any, {
@@ -815,14 +1103,12 @@ export function registerCommerceBlocks() {
         label: 'Encabezado del sitio',
         group: 'Chrome',
         description: 'Header del sitio: barra superior, logo, menú de categorías, buscador, cuenta, carrito y sucursal. Bloque funcional.',
-        props: {
-            schema: {
-                properties: {
-                    showTopBar: { type: 'boolean', title: 'Mostrar barra superior', default: true },
-                },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp(''),
+                showTopBar: { type: 'boolean', title: 'Mostrar barra superior', default: true },
             },
-            uiSchema: {},
-        },
+        }) as any,
     } as any)
 
     registerChaiBlock(SiteFooterPv as any, {
@@ -830,35 +1116,41 @@ export function registerCommerceBlocks() {
         label: 'Pie del sitio',
         group: 'Chrome',
         description: 'Footer del sitio: columnas de enlaces, copyright y zona editable previa. Bloque funcional.',
-        props: { schema: { properties: {} }, uiSchema: {} },
+        props: registerChaiBlockProps({
+            properties: { styles: StylesProp('mt-6 border-t border-gray-100 px-6 py-8 text-sm text-gray-400') },
+        }) as any,
     } as any)
 
-    const chrome = (type: string, label: string, description: string, Pv: any, props: any = { schema: { properties: {} }, uiSchema: {} }) =>
-        registerChaiBlock(Pv as any, { type, label, group: 'Header', description, props } as any)
-    chrome('HeaderTopBar', 'Header · Barra superior', 'Barra de avisos/links + sucursal más cercana.', HdTopBarPv)
+    const chrome = (type: string, label: string, description: string, Pv: any, extra: Record<string, any> = {}, styleDefault = '') =>
+        registerChaiBlock(Pv as any, {
+            type,
+            label,
+            group: 'Header',
+            description,
+            props: registerChaiBlockProps({ properties: { styles: StylesProp(styleDefault), ...extra } }) as any,
+        } as any)
+    chrome('HeaderTopBar', 'Header · Barra superior', 'Barra de avisos/links + sucursal más cercana.', HdTopBarPv, {}, 'flex items-center justify-between bg-gray-50 px-4 py-1.5 text-[11px] text-gray-400')
     chrome('HeaderLogo', 'Header · Logo', 'Logo enlazado al inicio.', HdLogoPv, {
-        schema: { properties: { logo: { type: 'string', title: 'Logo (URL)', default: '' }, brandName: { type: 'string', title: 'Marca', default: 'Farmatotal' } } },
-        uiSchema: {},
-    })
-    chrome('HeaderSearch', 'Header · Buscador', 'Buscador de productos con sugerencias.', HdSearchPv)
-    chrome('HeaderCategories', 'Header · Menú categorías', 'Botón Categorías + mega-menú.', HdCategoriesPv)
-    chrome('HeaderAccount', 'Header · Cuenta', 'Acceso a mi cuenta.', HdAccountPv)
-    chrome('HeaderCart', 'Header · Carrito', 'Botón de carrito con contador.', HdCartPv)
-    chrome('HeaderSucursal', 'Header · Sucursal', 'Selector de sucursal.', HdSucursalPv)
+        logo: { type: 'string', title: 'Logo (URL)', default: '' },
+        brandName: { type: 'string', title: 'Marca', default: 'Farmatotal' },
+    }, 'text-xl font-bold text-white')
+    chrome('HeaderSearch', 'Header · Buscador', 'Buscador de productos con sugerencias.', HdSearchPv, {}, 'h-10 w-full min-w-[200px] rounded-full bg-white/90')
+    chrome('HeaderCategories', 'Header · Menú categorías', 'Botón Categorías + mega-menú.', HdCategoriesPv, {}, 'rounded-md bg-white/20 px-3 py-1.5 text-sm text-white')
+    chrome('HeaderAccount', 'Header · Cuenta', 'Acceso a mi cuenta.', HdAccountPv, {}, 'rounded-full bg-white/20 px-3 py-1.5 text-xs text-white')
+    chrome('HeaderCart', 'Header · Carrito', 'Botón de carrito con contador.', HdCartPv, {}, 'rounded-full bg-white/20 px-3 py-1.5 text-xs text-white')
+    chrome('HeaderSucursal', 'Header · Sucursal', 'Selector de sucursal.', HdSucursalPv, {}, 'text-sm text-white')
 
     registerChaiBlock(CartPv as any, {
         type: 'Cart',
         label: 'Carrito',
         group: 'Comercio',
         description: 'Carrito funcional: ítems, cantidades, cupón y totales. Bloque funcional (como el widget de carrito de Woo).',
-        props: {
-            schema: {
-                properties: {
-                    showCoupon: { type: 'boolean', title: 'Mostrar cupón de descuento', default: true },
-                },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('py-8'),
+                showCoupon: { type: 'boolean', title: 'Mostrar cupón de descuento', default: true },
             },
-            uiSchema: {},
-        },
+        }) as any,
     } as any)
 
     registerChaiBlock(CheckoutPv as any, {
@@ -866,7 +1158,7 @@ export function registerCommerceBlocks() {
         label: 'Checkout',
         group: 'Comercio',
         description: 'Checkout funcional: facturación, entrega, pago y resumen. Crea la orden e inicia el pago (Bancard).',
-        props: { schema: { properties: {} }, uiSchema: {} },
+        props: registerChaiBlockProps({ properties: { styles: StylesProp('py-8') } }) as any,
     } as any)
 
     registerChaiBlock(ProductDetailPv as any, {
@@ -874,16 +1166,14 @@ export function registerCommerceBlocks() {
         label: 'Ficha de producto',
         group: 'Comercio',
         description: 'Ficha del producto consultado (galería, precio, variantes, add-to-cart, tabs, relacionados). Data-bound a la ruta.',
-        props: {
-            schema: {
-                properties: {
-                    showTabs: { type: 'boolean', title: 'Mostrar pestañas (desc./valoraciones)', default: true },
-                    showRelated: { type: 'boolean', title: 'Mostrar relacionados', default: true },
-                    relatedTitle: { type: 'string', title: 'Título de relacionados', default: 'Productos relacionados' },
-                },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('py-8'),
+                showTabs: { type: 'boolean', title: 'Mostrar pestañas (desc./valoraciones)', default: true },
+                showRelated: { type: 'boolean', title: 'Mostrar relacionados', default: true },
+                relatedTitle: { type: 'string', title: 'Título de relacionados', default: 'Productos relacionados' },
             },
-            uiSchema: {},
-        },
+        }) as any,
         i18nProps: ['relatedTitle'],
     } as any)
 
@@ -892,17 +1182,15 @@ export function registerCommerceBlocks() {
         label: 'Catálogo (grilla + paginación)',
         group: 'Comercio',
         description: 'Página de catálogo: grilla paginada de productos (lee ?page de la URL). Filtrable por categoría.',
-        props: {
-            schema: {
-                properties: {
-                    title: { type: 'string', title: 'Título', default: 'Catálogo' },
-                    perPage: { type: 'number', title: 'Por página', default: 48 },
-                    columns: { type: 'number', title: 'Columnas (desktop)', default: 5 },
-                    categorySlug: { type: 'string', title: 'Categoría (slug, opcional)', default: '' },
-                },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('ft-container py-6'),
+                title: { type: 'string', title: 'Título', default: 'Catálogo' },
+                perPage: { type: 'number', title: 'Por página', default: 48 },
+                columns: { type: 'number', title: 'Columnas (desktop)', default: 5 },
+                ...filterProps(),
             },
-            uiSchema: {},
-        },
+        }) as any,
         i18nProps: ['title'],
     } as any)
 
@@ -911,16 +1199,14 @@ export function registerCommerceBlocks() {
         label: 'Título / Encabezado',
         group: 'Contenido',
         description: 'Encabezado de sección (h2/h3/h4).',
-        props: {
-            schema: {
-                properties: {
-                    text: { type: 'string', title: 'Texto', default: 'Título de sección' },
-                    level: { type: 'string', title: 'Nivel', enum: ['h2', 'h3', 'h4'], default: 'h2' },
-                    align: { type: 'string', title: 'Alineación', enum: ['left', 'center'], default: 'left' },
-                },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('mt-2 text-2xl font-bold text-brand-text'),
+                text: { type: 'string', title: 'Texto', default: 'Título de sección' },
+                level: { type: 'string', title: 'Nivel', enum: ['h2', 'h3', 'h4'], default: 'h2' },
+                align: { type: 'string', title: 'Alineación', enum: ['left', 'center'], default: 'left' },
             },
-            uiSchema: {},
-        },
+        }) as any,
         i18nProps: ['text'],
     } as any)
 
@@ -929,20 +1215,18 @@ export function registerCommerceBlocks() {
         label: 'Texto / Párrafo',
         group: 'Contenido',
         description: 'Bloque de texto con formato (negrita, enlaces, saltos de línea).',
-        props: {
-            schema: {
-                properties: {
-                    html: {
-                        type: 'string',
-                        title: 'Contenido',
-                        default: 'Escribí aquí el contenido del párrafo…',
-                        ui: { 'ui:widget': 'richtext' },
-                    },
-                    align: { type: 'string', title: 'Alineación', enum: ['left', 'center'], default: 'left' },
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('text-[15px] leading-relaxed text-gray-600'),
+                html: {
+                    type: 'string',
+                    title: 'Contenido',
+                    default: 'Escribí aquí el contenido del párrafo…',
+                    ui: { 'ui:widget': 'richtext' },
                 },
+                align: { type: 'string', title: 'Alineación', enum: ['left', 'center'], default: 'left' },
             },
-            uiSchema: {},
-        },
+        }) as any,
         i18nProps: ['html'],
     } as any)
     /* eslint-enable @typescript-eslint/no-explicit-any */

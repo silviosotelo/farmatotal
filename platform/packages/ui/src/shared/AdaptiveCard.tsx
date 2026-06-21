@@ -1,7 +1,7 @@
-import classNames from '@ft/ui/utils/classNames'
-import Card from '@ft/ui/ui/Card'
-import useLayout from '@ft/ui/utils/hooks/useLayout'
-import type { CardProps } from '@ft/ui/ui/Card'
+import classNames from '@platform/ui/utils/classNames'
+import Card from '@platform/ui/ui/Card'
+import useLayout from '@platform/ui/utils/hooks/useLayout'
+import type { CardProps } from '@platform/ui/ui/Card'
 
 type AdaptableCardProps = CardProps
 

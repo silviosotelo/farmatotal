@@ -1,4 +1,4 @@
-import { COLORS } from '@ft/ui/theme/chart.constant'
+import { COLORS } from '@platform/ui/theme/chart.constant'
 import type { ApexOptions } from 'apexcharts'
 
 export const apexLineChartDefaultOption: ApexOptions = {

@@ -5,9 +5,10 @@ import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductActions } from "@/components/product/ProductActions";
 import { ProductTabs } from "@/components/product/ProductTabs";
+import { ProductSpecs } from "@/components/product/ProductSpecs";
 import { BranchStock } from "@/components/product/BranchStock";
-import { formatGs } from "@/lib/format";
-import { getProductBySlug, getDeals, listReviews, listVariants, getPage } from "@/lib/api";
+import { formatMoney } from "@/lib/money";
+import { getProductBySlug, getDeals, listReviews, listVariants, getPage, getStoreConfig } from "@/lib/api";
 import { getActiveTheme } from "@/themes/registry";
 import { EkomartProductDetail } from "@/themes/ekomart/pages/EkomartProductDetail";
 import { AnvogueProductDetail } from "@/themes/anvogue/pages/AnvogueProductDetail";
@@ -54,6 +55,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     );
   }
 
+  const { currency, locale } = await getStoreConfig();
   return (
     <main className="flex-1 pb-12">
       <Breadcrumbs
@@ -76,11 +78,11 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 
             <div className="font-price mt-1 flex flex-col gap-0.5">
               <div className="text-sm text-price-muted">
-                Precio Normal: <span className="line-through">{formatGs(product.priceNormal)}</span>
+                Precio Normal: <span className="line-through">{formatMoney(product.priceNormal, { currency, locale })}</span>
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-sm font-medium text-brand-muted">Precio Web:</span>
-                <span className="text-[28px] font-bold leading-none text-brand-orange">{formatGs(product.priceWeb)}</span>
+                <span className="text-[28px] font-bold leading-none text-brand-orange">{formatMoney(product.priceWeb, { currency, locale })}</span>
               </div>
             </div>
 
@@ -93,6 +95,8 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             </div>
           </div>
         </div>
+
+        <ProductSpecs product={product} className="mt-12" />
 
         {/* Pestañas: descripción / info / valoraciones */}
         <div className="mt-12">

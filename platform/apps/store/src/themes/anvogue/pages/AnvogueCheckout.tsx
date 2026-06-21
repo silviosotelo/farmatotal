@@ -1,14 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CreditCard, Banknote, Landmark, MapPin, ShoppingBag, Store, Truck } from "lucide-react";
 import { useCart } from "@/components/providers/CartContext";
 import { useSucursal } from "@/components/sucursal/SucursalContext";
 import { useToast } from "@/components/providers/ToastContext";
-import { formatGs } from "@/lib/data";
-import type { Order } from "@/types";
+import { useMoney } from "@/components/providers/CurrencyContext";
+import { useFlags } from "@/components/providers/FeatureFlagsContext";
+import {
+  useShippingQuote,
+  useTaxConfig,
+  usePaymentMethods,
+  isPaymentEnabled,
+  defaultRate,
+  computeTax,
+} from "@/lib/checkout";
 import { AnvogueBreadcrumb } from "../AnvogueBreadcrumb";
 import { container, buttonMain, buttonMainFull, heading5 } from "../sections/anvogueClasses";
 
@@ -17,6 +25,13 @@ type PaymentMethod =
   | "Tarjeta de crédito/débito (Bancard)"
   | "Efectivo en sucursal"
   | "Transferencia bancaria";
+
+/** Medios de pago de la UI mapeados a la clave de config del backend (mod_payments). */
+const PAYMENT_OPTIONS: { value: PaymentMethod; key: string; Icon: typeof CreditCard }[] = [
+  { value: "Tarjeta de crédito/débito (Bancard)", key: "bancard", Icon: CreditCard },
+  { value: "Efectivo en sucursal", key: "cash", Icon: Banknote },
+  { value: "Transferencia bancaria", key: "transfer", Icon: Landmark },
+];
 
 const INPUT_CLS =
   "h-12 w-full rounded-2xl border border-[#E9E9E9] bg-white px-4 text-sm text-[#1F1F1F] placeholder:text-[#696C70] focus:border-[#1F1F1F] focus:outline-none";
@@ -31,10 +46,12 @@ const LABEL_CLS =
  * negra/roja, surface gris, rounded-2xl y labels en mayúsculas con tracking.
  */
 export function AnvogueCheckout() {
+  const money = useMoney();
   const router = useRouter();
   const { lines, subtotal, coupon, discount, total, clear } = useCart();
   const { selected, open } = useSucursal();
   const { toast } = useToast();
+  const flags = useFlags();
 
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
@@ -42,11 +59,27 @@ export function AnvogueCheckout() {
   const [telefono, setTelefono] = useState("");
   const [ciudad, setCiudad] = useState("");
   const [direccion, setDireccion] = useState("");
-  const [delivery, setDelivery] = useState<DeliveryMethod>("retiro");
+  // Tenant sin sucursales (branches=false): no hay "retiro en sucursal" → solo envío.
+  const [delivery, setDelivery] = useState<DeliveryMethod>(flags.branches ? "retiro" : "envio");
   const [payment, setPayment] = useState<PaymentMethod>(
     "Tarjeta de crédito/débito (Bancard)",
   );
   const [submitting, setSubmitting] = useState(false);
+
+  // Pedido sin productos físicos (digital/servicio) → no requiere envío.
+  const requiresShipping = lines.some((l) => (l.product.productType ?? "physical") === "physical");
+
+  // Config-driven: cotización de envío, impuestos y medios de pago.
+  const ship = useShippingQuote({ enabled: requiresShipping && delivery === "envio", city: ciudad, subtotal });
+  const taxCfg = useTaxConfig();
+  const paymentMethods = usePaymentMethods();
+  const rate = defaultRate(taxCfg);
+
+  // Si el medio elegido queda deshabilitado por config, salta al primero visible.
+  useEffect(() => {
+    const visible = PAYMENT_OPTIONS.filter((o) => isPaymentEnabled(paymentMethods, o.key));
+    setPayment((prev) => (visible.some((o) => o.value === prev) ? prev : (visible[0]?.value ?? prev)));
+  }, [paymentMethods]);
 
   /* ── Empty cart ── */
   if (lines.length === 0) {
@@ -91,7 +124,7 @@ export function AnvogueCheckout() {
       // 1. Create order via checkout API
       const paymentMethod =
         payment === "Tarjeta de crédito/débito (Bancard)" ? "online" : "contraentrega";
-      const shippingMethod = delivery === "retiro" ? "pickup" : "delivery";
+      const shippingMethod = requiresShipping ? (delivery === "retiro" ? "pickup" : "delivery") : "pickup";
 
       const res = await fetch("/api/checkout", {
         method: "POST",
@@ -107,9 +140,12 @@ export function AnvogueCheckout() {
           couponCode: coupon?.code,
           paymentMethod,
           shippingMethod,
-          branchId: shippingMethod === "pickup" ? selected?.branchId : undefined,
+          shippingMethodId: shippingMethod === "delivery" ? (ship.selectedId ?? undefined) : undefined,
+          taxRateId: rate?.id,
+          branchId: flags.branches && shippingMethod === "pickup" ? selected?.branchId : undefined,
           billing: {
             name: `${nombre} ${apellido}`.trim(),
+            email,
             phone: telefono,
             address: direccion,
             city: ciudad,
@@ -166,15 +202,21 @@ export function AnvogueCheckout() {
   }
 
   const deliveryOptions: { value: DeliveryMethod; label: string; desc: string; Icon: typeof Store }[] = [
-    { value: "retiro", label: "Retiro en sucursal", desc: "Recogé tu pedido sin costo de envío", Icon: Store },
+    ...(flags.branches
+      ? [{ value: "retiro" as const, label: "Retiro en sucursal", desc: "Recogé tu pedido sin costo de envío", Icon: Store }]
+      : []),
     { value: "envio", label: "Envío a domicilio", desc: "Te lo llevamos a tu dirección", Icon: Truck },
   ];
 
-  const paymentOptions: { value: PaymentMethod; Icon: typeof CreditCard }[] = [
-    { value: "Tarjeta de crédito/débito (Bancard)", Icon: CreditCard },
-    { value: "Efectivo en sucursal", Icon: Banknote },
-    { value: "Transferencia bancaria", Icon: Landmark },
-  ];
+  // Medios de pago visibles (gateados por la config del tenant).
+  const paymentOptions = PAYMENT_OPTIONS.filter((o) => isPaymentEnabled(paymentMethods, o.key));
+
+  // Resumen config-driven: envío del método elegido + impuesto de la tasa default.
+  const selectedShip = ship.options.find((o) => o.id === ship.selectedId) ?? null;
+  const shippingCost = requiresShipping && delivery === "envio" ? (selectedShip?.cost ?? 0) : 0;
+  const taxIncluded = taxCfg?.pricesIncludeTax ?? true;
+  const taxAmount = rate ? computeTax(total, rate.percent, taxIncluded) : 0;
+  const grandTotal = total + shippingCost + (taxIncluded ? 0 : taxAmount);
 
   /* ── Checkout ── */
   return (
@@ -282,6 +324,10 @@ export function AnvogueCheckout() {
               {/* Delivery */}
               <section className="rounded-2xl border border-[#E9E9E9] bg-white p-7">
                 <h2 className={heading5}>Entrega</h2>
+                {!requiresShipping ? (
+                  <p className="mt-6 text-sm text-[#696C70]">Este pedido no requiere envío</p>
+                ) : (
+                <>
                 <div className="mt-6 flex flex-col gap-3">
                   {deliveryOptions.map(({ value, label, desc, Icon }) => (
                     <label
@@ -342,6 +388,45 @@ export function AnvogueCheckout() {
                     )}
                   </div>
                 )}
+
+                {delivery === "envio" && (
+                  <div className="mt-5">
+                    {ship.loading ? (
+                      <p className="text-sm text-[#696C70]">Cotizando envío…</p>
+                    ) : ship.options.length === 0 ? (
+                      <p className="text-sm text-[#696C70]">Ingresá tu ciudad para ver los métodos de envío disponibles.</p>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        {ship.options.map((o) => (
+                          <label
+                            key={o.id}
+                            className={
+                              "flex cursor-pointer items-center gap-4 rounded-2xl border p-5 transition-colors " +
+                              (ship.selectedId === o.id
+                                ? "border-[#1F1F1F] bg-[#F7F7F7]"
+                                : "border-[#E9E9E9] hover:border-[#1F1F1F]")
+                            }
+                          >
+                            <input
+                              type="radio"
+                              name="shipMethod"
+                              value={o.id}
+                              checked={ship.selectedId === o.id}
+                              onChange={() => ship.setSelectedId(o.id)}
+                              className="size-4 accent-[var(--brand-orange)]"
+                            />
+                            <span className="min-w-0 flex-1 text-sm font-semibold text-[#1F1F1F]">{o.name}</span>
+                            <span className="whitespace-nowrap text-sm font-semibold text-[#1F1F1F]">
+                              {o.cost > 0 ? money(o.cost) : "Gratis"}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                </>
+                )}
               </section>
 
               {/* Payment */}
@@ -397,7 +482,7 @@ export function AnvogueCheckout() {
                         <p className="mt-0.5 text-xs text-[#696C70]">×{quantity}</p>
                       </div>
                       <p className="whitespace-nowrap text-xs font-semibold text-[#1F1F1F]">
-                        {formatGs(product.priceWeb * quantity)}
+                        {money(product.priceWeb * quantity)}
                       </p>
                     </li>
                   ))}
@@ -406,19 +491,33 @@ export function AnvogueCheckout() {
                 <dl className="mt-2 space-y-3 border-t border-[#E9E9E9] pt-6 text-sm">
                   <div className="flex justify-between">
                     <dt className="text-[#696C70]">Subtotal</dt>
-                    <dd className="font-medium text-[#1F1F1F]">{formatGs(subtotal)}</dd>
+                    <dd className="font-medium text-[#1F1F1F]">{money(subtotal)}</dd>
                   </div>
 
                   {coupon && discount > 0 && (
                     <div className="flex justify-between text-[var(--brand-orange)]">
                       <dt>Descuento ({coupon.code})</dt>
-                      <dd className="font-medium">−{formatGs(discount)}</dd>
+                      <dd className="font-medium">−{money(discount)}</dd>
+                    </div>
+                  )}
+
+                  {requiresShipping && delivery === "envio" && (
+                    <div className="flex justify-between">
+                      <dt className="text-[#696C70]">Envío{selectedShip ? ` (${selectedShip.name})` : ""}</dt>
+                      <dd className="font-medium text-[#1F1F1F]">{selectedShip ? (shippingCost > 0 ? money(shippingCost) : "Gratis") : "A cotizar"}</dd>
+                    </div>
+                  )}
+
+                  {rate && taxAmount > 0 && (
+                    <div className="flex justify-between">
+                      <dt className="text-[#696C70]">{taxIncluded ? `${rate.name} incluido` : rate.name}</dt>
+                      <dd className="font-medium text-[#1F1F1F]">{money(taxAmount)}</dd>
                     </div>
                   )}
 
                   <div className="flex items-baseline justify-between border-t border-[#E9E9E9] pt-4">
                     <dt className="text-base font-semibold text-[#1F1F1F]">Total</dt>
-                    <dd className="text-2xl font-semibold text-[#1F1F1F]">{formatGs(total)}</dd>
+                    <dd className="text-2xl font-semibold text-[#1F1F1F]">{money(grandTotal)}</dd>
                   </div>
                 </dl>
 

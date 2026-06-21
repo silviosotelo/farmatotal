@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Input, InputProps } from '@ft/ui/ui/Input'
+import { Input, InputProps } from '@platform/ui/ui/Input'
 import { HiOutlineEyeOff, HiOutlineEye } from 'react-icons/hi'
 import type { MouseEvent, Ref } from 'react'
 

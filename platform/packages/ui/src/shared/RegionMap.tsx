@@ -5,9 +5,9 @@ import {
     Geography,
     Marker,
 } from 'react-simple-maps'
-import classNames from '@ft/ui/utils/classNames'
+import classNames from '@platform/ui/utils/classNames'
 import { PatternCircles } from '@visx/pattern'
-import WorldMap from '@ft/ui/assets/maps/world-countries-sans-antarctica.json'
+import WorldMap from '@platform/ui/assets/maps/world-countries-sans-antarctica.json'
 import { Tooltip as ReactTooltip } from 'react-tooltip'
 
 import type { Dispatch, ReactNode, SetStateAction } from 'react'

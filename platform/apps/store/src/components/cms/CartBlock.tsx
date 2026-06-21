@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useCart } from "@/components/providers/CartContext";
 import { useToast } from "@/components/providers/ToastContext";
-import { formatGs } from "@/lib/data";
+import { useMoney } from "@/components/providers/CurrencyContext";
+import { decQty, formatQty, stepQty, unitLabel } from "@/lib/units";
 
 /**
  * Bloque funcional "Carrito" del builder (estilo widget de carrito de Woo en
@@ -13,6 +14,7 @@ import { formatGs } from "@/lib/data";
  * coloca/posiciona desde el builder. Markup farmatotal pixel-perfect.
  */
 export function CartBlock({ showCoupon = true }: { showCoupon?: boolean } = {}) {
+  const money = useMoney();
   const { lines, subtotal, coupon, discount, total, setQty, removeItem, clear, applyCoupon, removeCoupon } = useCart();
   const { toast } = useToast();
   const [couponInput, setCouponInput] = useState("");
@@ -70,13 +72,13 @@ export function CartBlock({ showCoupon = true }: { showCoupon?: boolean } = {}) 
                       {product.title}
                     </Link>
                   </div>
-                  <p className="font-price text-sm text-brand-orange text-right">{formatGs(product.priceWeb)}</p>
+                  <p className="font-price text-sm text-brand-orange text-right">{money(product.priceWeb)}</p>
                   <div className="flex items-center justify-center gap-1">
-                    <button onClick={() => setQty(product.id, quantity - 1)} className="size-8 rounded-full border border-[#ededf1] bg-search-bg flex items-center justify-center text-brand-text hover:border-brand-orange transition-colors text-base leading-none" aria-label="Disminuir cantidad">−</button>
-                    <span className="w-8 text-center text-sm font-semibold text-brand-text">{quantity}</span>
-                    <button onClick={() => setQty(product.id, quantity + 1)} className="size-8 rounded-full border border-[#ededf1] bg-search-bg flex items-center justify-center text-brand-text hover:border-brand-orange transition-colors text-base leading-none" aria-label="Aumentar cantidad">+</button>
+                    <button onClick={() => setQty(product.id, decQty(quantity, product.unitStep ?? 1))} className="size-8 rounded-full border border-[#ededf1] bg-search-bg flex items-center justify-center text-brand-text hover:border-brand-orange transition-colors text-base leading-none" aria-label="Disminuir cantidad">−</button>
+                    <span className="min-w-8 px-1 text-center text-sm font-semibold text-brand-text whitespace-nowrap">{formatQty(quantity)} {unitLabel(product)}</span>
+                    <button onClick={() => setQty(product.id, stepQty(quantity, product.unitStep ?? 1, 1))} className="size-8 rounded-full border border-[#ededf1] bg-search-bg flex items-center justify-center text-brand-text hover:border-brand-orange transition-colors text-base leading-none" aria-label="Aumentar cantidad">+</button>
                   </div>
-                  <p className="font-price text-sm font-semibold text-brand-text text-right">{formatGs(product.priceWeb * quantity)}</p>
+                  <p className="font-price text-sm font-semibold text-brand-text text-right">{money(product.priceWeb * quantity)}</p>
                   <button onClick={() => removeItem(product.id)} className="text-brand-muted hover:text-[#c0392b] transition-colors p-1" aria-label={`Quitar ${product.title}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
                       <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
@@ -92,14 +94,14 @@ export function CartBlock({ showCoupon = true }: { showCoupon?: boolean } = {}) 
                     <Link href={`/productos/${product.slug}/`} className="text-sm text-brand-text hover:text-brand-orange transition-colors line-clamp-2 font-medium">
                       {product.title}
                     </Link>
-                    <p className="font-price text-sm text-brand-orange mt-1">{formatGs(product.priceWeb)}</p>
+                    <p className="font-price text-sm text-brand-orange mt-1">{money(product.priceWeb)}</p>
                     <div className="flex items-center gap-3 mt-2">
                       <div className="flex items-center gap-1">
-                        <button onClick={() => setQty(product.id, quantity - 1)} className="size-7 rounded-full border border-[#ededf1] bg-search-bg flex items-center justify-center text-brand-text hover:border-brand-orange transition-colors text-sm" aria-label="Disminuir cantidad">−</button>
-                        <span className="w-7 text-center text-sm font-semibold text-brand-text">{quantity}</span>
-                        <button onClick={() => setQty(product.id, quantity + 1)} className="size-7 rounded-full border border-[#ededf1] bg-search-bg flex items-center justify-center text-brand-text hover:border-brand-orange transition-colors text-sm" aria-label="Aumentar cantidad">+</button>
+                        <button onClick={() => setQty(product.id, decQty(quantity, product.unitStep ?? 1))} className="size-7 rounded-full border border-[#ededf1] bg-search-bg flex items-center justify-center text-brand-text hover:border-brand-orange transition-colors text-sm" aria-label="Disminuir cantidad">−</button>
+                        <span className="min-w-7 px-1 text-center text-sm font-semibold text-brand-text whitespace-nowrap">{formatQty(quantity)} {unitLabel(product)}</span>
+                        <button onClick={() => setQty(product.id, stepQty(quantity, product.unitStep ?? 1, 1))} className="size-7 rounded-full border border-[#ededf1] bg-search-bg flex items-center justify-center text-brand-text hover:border-brand-orange transition-colors text-sm" aria-label="Aumentar cantidad">+</button>
                       </div>
-                      <p className="font-price text-sm font-semibold text-brand-text">{formatGs(product.priceWeb * quantity)}</p>
+                      <p className="font-price text-sm font-semibold text-brand-text">{money(product.priceWeb * quantity)}</p>
                       <button onClick={() => removeItem(product.id)} className="ml-auto text-brand-muted hover:text-[#c0392b] transition-colors" aria-label={`Quitar ${product.title}`}>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
                           <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
@@ -136,17 +138,17 @@ export function CartBlock({ showCoupon = true }: { showCoupon?: boolean } = {}) 
             <dl className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <dt className="text-brand-muted">Subtotal</dt>
-                <dd className="font-price text-brand-text">{formatGs(subtotal)}</dd>
+                <dd className="font-price text-brand-text">{money(subtotal)}</dd>
               </div>
               {coupon && (
                 <div className="flex justify-between text-[#c0392b]">
                   <dt>Descuento ({coupon.code})</dt>
-                  <dd className="font-price">−{formatGs(discount)}</dd>
+                  <dd className="font-price">−{money(discount)}</dd>
                 </div>
               )}
               <div className="pt-3 border-t border-[#ededf1] flex justify-between items-baseline">
                 <dt className="font-semibold text-brand-text text-base">Total</dt>
-                <dd className="font-price text-brand-orange text-xl font-bold">{formatGs(total)}</dd>
+                <dd className="font-price text-brand-orange text-xl font-bold">{money(total)}</dd>
               </div>
             </dl>
             <div className="mt-6 flex flex-col gap-3">

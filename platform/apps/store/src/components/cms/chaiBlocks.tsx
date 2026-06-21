@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { tenantHeaders } from "@/lib/tenant";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -17,22 +18,25 @@ function gs(n: number) {
  */
 export function ChaiProductGrid({
   title,
-  categorySlug,
   limit = 8,
   columns = 4,
+  className,
+  query,
 }: {
   title?: string;
-  categorySlug?: string;
   limit?: number;
   columns?: number;
+  className?: string;
+  query?: Record<string, string>;
 }) {
   const [items, setItems] = useState<GridProduct[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const qkey = useMemo(() => JSON.stringify(query || {}), [query]);
 
   useEffect(() => {
-    const qs = new URLSearchParams({ perPage: String(limit || 8), status: "published" });
-    if (categorySlug) qs.set("category", categorySlug);
-    fetch(`${API}/catalog/products?${qs.toString()}`)
+    const qs = new URLSearchParams({ status: "published", perPage: String(limit || 8), ...(query || {}) });
+    qs.set("perPage", String(limit || 8));
+    fetch(`${API}/catalog/products?${qs.toString()}`, { headers: tenantHeaders() })
       .then((r) => r.json())
       .then((d) => {
         const list = ((d.data as Record<string, unknown>[]) || []).map((p) => ({
@@ -48,12 +52,13 @@ export function ChaiProductGrid({
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
-  }, [categorySlug, limit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qkey, limit]);
 
   if (loaded && items.length === 0) return null;
 
   return (
-    <section className="py-6">
+    <section className={className || "py-6"}>
       {title && <h3 className="mb-4 text-xl font-bold">{title}</h3>}
       <div
         className="grid gap-3"
@@ -93,15 +98,17 @@ type ShowcaseCategory = { name: string; href: string };
 export function ChaiCategoryShowcase({
   title,
   limit = 8,
+  className,
 }: {
   title?: string;
   limit?: number;
+  className?: string;
 }) {
   const [items, setItems] = useState<ShowcaseCategory[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    fetch(`${API}/catalog/categories?perPage=2000`)
+    fetch(`${API}/catalog/categories?perPage=2000`, { headers: tenantHeaders() })
       .then((r) => r.json())
       .then((d) => {
         const list = ((d.data as Record<string, unknown>[]) || []).map((c) => ({
@@ -117,7 +124,7 @@ export function ChaiCategoryShowcase({
   if (loaded && items.length === 0) return null;
 
   return (
-    <section className="py-6">
+    <section className={className || "py-6"}>
       {title && <h3 className="mb-4 text-xl font-bold">{title}</h3>}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
         {items.slice(0, limit).map((c) => (

@@ -8,7 +8,7 @@ import type { ThemeKey } from "./registry";
  * componentes cliente (carrito, checkout, modal de sucursal, mini-carrito) para
  * que puedan branchear su layout por tema. El layout server lo alimenta.
  */
-const ThemeContext = createContext<ThemeKey>("farmatotal");
+const ThemeContext = createContext<ThemeKey>("base");
 
 export function ThemeProvider({ theme, children }: { theme: ThemeKey; children: ReactNode }) {
   return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;

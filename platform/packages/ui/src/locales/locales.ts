@@ -4,7 +4,7 @@ import en from './lang/en.json'
 import zh from './lang/zh.json'
 import es from './lang/es.json'
 import ar from './lang/ar.json'
-import appConfig from '@ft/ui/configs/app.config'
+import appConfig from '@platform/ui/configs/app.config'
 
 const resources = {
     en: {

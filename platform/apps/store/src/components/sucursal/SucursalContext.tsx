@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { fetchSucursales, zonasOf, nearestSucursal, type Sucursal } from "@/lib/sucursales";
+import { useFlags } from "@/components/providers/FeatureFlagsContext";
 
 const STORAGE_KEY = "ft_sucursal";
 
@@ -22,13 +23,18 @@ interface SucursalCtx {
 const Ctx = createContext<SucursalCtx | null>(null);
 
 export function SucursalProvider({ children }: { children: ReactNode }) {
+  const flags = useFlags();
   const [selected, setSelected] = useState<Sucursal | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
 
   // Trae las sucursales del backend y resuelve la guardada en localStorage.
   // Si no hay sucursal elegida, abre el modal obligatorio (como Farmatotal).
+  // Tenant sin sucursales (branches=false): no fetch, no restore, no auto-open →
+  // selected queda null y toda la UI branch-scoped (BranchStock, StockBadge,
+  // retiro en checkout) colapsa por su rama de "sin sucursal".
   useEffect(() => {
+    if (!flags.branches) return;
     let cancelled = false;
     fetchSucursales().then((list) => {
       if (cancelled) return;
@@ -46,7 +52,7 @@ export function SucursalProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [flags.branches]);
 
   const open = useCallback(() => setIsOpen(true), []);
   // close NO cierra si todavía no hay sucursal elegida (modal obligatorio).

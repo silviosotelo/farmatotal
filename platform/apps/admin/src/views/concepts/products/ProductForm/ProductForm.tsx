@@ -7,6 +7,7 @@ import PricingSection from './components/PricingSection'
 import ImageSection from './components/ImageSection'
 import AttributeSection from './components/AttributeSection'
 import ProductDetailsSection from './components/ProductDetailsSection'
+import SpecsSection from './components/SpecsSection'
 import { useForm } from 'react-hook-form'
 import type { Resolver } from 'react-hook-form'
 import { z } from 'zod'
@@ -52,6 +53,12 @@ const validationSchema = z.object({
     featured: z.boolean().optional(),
     onPromo: z.boolean().optional(),
     promoCode: z.string().optional(),
+    unit: z.string().optional(),
+    unitStep: z.union([z.string(), z.number()]).optional(),
+    productType: z.enum(['physical', 'digital', 'service']).optional(),
+    attributes: z
+        .array(z.object({ label: z.string(), value: z.string() }))
+        .optional(),
 })
 
 const ProductForm = (props: ProductFormProps) => {
@@ -98,6 +105,7 @@ const ProductForm = (props: ProductFormProps) => {
                         <GeneralSection control={control} errors={errors} />
                         <PricingSection control={control} errors={errors} />
                         <ProductDetailsSection control={control} errors={errors} />
+                        <SpecsSection control={control} errors={errors} />
                     </div>
                     <div className="lg:min-w-[440px] 2xl:w-[500px] gap-4 flex flex-col">
                         <ImageSection control={control} errors={errors} />

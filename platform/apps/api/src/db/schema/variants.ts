@@ -10,13 +10,13 @@ import {
   index,
   unique,
 } from "drizzle-orm/pg-core";
-import { farmatotalApp } from "./_pgSchema";
+import { appSchema } from "./_pgSchema";
 import { products } from "./products";
 
 /** Atributos genéricos de la variante (white-label: talle/color, mg/cantidad, etc.). */
 export type VariantAttributes = Record<string, string>;
 
-export const productVariants = farmatotalApp.table(
+export const productVariants = appSchema.table(
   "product_variants",
   {
     id: uuid("id").primaryKey().defaultRandom(),

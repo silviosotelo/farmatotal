@@ -1,5 +1,5 @@
-import { useThemeStore } from '@ft/ui/store/themeStore'
-import { THEME_ENUM } from '@ft/ui/theme/theme.constant'
+import { useThemeStore } from '@platform/ui/store/themeStore'
+import { THEME_ENUM } from '@platform/ui/theme/theme.constant'
 import type { DetailedHTMLProps, ImgHTMLAttributes } from 'react'
 
 interface DoubleSidedImageProps

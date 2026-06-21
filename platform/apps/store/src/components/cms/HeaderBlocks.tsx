@@ -7,8 +7,10 @@ import { TOP_NAV } from "@/lib/data";
 import type { NavItem } from "@/lib/api";
 import { UserIcon, CartIcon, MenuIcon, ChevronDownIcon } from "@/components/icons";
 import { useCart } from "@/components/providers/CartContext";
+import { formatQty } from "@/lib/units";
 import { SucursalTrigger } from "@/components/sucursal/SucursalTrigger";
 import { SearchBar, MegaMenu, TopBar } from "@/components/sections/Header";
+import { useFlags } from "@/components/providers/FeatureFlagsContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -98,7 +100,7 @@ export function HeaderCartBlock() {
       <CartIcon width={24} height={24} />
       {count > 0 && (
         <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-[var(--brand-orange)]">
-          {count}
+          {formatQty(count)}
         </span>
       )}
     </button>
@@ -106,6 +108,8 @@ export function HeaderCartBlock() {
 }
 
 export function HeaderSucursalBlock() {
+  const flags = useFlags();
+  if (!flags.branches) return null;
   return (
     <div className="flex items-center gap-1 text-sm text-white">
       <span className="opacity-90">Sucursal:</span>

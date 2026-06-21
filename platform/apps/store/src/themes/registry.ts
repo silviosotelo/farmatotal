@@ -4,12 +4,12 @@
  * con override por env `NEXT_PUBLIC_THEME` para previsualizar. White-label /
  * multi-rubro: cada tema es un set de componentes (chrome + home) intercambiable.
  */
-export type ThemeKey = "farmatotal" | "ekomart" | "anvogue";
+export type ThemeKey = "base" | "ekomart" | "anvogue";
 
 export const THEMES: { key: ThemeKey; name: string; description: string }[] = [
   {
-    key: "farmatotal",
-    name: "Farmatotal (Bacola)",
+    key: "base",
+    name: "Base (Bacola)",
     description: "Tema farmacia/grocery basado en Bacola. Naranja, denso, orientado a catálogo.",
   },
   {
@@ -24,10 +24,10 @@ export const THEMES: { key: ThemeKey; name: string; description: string }[] = [
   },
 ];
 
-const VALID = new Set<ThemeKey>(["farmatotal", "ekomart", "anvogue"]);
+const VALID = new Set<ThemeKey>(["base", "ekomart", "anvogue"]);
 
 export function normalizeTheme(t?: string | null): ThemeKey {
-  return t && VALID.has(t as ThemeKey) ? (t as ThemeKey) : "farmatotal";
+  return t && VALID.has(t as ThemeKey) ? (t as ThemeKey) : "base";
 }
 
 /**
@@ -56,10 +56,10 @@ export async function getActiveTheme(): Promise<ThemeKey> {
   try {
     const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
     const res = await fetch(`${base}/cms/settings/store_config`, { cache: "no-store" });
-    if (!res.ok) return "farmatotal";
+    if (!res.ok) return "base";
     const data = (await res.json()) as { value?: { theme?: string } };
     return normalizeTheme(data?.value?.theme);
   } catch {
-    return "farmatotal";
+    return "base";
   }
 }

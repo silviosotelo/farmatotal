@@ -9,7 +9,7 @@ const lineSchema = z.object({
   productId: z.string().optional(),
   sku: z.string(),
   title: z.string(),
-  quantity: z.number().int().min(1),
+  quantity: z.number().positive(),
   unitPrice: z.number().int().min(0),
 });
 
@@ -18,6 +18,10 @@ const checkoutSchema = z.object({
   couponCode: z.string().optional(),
   paymentMethod: z.enum(["online", "contraentrega"]),
   shippingMethod: z.enum(["delivery", "pickup"]),
+  // Método de envío elegido (de /shipping/quote) y tasa de impuesto; el backend
+  // re-resuelve el costo/impuesto desde la config per-tenant.
+  shippingMethodId: z.string().optional(),
+  taxRateId: z.string().optional(),
   branchId: z.string().optional(),
   billing: z.object({
     name: z.string().min(1),
@@ -61,6 +65,10 @@ export async function POST(req: NextRequest) {
       docType,
       docNumber: docType ? data.billing.doc : undefined,
       shippingMethod: data.shippingMethod,
+      // Sólo en delivery se manda el método elegido (en pickup el costo es 0).
+      shippingMethodId:
+        data.shippingMethod === "delivery" ? data.shippingMethodId || undefined : undefined,
+      taxRateId: data.taxRateId || undefined,
       branchId,
       shippingAddress:
         data.shippingMethod === "delivery"

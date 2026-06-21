@@ -19,7 +19,7 @@ async function safe<T>(p: Promise<T>, fallback: T): Promise<T> {
  * (/slides/today), y categorías/ofertas/destacados salen del catálogo. Los colores
  * vienen de los tokens de marca (store_config.colors) inyectados en el layout.
  */
-export async function FarmatotalHome() {
+export async function BaseHome() {
   const [categories, deals, featured, latest] = await Promise.all([
     safe(getHomeCategories(), [] as Category[]),
     safe(getDeals(12), [] as Product[]),

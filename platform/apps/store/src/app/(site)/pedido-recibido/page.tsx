@@ -4,7 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
-import { formatGs } from "@/lib/data";
+import { formatMoney } from "@/lib/money";
+import { useCurrency } from "@/components/providers/CurrencyContext";
+import { formatQty } from "@/lib/units";
 import type { Order } from "@/types";
 
 function CheckIcon() {
@@ -43,6 +45,8 @@ function formatDate(iso: string): string {
 
 export default function PedidoRecibidoPage() {
   const [order, setOrder] = useState<Order | null | undefined>(undefined); // undefined = loading
+  // Orden histórica: moneda guardada de la orden (order.currency), no la viva del store.
+  const { locale } = useCurrency();
 
   useEffect(() => {
     try {
@@ -156,9 +160,9 @@ export default function PedidoRecibidoPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-center text-brand-text">{line.quantity}</td>
+                  <td className="px-4 py-3 text-center text-brand-text">{formatQty(line.quantity)}</td>
                   <td className="px-4 py-3 text-right font-price text-brand-text whitespace-nowrap">
-                    {formatGs(line.price * line.quantity)}
+                    {formatMoney(line.price * line.quantity, { currency: order.currency ?? "PYG", locale })}
                   </td>
                 </tr>
               ))}
@@ -169,7 +173,7 @@ export default function PedidoRecibidoPage() {
                   Total
                 </td>
                 <td className="px-4 py-3 text-right font-price text-brand-orange font-bold text-base whitespace-nowrap">
-                  {formatGs(order.total)}
+                  {formatMoney(order.total, { currency: order.currency ?? "PYG", locale })}
                 </td>
               </tr>
             </tfoot>

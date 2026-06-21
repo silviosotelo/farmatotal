@@ -14,6 +14,8 @@ import {
   ZodTypeProvider,
 } from "fastify-type-provider-zod";
 import { env } from "./env.js";
+import { registerTenantResolver } from "./plugins/tenant.js";
+import { tenantRoutes } from "./modules/tenant/tenant.routes.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { catalogRoutes } from "./modules/catalog/catalog.routes.js";
 import { branchRoutes } from "./modules/branches/branches.routes.js";
@@ -72,6 +74,9 @@ export async function buildApp() {
     secret: { private: env.JWT_ACCESS_SECRET, public: env.JWT_ACCESS_SECRET },
   });
 
+  // Multitenant: resuelve req.tenant (header x-tenant / dominio / default) en cada request.
+  await registerTenantResolver(app);
+
   // Guard global: toda MUTACIÓN (POST/PUT/PATCH/DELETE) exige JWT, salvo la whitelist
   // de escrituras públicas del storefront (checkout, alta de review, pagos, auth).
   // Las lecturas (GET) quedan abiertas para el storefront.
@@ -101,13 +106,14 @@ export async function buildApp() {
   await app.register(swagger, {
     transform: jsonSchemaTransform,
     openapi: {
-      info: { title: "Farmatotal API", version: "0.1.0" },
+      info: { title: "Platform API", version: "0.1.0" },
       servers: [{ url: `http://localhost:${env.API_PORT}` }],
     },
   });
   await app.register(swaggerUI, { routePrefix: "/docs" });
 
   await app.register(healthRoutes);
+  await app.register(tenantRoutes);
   await app.register(authRoutes);
   await app.register(catalogRoutes);
   await app.register(branchRoutes);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@ft/ui";
+import { Button } from "@platform/ui";
 import { BarcodeIcon, MicIcon, ArrowUpIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
@@ -45,7 +45,7 @@ export default function FloatingButtons() {
         </button>
       </div>
 
-      {/* Scroll-to-top — componente Button de Ecme (@ft/ui). variant solid usa
+      {/* Scroll-to-top — componente Button de Ecme (@platform/ui). variant solid usa
           bg-primary, que el puente de tokens mapea al naranja de marca. */}
       <Button
         onClick={handleScrollTop}

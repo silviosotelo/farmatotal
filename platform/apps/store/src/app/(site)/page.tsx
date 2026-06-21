@@ -1,7 +1,7 @@
 import { getActiveTheme } from "@/themes/registry";
 import { EkomartHome } from "@/themes/ekomart/EkomartHome";
 import { AnvogueHome } from "@/themes/anvogue/AnvogueHome";
-import { FarmatotalHome } from "@/components/FarmatotalHome";
+import { BaseHome } from "@/components/BaseHome";
 import { getPage } from "@/lib/api";
 import ChaiRender, { type ChaiBlock } from "@/components/cms/ChaiRender";
 
@@ -31,5 +31,5 @@ export default async function Home() {
       </main>
     );
   }
-  return <FarmatotalHome />;
+  return <BaseHome />;
 }

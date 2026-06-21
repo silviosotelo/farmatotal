@@ -1,5 +1,5 @@
 {
-  "name": "@ft/api",
+  "name": "@platform/api",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -24,7 +24,7 @@
     "@fastify/sensible": "^6.0.2",
     "@fastify/swagger": "^9.4.2",
     "@fastify/swagger-ui": "^5.2.1",
-    "@ft/shared-types": "workspace:*",
+    "@platform/shared-types": "workspace:*",
     "argon2": "^0.41.1",
     "bullmq": "^5.34.4",
     "dotenv": "^16.4.7",

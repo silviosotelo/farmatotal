@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSucursal } from "@/components/sucursal/SucursalContext";
+import { useFlags } from "@/components/providers/FeatureFlagsContext";
 import { LocationIcon } from "@/components/icons";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -15,6 +16,7 @@ type InvRow = { branchId: string; branchName: string; branchCode: string; stock:
  */
 export function BranchStock({ productId }: { productId: string }) {
   const { selected, open } = useSucursal();
+  const flags = useFlags();
   const [rows, setRows] = useState<InvRow[] | null>(null);
 
   useEffect(() => {
@@ -28,7 +30,9 @@ export function BranchStock({ productId }: { productId: string }) {
     };
   }, [productId]);
 
-  if (!selected) return null;
+  // Sin sucursal (incluye branches=false → selected siempre null) o con inventario
+  // oculto (inventory=false) no se muestra disponibilidad por sucursal.
+  if (!selected || !flags.inventory) return null;
 
   // match directo: la sucursal elegida es una branch del backend (id = code).
   const match: InvRow | undefined =

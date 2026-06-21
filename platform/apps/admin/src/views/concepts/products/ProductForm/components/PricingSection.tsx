@@ -2,11 +2,16 @@ import Card from '@/components/ui/Card'
 import { FormItem } from '@/components/ui/Form'
 import NumericInput from '@/components/shared/NumericInput'
 import { Controller } from 'react-hook-form'
+import { useTenantCurrency } from '@/services/currency'
 import type { FormSectionBaseProps } from '../types'
 
 type PricingSectionProps = FormSectionBaseProps
 
 const PricingSection = ({ control, errors }: PricingSectionProps) => {
+    // Moneda del tenant: decimales para el input y código para el afijo.
+    // El admin tipea en unidad MAYOR; la conversión a MENOR ocurre al guardar.
+    const { currency, decimals } = useTenantCurrency()
+    const pricePlaceholder = decimals > 0 ? (0).toFixed(decimals) : '0'
     return (
         <Card>
             <h4 className="mb-6">Precios</h4>
@@ -23,9 +28,10 @@ const PricingSection = ({ control, errors }: PricingSectionProps) => {
                             <NumericInput
                                 thousandSeparator
                                 type="text"
-                                inputPrefix="$"
+                                inputSuffix={` ${currency}`}
+                                decimalScale={decimals}
                                 autoComplete="off"
-                                placeholder="0.00"
+                                placeholder={pricePlaceholder}
                                 value={field.value}
                                 onChange={field.onChange}
                             />

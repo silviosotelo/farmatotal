@@ -6,13 +6,13 @@ import {
     useImperativeHandle,
 } from 'react'
 import classNames from 'classnames'
-import Table from '@ft/ui/ui/Table'
-import Pagination from '@ft/ui/ui/Pagination'
-import Select from '@ft/ui/ui/Select'
-import Checkbox from '@ft/ui/ui/Checkbox'
+import Table from '@platform/ui/ui/Table'
+import Pagination from '@platform/ui/ui/Pagination'
+import Select from '@platform/ui/ui/Select'
+import Checkbox from '@platform/ui/ui/Checkbox'
 import TableRowSkeleton from './loaders/TableRowSkeleton'
 import Loading from './Loading'
-import FileNotFound from '@ft/ui/assets/svg/FileNotFound'
+import FileNotFound from '@platform/ui/assets/svg/FileNotFound'
 import {
     useReactTable,
     getCoreRowModel,
@@ -25,10 +25,10 @@ import {
     Row,
     CellContext,
 } from '@tanstack/react-table'
-import type { TableProps } from '@ft/ui/ui/Table'
-import type { SkeletonProps } from '@ft/ui/ui/Skeleton'
+import type { TableProps } from '@platform/ui/ui/Table'
+import type { SkeletonProps } from '@platform/ui/ui/Skeleton'
 import type { Ref, ChangeEvent, ReactNode } from 'react'
-import type { CheckboxProps } from '@ft/ui/ui/Checkbox'
+import type { CheckboxProps } from '@platform/ui/ui/Checkbox'
 
 export type OnSortParam = { order: 'asc' | 'desc' | ''; key: string | number }
 

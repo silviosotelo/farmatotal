@@ -1,6 +1,6 @@
-import classNames from '@ft/ui/utils/classNames'
+import classNames from '@platform/ui/utils/classNames'
 import { Link } from 'react-router'
-import type { CommonProps } from '@ft/ui/@types/common'
+import type { CommonProps } from '@platform/ui/@types/common'
 import type { ComponentPropsWithoutRef } from 'react'
 
 interface ActionLink extends CommonProps, ComponentPropsWithoutRef<'a'> {

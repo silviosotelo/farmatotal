@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { TOP_NAV } from "@/lib/data";
-import { formatGs } from "@/lib/format";
+import { useMoney } from "@/components/providers/CurrencyContext";
+import { formatQty } from "@/lib/units";
 import type { NavItem } from "@/lib/api";
 import {
   GridIcon,
@@ -19,9 +20,11 @@ import {
 import { SucursalTrigger } from "@/components/sucursal/SucursalTrigger";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/providers/CartContext";
+import { useFlags } from "@/components/providers/FeatureFlagsContext";
 
 /* ─── TopBar (desktop only) ──────────────────────────────────────────────── */
 export function TopBar({ topNav }: { topNav: NavItem[] }) {
+  const flags = useFlags();
   return (
     <div
       className="hidden lg:flex w-full"
@@ -44,11 +47,13 @@ export function TopBar({ topNav }: { topNav: NavItem[] }) {
         {/* Right: location + selectors */}
         <div className="flex items-center gap-4 text-[12px] text-[#3e445a]">
           {/* Location — prod has no language/currency switchers, only this */}
-          <div className="flex items-center gap-1">
-            <LocationIcon width={14} height={14} stroke="#3e445a" />
-            <span>Sucursal más cercana:&nbsp;</span>
-            <SucursalTrigger className="font-medium text-brand-orange-ink" />
-          </div>
+          {flags.branches && (
+            <div className="flex items-center gap-1">
+              <LocationIcon width={14} height={14} stroke="#3e445a" />
+              <span>Sucursal más cercana:&nbsp;</span>
+              <SucursalTrigger className="font-medium text-brand-orange-ink" />
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -241,6 +246,7 @@ function MobileDrawer({
 type Suggestion = { id: string; slug: string; title: string; price: number; priceNormal: number; image: string };
 
 export function SearchBar({ className }: { className?: string }) {
+  const money = useMoney();
   const searchId = useId();
   const router = useRouter();
   const boxRef = useRef<HTMLDivElement>(null);
@@ -349,9 +355,9 @@ export function SearchBar({ className }: { className?: string }) {
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm text-brand-text">{p.title}</span>
-                        <span className="font-price text-sm font-bold text-brand-orange">{formatGs(p.price)}</span>
+                        <span className="font-price text-sm font-bold text-brand-orange">{money(p.price)}</span>
                         {p.priceNormal > p.price && (
-                          <span className="ml-2 text-xs text-price-muted line-through">{formatGs(p.priceNormal)}</span>
+                          <span className="ml-2 text-xs text-price-muted line-through">{money(p.priceNormal)}</span>
                         )}
                       </span>
                     </button>
@@ -388,6 +394,7 @@ function MainHeaderContent({
   const [megaOpen, setMegaOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { count, openCart } = useCart();
+  const flags = useFlags();
 
   return (
     <>
@@ -444,7 +451,7 @@ function MainHeaderContent({
           <CartIcon width={24} height={24} />
           {count > 0 && (
             <span className="absolute -top-0.5 -right-0.5 h-5 min-w-5 px-1 rounded-full bg-white text-[var(--brand-orange)] text-[10px] font-bold flex items-center justify-center">
-              {count}
+              {formatQty(count)}
             </span>
           )}
         </button>
@@ -461,9 +468,11 @@ function MainHeaderContent({
           >
             <MenuIcon width={24} height={24} />
           </button>
-          <button className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-md text-white touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80" aria-label="Ubicación">
-            <LocationIcon width={20} height={20} />
-          </button>
+          {flags.branches && (
+            <button className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-md text-white touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80" aria-label="Ubicación">
+              <LocationIcon width={20} height={20} />
+            </button>
+          )}
         </div>
 
         {/* Center: logo */}
@@ -498,7 +507,7 @@ function MainHeaderContent({
             <CartIcon width={22} height={22} />
             {count > 0 && (
               <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-white text-[var(--brand-orange)] text-[9px] font-bold flex items-center justify-center">
-                {count}
+                {formatQty(count)}
               </span>
             )}
           </button>
@@ -533,6 +542,7 @@ export default function Header({
   showTopBar?: boolean;
 }) {
   const [scrolled, setScrolled] = useState(false);
+  const flags = useFlags();
 
   useEffect(() => {
     function onScroll() {
@@ -554,11 +564,13 @@ export default function Header({
         </div>
 
         {/* Mobile: yellow strip */}
-        <div className="lg:hidden bg-brand-yellow text-brand-text text-sm py-2 text-center flex items-center justify-center gap-1">
-          <LocationIcon width={14} height={14} stroke="#202435" />
-          <span>Sucursal más cercana:&nbsp;</span>
-          <SucursalTrigger className="font-semibold" />
-        </div>
+        {flags.branches && (
+          <div className="lg:hidden bg-brand-yellow text-brand-text text-sm py-2 text-center flex items-center justify-center gap-1">
+            <LocationIcon width={14} height={14} stroke="#202435" />
+            <span>Sucursal más cercana:&nbsp;</span>
+            <SucursalTrigger className="font-semibold" />
+          </div>
+        )}
 
         {/* Mobile: full-width search */}
         <div className="lg:hidden brand-gradient px-4 pb-3">

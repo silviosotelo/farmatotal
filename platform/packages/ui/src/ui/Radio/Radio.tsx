@@ -1,5 +1,5 @@
 import { useState, useMemo, useContext, useCallback, useEffect } from 'react'
-import classNames from '@ft/ui/utils/classNames'
+import classNames from '@platform/ui/utils/classNames'
 import RadioGroupContext from './context'
 import type { CommonProps } from '../@types/common'
 import type { InputHTMLAttributes, Ref } from 'react'

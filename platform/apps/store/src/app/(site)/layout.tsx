@@ -10,8 +10,11 @@ import { ToastProvider } from "@/components/providers/ToastContext";
 import { AuthProvider } from "@/components/providers/AuthContext";
 import { WishlistProvider } from "@/components/providers/WishlistContext";
 import { CartProvider } from "@/components/providers/CartContext";
+import { CurrencyProvider } from "@/components/providers/CurrencyContext";
+import { FeatureFlagsProvider } from "@/components/providers/FeatureFlagsContext";
 import { MiniCart } from "@/components/sections/MiniCart";
-import { getHeaderConfig, getFooterConfig, getStoreConfig, brandColorVars } from "@/lib/api";
+import { getHeaderConfig, getFooterConfig, getStoreConfig, brandColorVars, getPage, getTenantFlags } from "@/lib/api";
+import ChaiRender, { type ChaiBlock } from "@/components/cms/ChaiRender";
 import { getActiveTheme } from "@/themes/registry";
 import { ThemeProvider } from "@/themes/ThemeProvider";
 import { EkomartChrome } from "@/themes/ekomart/EkomartChrome";
@@ -31,7 +34,7 @@ const dosis = Dosis({
 
 export async function generateMetadata(): Promise<Metadata> {
   const store = await getStoreConfig().catch(() => null);
-  const brand = store?.brandName ?? "Farmatotal";
+  const brand = store?.brandName ?? "Mi Tienda";
   const desc = store?.description ?? "tu farmacia online. Medicamentos, belleza, higiene y más.";
   const favicon = store?.faviconUrl ?? "/brand/isotipo.svg";
   const locale = (store?.locale ?? "es-PY").replace("-", "_");
@@ -58,13 +61,21 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [header, footer, store, theme] = await Promise.all([
+  const [header, footer, store, theme, headerPage, footerPage, flags] = await Promise.all([
     getHeaderConfig().catch(() => null),
     getFooterConfig().catch(() => null),
     getStoreConfig().catch(() => null),
     getActiveTheme(),
+    getPage("header").catch(() => null),
+    getPage("footer").catch(() => null),
+    getTenantFlags().catch(() => ({ branches: true, inventory: true, variants: true, units: false })),
   ]);
   const brandCss = store ? brandColorVars(store.colors) : "";
+  // Theme Builder: si el tenant tiene una plantilla 'header'/'footer' publicada en
+  // el builder, se renderiza con el motor; si no, el header/footer nativos.
+  const hasBlocks = (b: unknown): b is ChaiBlock[] => Array.isArray(b) && b.length > 0;
+  const headerTpl = headerPage?.published && hasBlocks(headerPage.blocks) ? (headerPage.blocks as ChaiBlock[]) : null;
+  const footerTpl = footerPage?.published && hasBlocks(footerPage.blocks) ? (footerPage.blocks as ChaiBlock[]) : null;
   return (
     <html
       lang="es"
@@ -73,6 +84,8 @@ export default async function RootLayout({
       <body className="flex min-h-screen flex-col bg-background text-foreground" suppressHydrationWarning>
         {/* White-label: override de tokens de marca por vertical (editable en admin) */}
         {brandCss && <style dangerouslySetInnerHTML={{ __html: brandCss }} />}
+        <CurrencyProvider currency={store?.currency ?? "PYG"} locale={store?.locale ?? "es-PY"}>
+        <FeatureFlagsProvider flags={flags}>
         <ThemeProvider theme={theme}>
         <ToastProvider>
           <AuthProvider>
@@ -91,22 +104,29 @@ export default async function RootLayout({
                     <AnvogueChrome store={store}>{children}</AnvogueChrome>
                   ) : (
                     <>
-                      {/* Header/footer nativos, system-driven (sin page builder):
-                          nav, logo y columnas del footer se editan en el admin. */}
-                      <Header
-                        topNav={header?.topNav}
-                        categories={header?.categories}
-                        logo={store?.logoUrl}
-                        brandName={store?.brandName}
-                      />
+                      {/* Header: plantilla del builder (Theme Builder) si existe; si no, nativo. */}
+                      {headerTpl ? (
+                        <ChaiRender blocks={headerTpl} />
+                      ) : (
+                        <Header
+                          topNav={header?.topNav}
+                          categories={header?.categories}
+                          logo={store?.logoUrl}
+                          brandName={store?.brandName}
+                        />
+                      )}
                       <div id="contenido" className="flex flex-1 flex-col">
                         {children}
                       </div>
-                      <Footer
-                        columns={footer?.columns}
-                        copyright={footer?.copyright}
-                        partner={footer?.partner}
-                      />
+                      {footerTpl ? (
+                        <ChaiRender blocks={footerTpl} />
+                      ) : (
+                        <Footer
+                          columns={footer?.columns}
+                          copyright={footer?.copyright}
+                          partner={footer?.partner}
+                        />
+                      )}
                     </>
                   )}
                   <FloatingButtons />
@@ -118,6 +138,8 @@ export default async function RootLayout({
           </AuthProvider>
         </ToastProvider>
         </ThemeProvider>
+        </FeatureFlagsProvider>
+        </CurrencyProvider>
       </body>
     </html>
   );

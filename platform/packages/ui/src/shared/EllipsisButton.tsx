@@ -1,6 +1,6 @@
-import Button from '@ft/ui/ui/Button'
+import Button from '@platform/ui/ui/Button'
 import { TbDots } from 'react-icons/tb'
-import type { ButtonProps } from '@ft/ui/ui/Button'
+import type { ButtonProps } from '@platform/ui/ui/Button'
 
 type EllipsisButtonProps = ButtonProps
 

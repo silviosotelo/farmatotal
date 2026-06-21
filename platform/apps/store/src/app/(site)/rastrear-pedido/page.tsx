@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { useToast } from "@/components/providers/ToastContext";
-import { formatGs } from "@/lib/data";
+import { formatMoney } from "@/lib/money";
+import { useCurrency } from "@/components/providers/CurrencyContext";
+import { formatQty } from "@/lib/units";
 import { cn } from "@/lib/utils";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -23,6 +25,7 @@ type TrackedOrder = {
   number: string;
   status: string;
   total: number;
+  currency?: string;
   customerEmail?: string | null;
   createdAt?: string;
   lines?: { title: string; quantity: number }[];
@@ -30,6 +33,9 @@ type TrackedOrder = {
 
 export default function RastrearPedidoPage() {
   const { toast } = useToast();
+  // Orden histórica: se formatea con la moneda guardada de la orden (order.currency),
+  // nunca con la moneda viva del store. El locale sí es el del tenant.
+  const { locale } = useCurrency();
   const [nro, setNro] = useState("");
   const [email, setEmail] = useState("");
   const [order, setOrder] = useState<TrackedOrder | null>(null);
@@ -98,7 +104,7 @@ export default function RastrearPedidoPage() {
                   </>
                 )}
               </p>
-              <span className="font-price text-sm font-semibold text-brand-text">{formatGs(order.total)}</span>
+              <span className="font-price text-sm font-semibold text-brand-text">{formatMoney(order.total, { currency: order.currency ?? "PYG", locale })}</span>
             </div>
 
             {cancelled ? (
@@ -132,7 +138,7 @@ export default function RastrearPedidoPage() {
               <ul className="mt-6 space-y-1 border-t border-[#ededf1] pt-4 text-sm text-brand-muted">
                 {order.lines.map((l, i) => (
                   <li key={i}>
-                    {l.quantity}× {l.title}
+                    {formatQty(l.quantity)}× {l.title}
                   </li>
                 ))}
               </ul>

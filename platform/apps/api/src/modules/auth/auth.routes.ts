@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { loginInput, refreshInput, registerInput, sessionUser } from "@ft/shared-types";
+import { loginInput, refreshInput, registerInput, sessionUser } from "@platform/shared-types";
 import { env } from "../../env.js";
 import {
   createUser,

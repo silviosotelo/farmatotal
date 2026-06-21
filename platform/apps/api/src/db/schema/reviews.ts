@@ -1,13 +1,13 @@
 import { sql } from "drizzle-orm";
 import { integer, text, timestamp, uuid, varchar, index } from "drizzle-orm/pg-core";
-import { farmatotalApp } from "./_pgSchema";
+import { appSchema } from "./_pgSchema";
 import { products } from "./products";
 
 /** Estado de moderación de la valoración (igual a Woo: pending/approved/rejected). */
 export const reviewStatus = ["pending", "approved", "rejected"] as const;
 export type ReviewStatus = (typeof reviewStatus)[number];
 
-export const reviews = farmatotalApp.table(
+export const reviews = appSchema.table(
   "reviews",
   {
     id: uuid("id").primaryKey().defaultRandom(),

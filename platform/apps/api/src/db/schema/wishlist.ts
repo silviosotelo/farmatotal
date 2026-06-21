@@ -1,10 +1,10 @@
 import { timestamp, uuid, uniqueIndex, index } from "drizzle-orm/pg-core";
-import { farmatotalApp } from "./_pgSchema";
+import { appSchema } from "./_pgSchema";
 import { users } from "./users";
 import { products } from "./products";
 
 /** Lista de deseos por usuario (cliente). Un producto aparece una sola vez por usuario. */
-export const wishlist = farmatotalApp.table(
+export const wishlist = appSchema.table(
   "wishlist",
   {
     id: uuid("id").primaryKey().defaultRandom(),

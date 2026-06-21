@@ -1,11 +1,15 @@
+"use client";
+
 import Link from "next/link";
 import type { Product } from "@/types";
-import { formatGs } from "@/lib/format";
+import { useMoney } from "@/components/providers/CurrencyContext";
 import { StockBadge } from "@/themes/CatalogStock";
+import { useFlags } from "@/components/providers/FeatureFlagsContext";
 
 /**
  * Tarjeta de producto con el markup/clases de Ekomart (single-shopping-card-one),
- * cableada a nuestro tipo Product. Server component (sin estado de carrito).
+ * cableada a nuestro tipo Product. Componente cliente: se renderiza dentro de
+ * carruseles/tabs cliente y usa la moneda del tenant vía useMoney.
  */
 export function EkomartProductCard({
   product,
@@ -14,6 +18,8 @@ export function EkomartProductCard({
   product: Product;
   className?: string;
 }) {
+  const money = useMoney();
+  const flags = useFlags();
   const href = `/productos/${product.slug}/`;
   const hasDiscount = product.priceNormal > product.priceWeb && product.discount > 0;
   const inStock = (product.stock ?? 0) > 0;
@@ -45,13 +51,15 @@ export function EkomartProductCard({
         <Link href={href}>
           <h4 className="title">{product.title}</h4>
         </Link>
-        <span className="availability">{inStock ? "En stock" : "Sin stock"}</span>
+        {flags.inventory && (
+          <span className="availability">{inStock ? "En stock" : "Sin stock"}</span>
+        )}
         <div className="mt-1">
           <StockBadge sku={product.sku ?? ""} />
         </div>
         <div className="price-area">
-          <span className="current">{formatGs(product.priceWeb)}</span>
-          {hasDiscount && <div className="previous">{formatGs(product.priceNormal)}</div>}
+          <span className="current">{money(product.priceWeb)}</span>
+          {hasDiscount && <div className="previous">{money(product.priceNormal)}</div>}
         </div>
 
         <div className="cart-counter-action">

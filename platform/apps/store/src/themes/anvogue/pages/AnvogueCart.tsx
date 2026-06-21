@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Minus, Plus, ShoppingBag, Tag, Trash2, X } from "lucide-react";
 import { useCart } from "@/components/providers/CartContext";
 import { useToast } from "@/components/providers/ToastContext";
-import { formatGs } from "@/lib/data";
+import { useMoney } from "@/components/providers/CurrencyContext";
 import { AnvogueBreadcrumb } from "../AnvogueBreadcrumb";
 import {
   container,
@@ -22,6 +22,7 @@ import {
  * y labels en mayúsculas con tracking.
  */
 export function AnvogueCart() {
+  const money = useMoney();
   const { lines, subtotal, coupon, discount, total, setQty, removeItem, clear, applyCoupon, removeCoupon } = useCart();
   const { toast } = useToast();
   const [couponInput, setCouponInput] = useState("");
@@ -108,7 +109,7 @@ export function AnvogueCart() {
 
                     {/* Price */}
                     <p className="text-center text-sm text-[#696C70]">
-                      {formatGs(product.priceWeb)}
+                      {money(product.priceWeb)}
                     </p>
 
                     {/* Stepper */}
@@ -136,7 +137,7 @@ export function AnvogueCart() {
 
                     {/* Line subtotal */}
                     <p className="text-center text-sm font-semibold text-[#1F1F1F]">
-                      {formatGs(product.priceWeb * quantity)}
+                      {money(product.priceWeb * quantity)}
                     </p>
 
                     {/* Remove */}
@@ -176,7 +177,7 @@ export function AnvogueCart() {
                         </button>
                       </div>
                       <p className="mt-1 text-sm text-[#696C70]">
-                        {formatGs(product.priceWeb)}
+                        {money(product.priceWeb)}
                       </p>
 
                       <div className="mt-3 flex items-center justify-between">
@@ -200,7 +201,7 @@ export function AnvogueCart() {
                           </button>
                         </div>
                         <p className="text-sm font-semibold text-[#1F1F1F]">
-                          {formatGs(product.priceWeb * quantity)}
+                          {money(product.priceWeb * quantity)}
                         </p>
                       </div>
                     </div>
@@ -269,19 +270,19 @@ export function AnvogueCart() {
               <dl className="mt-6 space-y-3 border-t border-[#E9E9E9] pt-6 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-[#696C70]">Subtotal</dt>
-                  <dd className="font-medium text-[#1F1F1F]">{formatGs(subtotal)}</dd>
+                  <dd className="font-medium text-[#1F1F1F]">{money(subtotal)}</dd>
                 </div>
 
                 {coupon && (
                   <div className="flex justify-between text-[var(--brand-orange)]">
                     <dt>Descuento ({coupon.code})</dt>
-                    <dd className="font-medium">−{formatGs(discount)}</dd>
+                    <dd className="font-medium">−{money(discount)}</dd>
                   </div>
                 )}
 
                 <div className="flex items-baseline justify-between border-t border-[#E9E9E9] pt-4">
                   <dt className="text-base font-semibold text-[#1F1F1F]">Total</dt>
-                  <dd className="text-2xl font-semibold text-[#1F1F1F]">{formatGs(total)}</dd>
+                  <dd className="text-2xl font-semibold text-[#1F1F1F]">{money(total)}</dd>
                 </div>
               </dl>
 

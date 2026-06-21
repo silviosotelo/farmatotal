@@ -1,4 +1,4 @@
-import classNames from '@ft/ui/utils/classNames'
+import classNames from '@platform/ui/utils/classNames'
 import { HiArrowUp, HiArrowDown } from 'react-icons/hi'
 import type { ReactNode, Ref } from 'react'
 

@@ -6,7 +6,7 @@
  */
 import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client";
-import { brands, categories, productImages, products, syncRuns } from "../db/schema";
+import { brands, categories, productImages, products, syncRuns, tenants } from "../db/schema";
 
 const SOURCE = "woo";
 const BASE = "https://www.farmatotal.com.py/wp-json/wc/store/v1";
@@ -95,7 +95,7 @@ function stripHtml(s: string | undefined): string | null {
 }
 
 // ============ CATEGORIES ============
-async function importCategories(): Promise<{ ok: number; map: Map<number, string> }> {
+async function importCategories(tenantId: string): Promise<{ ok: number; map: Map<number, string> }> {
   const map = new Map<number, string>(); // wooId -> ourUuid
   let page = 1;
   const perPage = 100;
@@ -114,6 +114,7 @@ async function importCategories(): Promise<{ ok: number; map: Map<number, string
       const [row] = await db
         .insert(categories)
         .values({
+          tenantId,
           slug,
           name: c.name,
           description: stripHtml(c.description),
@@ -151,6 +152,15 @@ export async function runFullWooImport(opts: {
   const max = opts.maxProducts ?? 1500;
   const triggeredBy = opts.triggeredBy ?? "cli";
 
+  const slug = process.env.DEFAULT_TENANT ?? "default";
+  const [tenant] = await db
+    .select({ id: tenants.id })
+    .from(tenants)
+    .where(eq(tenants.slug, slug))
+    .limit(1);
+  if (!tenant) throw new Error(`Tenant '${slug}' no existe`);
+  const tenantId = tenant.id;
+
   const [run] = await db
     .insert(syncRuns)
     .values({
@@ -166,7 +176,7 @@ export async function runFullWooImport(opts: {
 
   try {
     console.log("[woo] importando categorias…");
-    const { ok: catsOk, map: catMap } = await importCategories();
+    const { ok: catsOk, map: catMap } = await importCategories(tenantId);
     stats.catsImported = catsOk;
     console.log(`[woo] categorias OK: ${catsOk}`);
 
@@ -184,7 +194,7 @@ export async function runFullWooImport(opts: {
       for (const p of data) {
         if (stats.productsUpserted >= max) break;
         try {
-          await upsertProduct(p, catMap);
+          await upsertProduct(p, catMap, tenantId);
           stats.productsUpserted++;
           if (p.images?.length) stats.imagesUpserted += p.images.length;
         } catch (e) {
@@ -217,7 +227,7 @@ export async function runFullWooImport(opts: {
   }
 }
 
-async function upsertProduct(p: WooProduct, catMap: Map<number, string>) {
+async function upsertProduct(p: WooProduct, catMap: Map<number, string>, tenantId: string) {
   const sku = p.sku?.trim() || `woo-${p.id}`;
   const slug = p.slug || slugify(p.name);
   const priceNormal = parsePrice(p.prices.regular_price, p.prices.currency_minor_unit);
@@ -238,6 +248,7 @@ async function upsertProduct(p: WooProduct, catMap: Map<number, string>) {
   };
 
   const values = {
+    tenantId,
     sku,
     slug,
     title: p.name,

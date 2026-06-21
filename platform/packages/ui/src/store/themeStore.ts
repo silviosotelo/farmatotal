@@ -1,7 +1,7 @@
-import { themeConfig } from '@ft/ui/configs/theme.config'
+import { themeConfig } from '@platform/ui/configs/theme.config'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Theme, LayoutType, Direction } from '@ft/ui/@types/theme'
+import type { Theme, LayoutType, Direction } from '@platform/ui/@types/theme'
 
 type ThemeState = Theme
 

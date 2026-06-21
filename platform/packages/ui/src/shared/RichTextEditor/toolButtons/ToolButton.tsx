@@ -1,4 +1,4 @@
-import classNames from '@ft/ui/utils/classNames'
+import classNames from '@platform/ui/utils/classNames'
 import type { ComponentProps } from 'react'
 
 export type ToolButtonProps = ComponentProps<'button'> & {

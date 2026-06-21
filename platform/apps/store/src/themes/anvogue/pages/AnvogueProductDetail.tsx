@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { ChevronRight, Truck, ShieldCheck, RotateCcw } from "lucide-react";
 import type { ThemeProductDetailProps } from "@/themes/types";
-import { formatGs } from "@/lib/format";
+import { formatMoney } from "@/lib/money";
+import { getStoreConfig } from "@/lib/api";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductActions } from "@/components/product/ProductActions";
 import { ProductTabs } from "@/components/product/ProductTabs";
+import { ProductSpecs } from "@/components/product/ProductSpecs";
 import { BranchStock } from "@/components/product/BranchStock";
+import { InventoryGate } from "@/components/providers/InventoryGate";
 import { AnvogueProductCard } from "../AnvogueProductCard";
 import { heading5 } from "../sections/anvogueClasses";
 
@@ -15,7 +18,8 @@ import { heading5 } from "../sections/anvogueClasses";
  * (galería, acciones/carrito, tabs, stock por sucursal) dentro de contenedores
  * estilados a la paleta Anvogue. White-label: sin marca hardcodeada.
  */
-export function AnvogueProductDetail({ product, related, reviews, variants }: ThemeProductDetailProps) {
+export async function AnvogueProductDetail({ product, related, reviews, variants }: ThemeProductDetailProps) {
+  const { currency, locale } = await getStoreConfig();
   const hasDiscount = product.priceNormal > product.priceWeb && product.discount > 0;
   const outOfStock = product.stock === 0;
   const categoryHref = product.category ? `/categorias/${product.category}/` : "/productos";
@@ -72,27 +76,29 @@ export function AnvogueProductDetail({ product, related, reviews, variants }: Th
 
             <div className="mt-3 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.06em] text-[#696C70]">
               {product.sku ? <span>SKU: {product.sku}</span> : null}
-              <span
-                className={
-                  outOfStock
-                    ? "rounded-full bg-[#F7F7F7] px-3 py-1 font-semibold text-[var(--brand-orange)]"
-                    : "rounded-full bg-[#F7F7F7] px-3 py-1 font-semibold text-[#1F8A4C]"
-                }
-              >
-                {outOfStock ? "Sin stock" : "En stock"}
-              </span>
+              <InventoryGate>
+                <span
+                  className={
+                    outOfStock
+                      ? "rounded-full bg-[#F7F7F7] px-3 py-1 font-semibold text-[var(--brand-orange)]"
+                      : "rounded-full bg-[#F7F7F7] px-3 py-1 font-semibold text-[#1F8A4C]"
+                  }
+                >
+                  {outOfStock ? "Sin stock" : "En stock"}
+                </span>
+              </InventoryGate>
             </div>
 
             {/* precio (.product-price heading5 · divisor · origin secondary2 · sale bg-green) */}
             <div className="mt-5 flex flex-wrap items-center gap-3 border-b border-[#E9E9E9] pb-6">
               <span className={`${heading5} text-[#1F1F1F]`}>
-                {formatGs(product.priceWeb)}
+                {formatMoney(product.priceWeb, { currency, locale })}
               </span>
               {hasDiscount ? (
                 <>
                   <span className="h-4 w-px bg-[#E9E9E9]" />
                   <span className="text-lg font-normal text-[#A0A0A0] line-through">
-                    {formatGs(product.priceNormal)}
+                    {formatMoney(product.priceNormal, { currency, locale })}
                   </span>
                   <span className="inline-block rounded-full bg-[#D2EF9A] px-3 py-0.5 text-xs font-semibold text-[#1F1F1F]">
                     -{product.discount}%
@@ -134,6 +140,9 @@ export function AnvogueProductDetail({ product, related, reviews, variants }: Th
             </ul>
           </div>
         </div>
+
+        {/* ficha técnica */}
+        <ProductSpecs product={product} className="mt-12 rounded-2xl border border-[#E9E9E9] bg-white p-6 lg:mt-16 lg:p-10" />
 
         {/* descripción / info / valoraciones */}
         <section className="mt-12 rounded-2xl border border-[#E9E9E9] bg-white p-6 lg:mt-16 lg:p-10">

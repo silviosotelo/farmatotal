@@ -1,7 +1,7 @@
 import { NumberFormatBase, NumberFormatBaseProps } from 'react-number-format'
-import Input from '@ft/ui/ui/Input'
+import Input from '@platform/ui/ui/Input'
 import type { ReactNode, ComponentType } from 'react'
-import type { InputProps } from '@ft/ui/ui'
+import type { InputProps } from '@platform/ui/ui'
 
 interface InputAffix {
     inputSuffix?: string | ReactNode

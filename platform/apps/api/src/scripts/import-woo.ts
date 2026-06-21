@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * CLI runner:  pnpm --filter @ft/api tsx src/scripts/import-woo.ts [MAX]
+ * CLI runner:  pnpm --filter @platform/api tsx src/scripts/import-woo.ts [MAX]
  */
 import { runFullWooImport } from "../services/woo-importer";
 

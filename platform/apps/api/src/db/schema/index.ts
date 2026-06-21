@@ -1,4 +1,5 @@
 export * from "./_pgSchema";
+export * from "./tenants";
 export * from "./users";
 export * from "./categories";
 export * from "./brands";

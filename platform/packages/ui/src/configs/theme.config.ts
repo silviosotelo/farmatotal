@@ -1,5 +1,5 @@
-import { THEME_ENUM } from '@ft/ui/theme/theme.constant'
-import { Direction, Mode, ControlSize, LayoutType } from '@ft/ui/@types/theme'
+import { THEME_ENUM } from '@platform/ui/theme/theme.constant'
+import { Direction, Mode, ControlSize, LayoutType } from '@platform/ui/@types/theme'
 
 export type ThemeConfig = {
     themeSchema: string
