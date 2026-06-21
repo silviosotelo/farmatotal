@@ -50,6 +50,15 @@ const conceptsRoute: Routes = [
         },
     },
     {
+        key: 'shop.checkout-fields',
+        path: `${CONCEPTS_PREFIX_PATH}/checkout-fields`,
+        component: lazy(() => import('@/views/concepts/checkout-fields/CheckoutFields')),
+        authority: [ADMIN, USER],
+        meta: {
+            pageContainerType: 'contained',
+        },
+    },
+    {
         key: 'shop.users',
         path: `${CONCEPTS_PREFIX_PATH}/users`,
         component: lazy(() => import('@/views/concepts/users/Users')),

@@ -63,6 +63,7 @@ const conceptsNavigationConfig: NavigationTree[] = [
         item('shop.payments', `${CONCEPTS_PREFIX_PATH}/payments`, 'Pagos', 'cmPayments'),
         item('shop.shipping', `${CONCEPTS_PREFIX_PATH}/shipping`, 'Envíos', 'cmShipping'),
         item('shop.tax', `${CONCEPTS_PREFIX_PATH}/tax`, 'Impuestos', 'cmTax'),
+        item('shop.checkout-fields', `${CONCEPTS_PREFIX_PATH}/checkout-fields`, 'Campos del checkout', 'cmTax'),
         item('shop.coupons', `${CONCEPTS_PREFIX_PATH}/coupons`, 'Cupones', 'cmCoupons'),
         item('shop.reviews', `${CONCEPTS_PREFIX_PATH}/reviews`, 'Valoraciones', 'cmReviews'),
         item('shop.reports', `${CONCEPTS_PREFIX_PATH}/reports`, 'Reportes', 'cmReports'),
