@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/providers/CartContext";
@@ -11,18 +11,18 @@ import { useToast } from "@/components/providers/ToastContext";
 import { useMoney } from "@/components/providers/CurrencyContext";
 import { useFlags } from "@/components/providers/FeatureFlagsContext";
 import { formatQty, unitLabel } from "@/lib/units";
+import { fetchSucursales, zonasOf, departmentsOf, departmentOf, type Sucursal } from "@/lib/sucursales";
 import { useShippingQuote, useTaxConfig, usePaymentMethods, defaultRate, computeTax } from "@/lib/checkout";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const GEO_KEY = "ft_geo";
 
-// Mapa de ubicación: leaflet toca window → solo cliente (permitido, este bloque es "use client").
 const CheckoutMap = dynamic(() => import("./CheckoutMap"), {
   ssr: false,
   loading: () => <div className="flex h-full items-center justify-center bg-search-bg text-sm text-brand-muted">Cargando mapa…</div>,
 });
 
-type DeliveryMethod = "retiro" | "envio";
-type CustomField = { key: string; label: string; type?: string; required?: boolean; options?: string[] };
+type CustomField = { key: string; label: string; type?: string; required?: boolean; options?: string[]; width?: "full" | "half" };
 
 const INPUT_CLS =
   "w-full bg-search-bg rounded-md h-11 px-3 text-sm outline-none border border-transparent focus-visible:ring-2 focus-visible:ring-brand-orange/40 text-brand-text placeholder:text-brand-muted";
@@ -41,36 +41,50 @@ export function CheckoutBlock() {
   const [apellido, setApellido] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
+  const [departamento, setDepartamento] = useState("");
   const [ciudad, setCiudad] = useState("");
   const [direccion, setDireccion] = useState("");
-  const [delivery, setDelivery] = useState<DeliveryMethod>(flags.branches ? "retiro" : "envio");
-  const deliveryOptions: DeliveryMethod[] = flags.branches ? ["retiro", "envio"] : ["envio"];
   const [submitting, setSubmitting] = useState(false);
 
-  // Ubicación exacta (mapa) + geolocalización.
+  // Ubicación exacta (mapa) — persistida en localStorage (no cookies).
   const [loc, setLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [geoMsg, setGeoMsg] = useState("");
 
-  // Campos custom definidos por el tenant (mod_checkout).
+  // Sucursales: fuente de ciudades/departamentos para los selects (branch-derived).
+  const [branches, setBranches] = useState<Sucursal[]>([]);
+  const departamentos = useMemo(() => departmentsOf(branches), [branches]);
+  const ciudades = useMemo(
+    () => (departamento ? zonasOf(branches).filter((c) => departmentOf(c) === departamento) : zonasOf(branches)),
+    [branches, departamento],
+  );
+
+  // Campos custom (config del tenant, con layout width).
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [customVals, setCustomVals] = useState<Record<string, string>>({});
 
   const requiresShipping = lines.some((l) => (l.product.productType ?? "physical") === "physical");
-  const ship = useShippingQuote({ enabled: requiresShipping && delivery === "envio", city: ciudad, subtotal });
+
+  // Envío: ÚNICA fuente = /shipping/quote (retiro gratis + delivery 12.000). Se
+  // cotiza siempre (no gateado por un selector aparte); el comportamiento sale del
+  // `type` del método elegido.
+  const ship = useShippingQuote({ enabled: requiresShipping, city: ciudad, subtotal });
   const taxCfg = useTaxConfig();
   const paymentMethods = usePaymentMethods();
   const rate = defaultRate(taxCfg);
+  const selectedShip = ship.options.find((o) => o.id === ship.selectedId) ?? null;
+  const isPickup = selectedShip?.type === "pickup";
 
-  // Pago dinámico: lista de métodos habilitados (incluye custom). null = aún cargando.
+  // Pago dinámico (incluye custom; oculta los deshabilitados).
   const payOptions = (paymentMethods ?? []).filter((m) => m.enabled);
-  const [paymentKey, setPaymentKey] = useState<string>("");
+  const [paymentKey, setPaymentKey] = useState("");
   useEffect(() => {
     if (payOptions.length === 0) return;
     setPaymentKey((prev) => (payOptions.some((o) => o.key === prev) ? prev : payOptions[0].key));
   }, [paymentMethods]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Carga de campos custom del checkout (config del tenant).
+  // Carga inicial: sucursales, campos custom, ubicación guardada.
   useEffect(() => {
+    fetchSucursales().then(setBranches);
     fetch(`${API}/cms/settings/mod_checkout`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
@@ -78,7 +92,26 @@ export function CheckoutBlock() {
         if (Array.isArray(f)) setCustomFields(f.filter((x) => x?.key && x?.label));
       })
       .catch(() => {});
+    try {
+      const raw = localStorage.getItem(GEO_KEY);
+      if (raw) setLoc(JSON.parse(raw));
+    } catch { /* ignore */ }
   }, []);
+
+  // Precarga ciudad/departamento desde la sucursal elegida (branch-derived).
+  useEffect(() => {
+    if (selected?.zona && !ciudad) {
+      setCiudad(selected.zona.trim());
+      setDepartamento(departmentOf(selected.zona));
+    }
+  }, [selected]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function persistLoc(p: { lat: number; lng: number } | null) {
+    setLoc(p);
+    try {
+      if (p) localStorage.setItem(GEO_KEY, JSON.stringify(p));
+    } catch { /* ignore */ }
+  }
 
   function locate() {
     if (!("geolocation" in navigator)) {
@@ -88,7 +121,7 @@ export function CheckoutBlock() {
     setGeoMsg("Obteniendo tu ubicación…");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        persistLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setGeoMsg("Ubicación marcada. Podés arrastrar el pin para ajustar.");
       },
       () => setGeoMsg("No pudimos obtener tu ubicación. Marcá el punto en el mapa."),
@@ -121,9 +154,8 @@ export function CheckoutBlock() {
     setSubmitting(true);
     try {
       const chosen = payOptions.find((o) => o.key === paymentKey);
-      // El backend usa enum online|cash|transfer; bancard→online, el resto→contraentrega(cash).
       const paymentMethod = paymentKey === "bancard" ? "online" : "contraentrega";
-      const shippingMethod = requiresShipping ? (delivery === "retiro" ? "pickup" : "delivery") : "pickup";
+      const shippingMethod = requiresShipping && !isPickup ? "delivery" : "pickup";
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -158,7 +190,7 @@ export function CheckoutBlock() {
       try {
         localStorage.setItem("ft_last_order_v1", JSON.stringify({
           id: order.number, date: new Date().toISOString(), status: order.status, total: order.total,
-          sucursal: delivery === "retiro" ? selected?.name : undefined, paymentMethod: chosen?.name,
+          sucursal: isPickup ? selected?.name : undefined, paymentMethod: chosen?.name,
           lines: lines.map(({ product, quantity }) => ({ title: product.title, sku: product.sku, quantity, price: product.priceWeb, image: product.image })),
         }));
       } catch { /* ignore */ }
@@ -175,11 +207,12 @@ export function CheckoutBlock() {
     }
   }
 
-  const selectedShip = ship.options.find((o) => o.id === ship.selectedId) ?? null;
-  const shippingCost = requiresShipping && delivery === "envio" ? (selectedShip?.cost ?? 0) : 0;
+  const shippingCost = requiresShipping ? (selectedShip?.cost ?? 0) : 0;
   const taxIncluded = taxCfg?.pricesIncludeTax ?? true;
   const taxAmount = rate ? computeTax(total, rate.percent, taxIncluded) : 0;
   const grandTotal = total + shippingCost + (taxIncluded ? 0 : taxAmount);
+
+  const sel = INPUT_CLS;
 
   return (
     <div className="ft-container py-8">
@@ -207,23 +240,32 @@ export function CheckoutBlock() {
                   <input id="telefono" inputMode="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="0981 000 000" className={INPUT_CLS} />
                 </div>
                 <div>
-                  <label htmlFor="ciudad" className={LABEL_CLS}>Ciudad</label>
-                  <input id="ciudad" value={ciudad} onChange={(e) => setCiudad(e.target.value)} placeholder="Asunción" className={INPUT_CLS} />
+                  <label htmlFor="departamento" className={LABEL_CLS}>Departamento</label>
+                  <select id="departamento" value={departamento} onChange={(e) => { setDepartamento(e.target.value); setCiudad(""); }} className={sel}>
+                    <option value="">Elegí un departamento</option>
+                    {departamentos.map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
                 </div>
                 <div>
+                  <label htmlFor="ciudad" className={LABEL_CLS}>Ciudad</label>
+                  <select id="ciudad" value={ciudad} onChange={(e) => setCiudad(e.target.value)} className={sel}>
+                    <option value="">Elegí una ciudad</option>
+                    {ciudades.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
                   <label htmlFor="direccion" className={LABEL_CLS}>Dirección</label>
                   <input id="direccion" value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Av. Mariscal López 1234" className={INPUT_CLS} />
                 </div>
-                {/* Campos custom definidos por el tenant */}
                 {customFields.map((f) => (
-                  <div key={f.key} className={f.type === "textarea" ? "sm:col-span-2" : ""}>
+                  <div key={f.key} className={f.width === "full" || f.type === "textarea" ? "sm:col-span-2" : ""}>
                     <label htmlFor={`cf-${f.key}`} className={LABEL_CLS}>
                       {f.label} {f.required ? <span className="text-[#c0392b]">*</span> : null}
                     </label>
                     {f.type === "textarea" ? (
                       <textarea id={`cf-${f.key}`} value={customVals[f.key] ?? ""} onChange={(e) => setCustomVals((v) => ({ ...v, [f.key]: e.target.value }))} className={INPUT_CLS + " h-auto py-2 resize-y"} rows={3} />
                     ) : f.type === "select" && f.options?.length ? (
-                      <select id={`cf-${f.key}`} value={customVals[f.key] ?? ""} onChange={(e) => setCustomVals((v) => ({ ...v, [f.key]: e.target.value }))} className={INPUT_CLS}>
+                      <select id={`cf-${f.key}`} value={customVals[f.key] ?? ""} onChange={(e) => setCustomVals((v) => ({ ...v, [f.key]: e.target.value }))} className={sel}>
                         <option value="">Elegí una opción</option>
                         {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
                       </select>
@@ -239,65 +281,45 @@ export function CheckoutBlock() {
               <h3 className="font-heading text-lg text-brand-text mb-5">Entrega</h3>
               {!requiresShipping ? (
                 <p className="text-sm text-brand-muted">Este pedido no requiere envío</p>
+              ) : ship.loading ? (
+                <p className="text-sm text-brand-muted">Cargando métodos de entrega…</p>
+              ) : ship.options.length === 0 ? (
+                <p className="text-sm text-brand-muted">No hay métodos de entrega configurados.</p>
               ) : (
                 <>
                   <div className="flex flex-col gap-3">
-                    {deliveryOptions.map((opt) => (
-                      <label key={opt} className={"flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors " + (delivery === opt ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}>
-                        <input type="radio" name="delivery" value={opt} checked={delivery === opt} onChange={() => setDelivery(opt)} className="accent-brand-orange" />
-                        <span className="text-sm font-medium text-brand-text">{opt === "retiro" ? "Retiro en sucursal" : "Envío a domicilio"}</span>
+                    {ship.options.map((o) => (
+                      <label key={o.id} className={"flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors " + (ship.selectedId === o.id ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}>
+                        <input type="radio" name="shipMethod" value={o.id} checked={ship.selectedId === o.id} onChange={() => ship.setSelectedId(o.id)} className="accent-brand-orange" />
+                        <span className="flex-1 text-sm font-medium text-brand-text">{o.name}</span>
+                        <span className="font-price text-sm text-brand-text whitespace-nowrap">{o.cost > 0 ? money(o.cost) : "Gratis"}</span>
                       </label>
                     ))}
                   </div>
 
-                  {delivery === "retiro" && (
+                  {isPickup ? (
                     <div className="mt-4 text-sm text-brand-text">
                       {selected ? (
-                        <span>
-                          Retirás en <span className="font-semibold">{selected.name}</span>
-                          {selected.address ? <span className="text-brand-muted"> — {selected.address}</span> : null}
-                        </span>
+                        <span>Retirás en <span className="font-semibold">{selected.name}</span>{selected.address ? <span className="text-brand-muted"> — {selected.address}</span> : null}</span>
                       ) : (
-                        <span className="text-brand-muted">Elegí tu sucursal para ver stock y retirar tu pedido.</span>
+                        <span className="text-brand-muted">Elegí tu sucursal para retirar tu pedido.</span>
                       )}
                     </div>
-                  )}
-
-                  {delivery === "envio" && (
-                    <div className="mt-4 flex flex-col gap-4">
-                      {/* Métodos de envío cotizados */}
-                      {ship.loading ? (
-                        <p className="text-sm text-brand-muted">Cotizando envío…</p>
-                      ) : ship.options.length === 0 ? (
-                        <p className="text-sm text-brand-muted">Ingresá tu ciudad para ver los métodos de envío.</p>
-                      ) : (
-                        <div className="flex flex-col gap-3">
-                          {ship.options.map((o) => (
-                            <label key={o.id} className={"flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors " + (ship.selectedId === o.id ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}>
-                              <input type="radio" name="shipMethod" value={o.id} checked={ship.selectedId === o.id} onChange={() => ship.setSelectedId(o.id)} className="accent-brand-orange" />
-                              <span className="flex-1 text-sm font-medium text-brand-text">{o.name}</span>
-                              <span className="font-price text-sm text-brand-text whitespace-nowrap">{o.cost > 0 ? money(o.cost) : "Gratis"}</span>
-                            </label>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Mapa: marcar la ubicación exacta */}
-                      <div>
-                        <div className="mb-2 flex items-center justify-between gap-2">
-                          <span className="text-sm font-medium text-brand-text">Ubicación exacta de entrega</span>
-                          <button type="button" onClick={locate} className="rounded-[30px] border border-brand-orange px-3 py-1.5 text-xs font-semibold text-brand-orange-ink transition hover:bg-brand-orange hover:text-white">
-                            Usar mi ubicación
-                          </button>
-                        </div>
-                        <div className="h-[300px] overflow-hidden rounded-lg border border-[#ededf1]">
-                          <CheckoutMap value={loc} onChange={(lat, lng) => setLoc({ lat, lng })} />
-                        </div>
-                        <p className="mt-1 text-xs text-brand-muted">
-                          {geoMsg || "Tocá el mapa o arrastrá el pin para marcar tu dirección exacta."}
-                          {loc ? ` (${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)})` : ""}
-                        </p>
+                  ) : (
+                    <div className="mt-4">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <span className="text-sm font-medium text-brand-text">Ubicación exacta de entrega</span>
+                        <button type="button" onClick={locate} className="rounded-[30px] border border-brand-orange px-3 py-1.5 text-xs font-semibold text-brand-orange-ink transition hover:bg-brand-orange hover:text-white">
+                          Usar mi ubicación
+                        </button>
                       </div>
+                      <div className="h-[300px] overflow-hidden rounded-lg border border-[#ededf1]">
+                        <CheckoutMap value={loc} onChange={(lat, lng) => persistLoc({ lat, lng })} />
+                      </div>
+                      <p className="mt-1 text-xs text-brand-muted">
+                        {geoMsg || "Tocá el mapa o arrastrá el pin para marcar tu dirección exacta."}
+                        {loc ? ` (${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)})` : ""}
+                      </p>
                     </div>
                   )}
                 </>
@@ -351,10 +373,10 @@ export function CheckoutBlock() {
                     <dd className="font-price">−{money(discount)}</dd>
                   </div>
                 )}
-                {requiresShipping && delivery === "envio" && (
+                {requiresShipping && (
                   <div className="flex justify-between">
                     <dt className="text-brand-muted">Envío{selectedShip ? ` (${selectedShip.name})` : ""}</dt>
-                    <dd className="font-price text-brand-text">{selectedShip ? (shippingCost > 0 ? money(shippingCost) : "Gratis") : "A cotizar"}</dd>
+                    <dd className="font-price text-brand-text">{selectedShip ? (shippingCost > 0 ? money(shippingCost) : "Gratis") : "—"}</dd>
                   </div>
                 )}
                 {rate && taxAmount > 0 && (
