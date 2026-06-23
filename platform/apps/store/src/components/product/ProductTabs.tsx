@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Button, Input } from "@platform/ui";
 import type { Product } from "@/types";
 import { type ReviewItem, submitReview } from "@/lib/api";
 import { useToast } from "@/components/providers/ToastContext";
@@ -66,9 +67,10 @@ function ReviewForm({ productId }: { productId: string }) {
         <span className="text-sm text-brand-muted">Puntuación:</span>
         <div className="flex" role="radiogroup" aria-label="Puntuación">
           {[1, 2, 3, 4, 5].map((v) => (
-            <button
+            <Button
               key={v}
               type="button"
+              variant="plain"
               onClick={() => setRating(v)}
               aria-label={`${v} estrellas`}
               aria-checked={rating === v}
@@ -76,40 +78,41 @@ function ReviewForm({ productId }: { productId: string }) {
               className={cn("px-0.5 text-xl leading-none", v <= rating ? "text-brand-orange" : "text-[#d9d9e0]")}
             >
               ★
-            </button>
+            </Button>
           ))}
         </div>
       </div>
-      <input
+      <Input
         type="text"
         placeholder="Tu nombre *"
         value={author}
         onChange={(e) => setAuthor(e.target.value)}
         required
-        className="rounded-md border border-[#dcdce4] px-3 py-2 text-sm outline-none focus:border-brand-orange"
       />
-      <input
+      <Input
         type="text"
         placeholder="Título (opcional)"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="rounded-md border border-[#dcdce4] px-3 py-2 text-sm outline-none focus:border-brand-orange"
       />
-      <textarea
+      <Input
+        textArea
         placeholder="Tu opinión *"
         value={body}
         onChange={(e) => setBody(e.target.value)}
         required
         rows={3}
-        className="rounded-md border border-[#dcdce4] px-3 py-2 text-sm outline-none focus:border-brand-orange"
       />
-      <button
+      <Button
         type="submit"
+        variant="solid"
+        shape="round"
+        loading={sending}
         disabled={sending}
-        className="self-start rounded-full bg-brand-orange px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+        className="self-start brand-gradient px-6 py-2.5 text-sm font-semibold"
       >
         {sending ? "Enviando…" : "Enviar valoración"}
-      </button>
+      </Button>
     </form>
   );
 }
@@ -124,6 +127,21 @@ export function ProductTabs({
   average?: number;
 }) {
   const [tab, setTab] = useState<"desc" | "info" | "rev">("desc");
+  const [customDefs, setCustomDefs] = useState<{ key: string; label: string }[]>([]);
+  useEffect(() => {
+    const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    fetch(`${API}/cms/settings/mod_product_fields`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const fields = (d?.value?.fields ?? []) as { key: string; label: string; builtin?: boolean; enabled?: boolean }[];
+        setCustomDefs(fields.filter((f) => !f.builtin && f.enabled !== false).map((f) => ({ key: f.key, label: f.label })));
+      })
+      .catch(() => {});
+  }, []);
+  const customRows = customDefs
+    .map((d) => [d.label, product.custom?.[d.key]] as const)
+    .filter(([, v]) => v !== undefined && v !== null && String(v).trim() !== "")
+    .map(([k, v]) => [k, typeof v === "boolean" ? (v ? "Sí" : "No") : String(v)] as [string, string]);
   const tabs = [
     { id: "desc" as const, label: "Descripción" },
     { id: "info" as const, label: "Información adicional" },
@@ -134,18 +152,19 @@ export function ProductTabs({
     <div>
       <div className="flex flex-wrap gap-1 border-b border-[#ededf1]">
         {tabs.map((t) => (
-          <button
+          <Button
             key={t.id}
             type="button"
+            variant="plain"
             onClick={() => setTab(t.id)}
             aria-current={tab === t.id}
             className={cn(
-              "focus-ring -mb-px rounded-t-md px-4 py-2.5 text-sm font-semibold transition",
+              "-mb-px rounded-t-md px-4 py-2.5 text-sm font-semibold transition",
               tab === t.id ? "border-b-2 border-brand-orange text-brand-text" : "text-brand-muted hover:text-brand-text",
             )}
           >
             {t.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -160,6 +179,7 @@ export function ProductTabs({
                 ["SKU", product.sku ?? "—"],
                 ["Categoría", product.category ?? "—"],
                 ["Disponibilidad", product.stock === 0 ? "Sin stock" : "En stock"],
+                ...customRows,
               ].map(([k, v]) => (
                 <tr key={k} className="border-b border-[#ededf1]">
                   <th className="py-2 pr-4 text-left font-medium text-brand-muted">{k}</th>

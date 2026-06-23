@@ -9,6 +9,7 @@ import {
   HomeFeaturedBlock,
   HomePromoBannerBlock,
 } from "./sectionBlocks";
+import { Button } from "@platform/ui";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -67,16 +68,20 @@ function StoreHeroSlider() {
       {visible.length > 1 && (
         <div style={{ position: "absolute", bottom: 12, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 8 }}>
           {visible.map((_, i) => (
-            <button
+            <Button
               key={i}
+              type="button"
+              variant="plain"
               onClick={() => setIdx(i)}
               aria-label={`Slide ${i + 1}`}
               style={{
                 width: 10,
                 height: 10,
+                minWidth: 0,
                 borderRadius: "50%",
                 border: "none",
                 cursor: "pointer",
+                padding: 0,
                 background: i === idx % visible.length ? "var(--brand-orange)" : "rgba(255,255,255,.7)",
               }}
             />

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@platform/ui";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation } from "swiper/modules";
 import "swiper/css/bundle";
@@ -25,8 +26,8 @@ const pad = (n: number) => String(n).padStart(2, "0");
  */
 export function AnvogueDeals({ products }: { products: Product[] }) {
   const [seconds, setSeconds] = useState<number | null>(null);
-  const prevRef = useRef<HTMLButtonElement>(null);
-  const nextRef = useRef<HTMLButtonElement>(null);
+  const prevRef = useRef<HTMLButtonElement>(null!);
+  const nextRef = useRef<HTMLButtonElement>(null!);
 
   useEffect(() => {
     setSeconds(secsToEndOfDay());
@@ -110,20 +111,24 @@ export function AnvogueDeals({ products }: { products: Product[] }) {
             ))}
           </Swiper>
 
-          <button
+          <Button
             ref={prevRef}
+            type="button"
+            variant="plain"
             aria-label="Anterior"
             className="absolute -left-2 top-1/3 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1F1F1F] shadow-md transition-colors hover:bg-[#1F1F1F] hover:text-white"
           >
             <ChevronLeft size={20} />
-          </button>
-          <button
+          </Button>
+          <Button
             ref={nextRef}
+            type="button"
+            variant="plain"
             aria-label="Siguiente"
             className="absolute -right-2 top-1/3 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1F1F1F] shadow-md transition-colors hover:bg-[#1F1F1F] hover:text-white"
           >
             <ChevronRight size={20} />
-          </button>
+          </Button>
         </div>
       </div>
     </div>

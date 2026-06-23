@@ -1,16 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Button } from "@platform/ui";
 import { LocationIcon } from "@/components/icons";
 import { useToast } from "@/components/providers/ToastContext";
 import { useSucursal } from "@/components/sucursal/SucursalContext";
 import { useFlags } from "@/components/providers/FeatureFlagsContext";
 import { cn } from "@/lib/utils";
 
-/**
- * Widget funcional de sucursales: filtro por zona + geolocalización + listado.
- * Consume las sucursales reales del backend vía SucursalContext (/branches).
- */
 export function SucursalesList() {
   const { toast } = useToast();
   const { sucursales, zonas, nearest } = useSucursal();
@@ -39,7 +36,6 @@ export function SucursalesList() {
     );
   };
 
-  // Tenant sin sucursales (branches=false): la sección no aplica.
   if (!flags.branches) {
     return (
       <p className="text-sm text-brand-muted">La selección de sucursales no está disponible.</p>
@@ -50,28 +46,30 @@ export function SucursalesList() {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <h2 className="font-heading text-xl font-bold text-brand-text">Encontrá tu sucursal</h2>
-        <button
+        <Button
           type="button"
+          variant="default"
+          shape="round"
           onClick={locate}
-          className="focus-ring flex items-center gap-2 rounded-[30px] border border-brand-orange px-4 py-2 text-sm font-medium text-brand-orange-ink transition hover:bg-brand-orange hover:text-white"
+          className="border-brand-orange text-brand-orange-ink hover:bg-brand-orange hover:text-white"
         >
           <LocationIcon className="size-4" /> Usar mi ubicación
-        </button>
+        </Button>
       </div>
 
       <div className="mb-6 flex flex-wrap gap-2">
         {["Todas", ...zonas].map((z) => (
-          <button
+          <Button
             key={z}
             type="button"
+            variant={zona === z ? "solid" : "default"}
+            shape="round"
+            size="md"
             onClick={() => setZona(z)}
-            className={cn(
-              "focus-ring rounded-full px-3 py-1 text-xs font-medium transition",
-              zona === z ? "bg-brand-orange text-white" : "bg-search-bg text-brand-text hover:bg-[#e7e8ee]",
-            )}
+            className={zona === z ? "bg-brand-orange text-white border-brand-orange" : "bg-search-bg text-brand-text border-transparent hover:bg-[#e7e8ee]"}
           >
             {z}
-          </button>
+          </Button>
         ))}
       </div>
 

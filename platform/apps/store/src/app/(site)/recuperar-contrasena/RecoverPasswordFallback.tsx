@@ -2,27 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Input, Button } from "@platform/ui";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { useToast } from "@/components/providers/ToastContext";
 
-/**
- * Fallback nativo de /recuperar-contrasena: se renderiza cuando el documento del
- * builder ("recuperar-contrasena") no está publicado. Replica el flujo real del
- * PasswordRecoveryBlock — dispara la recuperación contra el endpoint REAL del API
- * del tenant (`/auth/forgot-password`), sin mock ni simulación de éxito.
- *
- * IMPORTANTE — pendiente de backend: a la fecha apps/api NO expone la ruta de
- * recuperación de contraseña. Por eso ante 404/error NO se finge éxito: se hace
- * surface del error honesto. Cuando el backend implemente la ruta, el formulario
- * ya queda funcional sin más cambios.
- */
-
-// Cliente: el API público se consume directo (igual que PasswordRecoveryBlock).
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const FORGOT_PASSWORD_ENDPOINT = "/auth/forgot-password";
-
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 type Status = "idle" | "loading" | "sent" | "error";
 
 export default function RecoverPasswordFallback() {
@@ -37,7 +23,6 @@ export default function RecoverPasswordFallback() {
       toast("Ingresá un correo válido", "error");
       return;
     }
-
     setStatus("loading");
     try {
       const res = await fetch(`${API}${FORGOT_PASSWORD_ENDPOINT}`, {
@@ -76,23 +61,26 @@ export default function RecoverPasswordFallback() {
           <form onSubmit={submit} className="flex flex-col gap-4">
             <div>
               <label htmlFor="r-email" className="mb-1 block text-sm text-brand-text">Correo electrónico *</label>
-              <input
+              <Input
                 id="r-email"
                 type="email"
                 inputMode="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-search-bg rounded-md h-11 px-3 text-sm outline-none border border-transparent focus-visible:ring-2 focus-visible:ring-brand-orange/40"
               />
             </div>
-            <button
+            <Button
               type="submit"
+              variant="solid"
+              shape="round"
+              loading={status === "loading"}
               disabled={status === "loading"}
-              className="brand-gradient focus-ring h-[48px] w-full rounded-[8px] text-sm font-semibold text-white disabled:opacity-60 disabled:cursor-not-allowed"
+              block
+              className="brand-gradient h-[48px] text-sm font-semibold"
             >
               {status === "loading" ? "Enviando…" : "Enviar enlace"}
-            </button>
+            </Button>
             <Link href="/mi-cuenta" className="focus-ring rounded-sm text-center text-sm text-brand-orange-ink hover:underline">
               Volver a iniciar sesión
             </Link>

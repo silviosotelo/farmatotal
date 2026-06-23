@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@platform/ui";
 
 export function QuantityStepper({ min = 1, max = 99 }: { min?: number; max?: number }) {
   const [qty, setQty] = useState(min);
@@ -9,30 +10,32 @@ export function QuantityStepper({ min = 1, max = 99 }: { min?: number; max?: num
 
   return (
     <div className="flex h-[44px] items-center overflow-hidden rounded-[8px] border border-[#ededf1]">
-      <button
+      <Button
         type="button"
+        variant="plain"
         aria-label="Disminuir cantidad"
         onClick={dec}
         disabled={qty <= min}
-        className="focus-ring flex h-full select-none items-center justify-center px-4 text-base text-brand-muted transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex h-full select-none items-center justify-center px-4 text-base text-brand-muted hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 rounded-none"
       >
         −
-      </button>
+      </Button>
       <span
         className="flex h-full min-w-[40px] items-center justify-center border-x border-[#ededf1] px-5 text-sm font-medium text-brand-text tabular-nums"
         aria-live="polite"
       >
         {qty}
       </span>
-      <button
+      <Button
         type="button"
+        variant="plain"
         aria-label="Aumentar cantidad"
         onClick={inc}
         disabled={qty >= max}
-        className="focus-ring flex h-full select-none items-center justify-center px-4 text-base text-brand-muted transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex h-full select-none items-center justify-center px-4 text-base text-brand-muted hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 rounded-none"
       >
         +
-      </button>
+      </Button>
     </div>
   );
 }

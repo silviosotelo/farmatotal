@@ -5,6 +5,7 @@ import type { Product } from "@/types";
 import { useMoney } from "@/components/providers/CurrencyContext";
 import { StockBadge } from "@/themes/CatalogStock";
 import { useFlags } from "@/components/providers/FeatureFlagsContext";
+import { Tag } from "@platform/ui";
 
 /**
  * Tarjeta de producto con el markup/clases de Ekomart (single-shopping-card-one),
@@ -29,13 +30,13 @@ export function EkomartProductCard({
       <div className="image-and-action-area-wrapper">
         <Link href={href} className="thumbnail-preview">
           {hasDiscount && (
-            <div className="badge">
+            <Tag className="badge">
               <span>
                 {product.discount}% <br />
                 Off
               </span>
               <i className="fa-solid fa-bookmark" />
-            </div>
+            </Tag>
           )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={product.image} alt={product.title} />

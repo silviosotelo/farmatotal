@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Product, Category } from "@/types";
 import { getDeals, getFeatured, listProducts, listCategories, getStoreConfig } from "@/lib/api";
 import { formatMoney } from "@/lib/money";
+import { Tag } from "@platform/ui";
 import { EkomartProductCard } from "./EkomartProductCard";
 import { InventoryGate } from "@/components/providers/InventoryGate";
 import EkomartProductCarousel from "./sections/EkomartProductCarousel";
@@ -213,13 +214,13 @@ function TrendingSection({ products, currency, locale }: { products: Product[]; 
                       <div className="single-shopping-card-one tranding-product">
                         <Link href={href} className="thumbnail-preview">
                           {hasDiscount && (
-                            <div className="badge">
+                            <Tag className="badge">
                               <span>
                                 {product.discount}% <br />
                                 Off
                               </span>
                               <i className="fa-solid fa-bookmark" />
-                            </div>
+                            </Tag>
                           )}
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={product.image} alt={product.title} />

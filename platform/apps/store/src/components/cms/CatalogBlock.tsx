@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Input, Button, Select } from "@platform/ui";
 import { ProductCard } from "@/components/ProductCard";
 import { CatalogStockProvider } from "@/themes/CatalogStock";
 import { tenantHeaders } from "@/lib/tenant";
@@ -9,13 +10,20 @@ import type { Product } from "@/types";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const PER_PAGE_OPTIONS = [24, 48, 96];
 
-// UI de orden → parámetro `sort` del backend (catalog.routes).
-const SORTS: { value: string; label: string; api?: string }[] = [
+type SelOpt = { value: string; label: string };
+
+const SORTS: SelOpt[] = [
   { value: "relevancia", label: "Orden predeterminado" },
-  { value: "precio-asc", label: "Precio: bajo a alto", api: "priceWeb:asc" },
-  { value: "precio-desc", label: "Precio: alto a bajo", api: "priceWeb:desc" },
-  { value: "nombre-az", label: "Nombre A-Z", api: "title:asc" },
+  { value: "precio-asc", label: "Precio: bajo a alto" },
+  { value: "precio-desc", label: "Precio: alto a bajo" },
+  { value: "nombre-az", label: "Nombre A-Z" },
 ];
+
+const SORT_API: Record<string, string | undefined> = {
+  "precio-asc": "priceWeb:asc",
+  "precio-desc": "priceWeb:desc",
+  "nombre-az": "title:asc",
+};
 
 function discount(normal: number, web: number) {
   if (normal <= 0 || web >= normal) return 0;
@@ -63,11 +71,9 @@ export function CatalogBlock({
   const [page, setPage] = useState(1);
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  // Precio con debounce (no refetch en cada tecla).
   const [priceApplied, setPriceApplied] = useState<{ min: string; max: string }>({ min: "", max: "" });
   const firstRender = useRef(true);
 
-  // Filtros de categoría y marca (el backend soporta categoryId/brandId).
   const [cats, setCats] = useState<{ id: string; name: string }[]>([]);
   const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
   const [catId, setCatId] = useState("");
@@ -89,7 +95,6 @@ export function CatalogBlock({
     return () => clearTimeout(t);
   }, [minPrice, maxPrice]);
 
-  // Reset a página 1 cuando cambian filtros/orden (no en el primer render).
   useEffect(() => {
     if (firstRender.current) return;
     setPage(1);
@@ -101,7 +106,7 @@ export function CatalogBlock({
     qs.set("page", String(page));
     qs.set("perPage", String(perPage));
     qs.delete("offset");
-    const apiSort = SORTS.find((s) => s.value === sort)?.api;
+    const apiSort = SORT_API[sort];
     if (apiSort) qs.set("sort", apiSort);
     if (priceApplied.min) qs.set("priceMin", priceApplied.min);
     if (priceApplied.max) qs.set("priceMax", priceApplied.max);
@@ -130,9 +135,8 @@ export function CatalogBlock({
     [totalPages, page],
   );
 
-  const ctrl =
-    "h-10 rounded border border-[#ededf1] bg-white px-3 text-sm text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-orange/50";
-  const pageBtn = "flex size-9 items-center justify-center rounded border border-[#ededf1] text-sm text-brand-text transition-colors hover:border-brand-orange hover:text-brand-orange";
+  const sortOpt = SORTS.find((s) => s.value === sort) ?? SORTS[0];
+  const perPageOpt: SelOpt = { value: String(perPage), label: `Mostrar ${perPage}` };
 
   return (
     <CatalogStockProvider skus={skus}>
@@ -144,62 +148,64 @@ export function CatalogBlock({
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-brand-text">Filtrar por precio</span>
             <div className="flex items-center gap-1">
-              <input
+              <Input
                 type="number"
                 min={0}
                 placeholder="Mín"
                 value={minPrice}
                 onChange={(e) => setMinPrice(e.target.value)}
                 aria-label="Precio mínimo"
-                className="h-8 w-24 rounded border border-[#ededf1] bg-white px-2 text-sm text-brand-text placeholder:text-brand-muted/60 focus:outline-none focus:ring-2 focus:ring-brand-orange/50"
+                size="md"
+                className="w-24"
               />
               <span className="text-brand-muted">–</span>
-              <input
+              <Input
                 type="number"
                 min={0}
                 placeholder="Máx"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
                 aria-label="Precio máximo"
-                className="h-8 w-24 rounded border border-[#ededf1] bg-white px-2 text-sm text-brand-text placeholder:text-brand-muted/60 focus:outline-none focus:ring-2 focus:ring-brand-orange/50"
+                size="md"
+                className="w-24"
               />
             </div>
-            <select value={catId} onChange={(e) => setCatId(e.target.value)} aria-label="Categoría" className="h-8 max-w-[180px] rounded border border-[#ededf1] bg-white px-2 text-sm text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-orange/50">
-              <option value="">Todas las categorías</option>
-              {cats.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <select value={brandId} onChange={(e) => setBrandId(e.target.value)} aria-label="Marca" className="h-8 max-w-[160px] rounded border border-[#ededf1] bg-white px-2 text-sm text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-orange/50">
-              <option value="">Todas las marcas</option>
-              {brands.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={catId ? { value: catId, label: cats.find((c) => c.id === catId)?.name ?? catId } : null}
+              onChange={(opt) => setCatId((opt as SelOpt | null)?.value ?? "")}
+              options={cats.map((c) => ({ value: c.id, label: c.name }))}
+              placeholder="Todas las categorías"
+              isClearable
+              className="min-w-[160px]"
+            />
+            <Select
+              value={brandId ? { value: brandId, label: brands.find((b) => b.id === brandId)?.name ?? brandId } : null}
+              onChange={(opt) => setBrandId((opt as SelOpt | null)?.value ?? "")}
+              options={brands.map((b) => ({ value: b.id, label: b.name }))}
+              placeholder="Todas las marcas"
+              isClearable
+              className="min-w-[140px]"
+            />
             <span className="text-sm text-brand-muted">
               {total.toLocaleString("es-PY")} resultado{total !== 1 ? "s" : ""}
             </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Ordenar productos" className={ctrl}>
-              {SORTS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-            <select value={perPage} onChange={(e) => setPerPage(Number(e.target.value))} aria-label="Productos por página" className={ctrl}>
-              {PER_PAGE_OPTIONS.map((n) => (
-                <option key={n} value={n}>
-                  Mostrar {n}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={sortOpt}
+              onChange={(opt) => setSort((opt as SelOpt | null)?.value ?? "relevancia")}
+              options={SORTS}
+              isSearchable={false}
+              className="min-w-[200px]"
+            />
+            <Select
+              value={perPageOpt}
+              onChange={(opt) => setPerPage(Number((opt as SelOpt | null)?.value ?? "24"))}
+              options={PER_PAGE_OPTIONS.map((n) => ({ value: String(n), label: `Mostrar ${n}` }))}
+              isSearchable={false}
+              className="min-w-[120px]"
+            />
           </div>
         </div>
 
@@ -217,32 +223,43 @@ export function CatalogBlock({
           </div>
         )}
 
-        {/* Paginación (server, ventana de páginas) */}
+        {/* Paginación */}
         {totalPages > 1 && (
           <div className="mt-10 flex flex-wrap items-center justify-center gap-1">
-            <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} aria-label="Página anterior" className={pageBtn + " disabled:pointer-events-none disabled:opacity-40"}>
+            <Button
+              variant="default"
+              size="md"
+              shape="circle"
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              aria-label="Página anterior"
+            >
               ‹
-            </button>
+            </Button>
             {pageNumbers.map((n, idx, arr) => (
               <span key={n} className="flex items-center gap-1">
                 {idx > 0 && n - arr[idx - 1] > 1 ? <span className="px-1 text-brand-muted">…</span> : null}
-                <button
-                  type="button"
+                <Button
+                  variant={n === page ? "solid" : "default"}
+                  size="md"
+                  shape="circle"
                   onClick={() => setPage(n)}
                   aria-current={n === page ? "page" : undefined}
-                  className={
-                    n === page
-                      ? "flex size-9 items-center justify-center rounded bg-brand-orange text-sm font-medium text-white"
-                      : pageBtn
-                  }
                 >
                   {n}
-                </button>
+                </Button>
               </span>
             ))}
-            <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} aria-label="Página siguiente" className={pageBtn + " disabled:pointer-events-none disabled:opacity-40"}>
+            <Button
+              variant="default"
+              size="md"
+              shape="circle"
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              aria-label="Página siguiente"
+            >
               ›
-            </button>
+            </Button>
           </div>
         )}
       </section>

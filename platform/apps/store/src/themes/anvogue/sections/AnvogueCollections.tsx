@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@platform/ui";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation } from "swiper/modules";
 import "swiper/css/bundle";
@@ -11,8 +12,8 @@ import { container, heading3, heading5 } from "./anvogueClasses";
 export type CollectionItem = { name: string; href: string; image: string };
 
 export function AnvogueCollections({ title, items }: { title: string; items: CollectionItem[] }) {
-  const prevRef = useRef<HTMLButtonElement>(null);
-  const nextRef = useRef<HTMLButtonElement>(null);
+  const prevRef = useRef<HTMLButtonElement>(null!);
+  const nextRef = useRef<HTMLButtonElement>(null!);
   if (!items.length) return null;
 
   return (
@@ -72,20 +73,24 @@ export function AnvogueCollections({ title, items }: { title: string; items: Col
           ))}
         </Swiper>
 
-        <button
+        <Button
           ref={prevRef}
+          type="button"
+          variant="plain"
           aria-label="Anterior"
           className="absolute left-1 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1F1F1F] shadow-md transition-colors hover:bg-[#1F1F1F] hover:text-white"
         >
           <ChevronLeft size={20} />
-        </button>
-        <button
+        </Button>
+        <Button
           ref={nextRef}
+          type="button"
+          variant="plain"
           aria-label="Siguiente"
           className="absolute right-1 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1F1F1F] shadow-md transition-colors hover:bg-[#1F1F1F] hover:text-white"
         >
           <ChevronRight size={20} />
-        </button>
+        </Button>
       </div>
     </div>
   );

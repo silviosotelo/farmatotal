@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "@platform/ui";
 import { useMoney } from "@/components/providers/CurrencyContext";
 import type { Product } from "@/types";
 import { HeartIcon } from "@/components/icons";
@@ -20,7 +21,6 @@ export function ProductCard({ product }: { product: Product }) {
   const { toast } = useToast();
   const flags = useFlags();
   const fav = has(product.id);
-  // Inventario oculto (inventory=false): nunca "agotado" ni tope de stock.
   const out = flags.inventory ? product.stock === 0 : false;
 
   const onAdd = () => {
@@ -34,7 +34,6 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <div className="group card-shadow relative flex h-full flex-col overflow-hidden rounded-[10px] border border-[#ededf1] bg-white transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:border-transparent hover:[box-shadow:0_14px_34px_rgba(241,101,34,0.14),0_6px_14px_rgba(16,24,40,0.08)]">
-      {/* thumbnail */}
       <div className="relative p-5">
         {product.discount > 0 && (
           <span className="font-price absolute left-3 top-3 z-10 rounded-[8px] bg-brand-orange px-2 py-1 text-xs font-bold leading-none text-white shadow-[0_2px_6px_rgba(241,101,34,0.35)]">
@@ -46,19 +45,20 @@ export function ProductCard({ product }: { product: Product }) {
             Sin stock
           </span>
         )}
-        {/* wishlist */}
-        <button
+        <Button
           type="button"
+          variant="plain"
+          shape="circle"
           aria-label={fav ? "Quitar de favoritos" : "Añadir a favoritos"}
           aria-pressed={fav}
           onClick={onFav}
           className={cn(
-            "focus-ring absolute right-3 top-3 z-10 flex size-8 -translate-y-1 items-center justify-center rounded-full bg-white shadow-sm transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 focus-visible:translate-y-0 focus-visible:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100",
+            "absolute right-3 top-3 z-10 size-8 -translate-y-1 bg-white shadow-sm transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 focus-visible:translate-y-0 focus-visible:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100",
             fav ? "text-[#e74c3c] opacity-100" : "text-brand-muted opacity-0 hover:text-brand-orange",
           )}
         >
           <HeartIcon className="size-4" fill={fav ? "currentColor" : "none"} />
-        </button>
+        </Button>
         <Link href={href} className="focus-ring block rounded-md">
           <div className="relative aspect-square w-full">
             {product.image ? (
@@ -87,7 +87,6 @@ export function ProductCard({ product }: { product: Product }) {
         </Link>
       </div>
 
-      {/* content */}
       <div className="flex flex-1 flex-col px-5 pb-5">
         <h3 className="mb-2 h-[50px] text-sm font-medium leading-[1.4] text-brand-text">
           <Link href={href} className="focus-ring line-clamp-2 rounded-sm transition-colors hover:text-brand-orange">
@@ -108,14 +107,17 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
 
-        <button
+        <Button
           type="button"
+          variant="solid"
+          shape="round"
+          block
           onClick={onAdd}
           disabled={out}
-          className="brand-gradient focus-ring mt-4 flex h-[38px] w-full items-center justify-center rounded-[30px] px-5 text-xs font-semibold uppercase tracking-wide text-white shadow-[0_4px_12px_rgba(241,101,34,0.25)] transition-all duration-200 hover:shadow-[0_6px_16px_rgba(241,101,34,0.4)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+          className="brand-gradient mt-4 h-[38px] px-5 text-xs font-semibold uppercase tracking-wide shadow-[0_4px_12px_rgba(241,101,34,0.25)] transition-all duration-200 hover:shadow-[0_6px_16px_rgba(241,101,34,0.4)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
         >
           {out ? "Sin stock" : "Añadir al carrito"}
-        </button>
+        </Button>
       </div>
     </div>
   );

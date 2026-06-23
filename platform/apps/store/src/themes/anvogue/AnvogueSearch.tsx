@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
+import { Input, Button } from "@platform/ui";
 
 /**
  * Buscador del header Anvogue. Cliente: maneja el estado del input y navega
@@ -24,20 +25,21 @@ export function AnvogueSearch({ className = "" }: { className?: string }) {
       autoComplete="off"
       className={`relative w-full ${className}`}
     >
-      <input
+      <Input
         type="text"
         placeholder="¿Qué estás buscando?"
         value={term}
         onChange={(e) => setTerm(e.target.value)}
         className="h-11 w-full rounded-full border border-[#E9E9E9] bg-white pl-5 pr-12 text-sm text-[#1F1F1F] placeholder:text-[#A0A0A0] focus:border-[#1F1F1F] focus:outline-none"
       />
-      <button
+      <Button
         type="submit"
+        variant="plain"
         aria-label="Buscar"
         className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full bg-[#1F1F1F] text-white transition-colors hover:bg-[var(--brand-orange)]"
       >
         <Search size={18} />
-      </button>
+      </Button>
     </form>
   );
 }

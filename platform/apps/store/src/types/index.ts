@@ -31,6 +31,8 @@ export interface Product {
   stock?: number;
   brand?: string;
   description?: string;
+  /** valores de campos personalizados (config en mod_product_fields). */
+  custom?: Record<string, unknown> | null;
   /** extra image paths for the gallery */
   gallery?: string[];
   /** 0–5 */

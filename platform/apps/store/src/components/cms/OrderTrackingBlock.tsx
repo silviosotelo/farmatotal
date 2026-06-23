@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Input, Button, Alert } from "@platform/ui";
 import { useToast } from "@/components/providers/ToastContext";
 import { useCurrency } from "@/components/providers/CurrencyContext";
 import { useFlags } from "@/components/providers/FeatureFlagsContext";
@@ -12,16 +13,11 @@ import { cn } from "@/lib/utils";
  * Bloque funcional "Seguimiento de pedido" del builder (estilo widget de
  * Order Tracking de Woo en Elementor): input de número de pedido + lógica real
  * (GET /orders/by-number/:n) embebida; se coloca/posiciona desde el builder.
- *
- * Data-bound al API del tenant — el paso del stepper se DERIVA del status real
- * de la orden (no hay activeStep mockeado). Montos formateados con useMoney().
  */
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
-// Pasos visibles del seguimiento.
 const STEPS = ["Recibido", "En preparación", "Listo / En camino", "Entregado"];
-// Estado real del backend → índice del stepper (deriva el paso, sin mock).
 const STATUS_STEP: Record<string, number> = {
   pending: 0,
   paid: 1,
@@ -29,9 +25,6 @@ const STATUS_STEP: Record<string, number> = {
   fulfilled: 2,
   delivered: 3,
 };
-
-const INPUT_CLS =
-  "w-full bg-search-bg rounded-md h-11 px-3 text-sm outline-none border border-transparent focus-visible:ring-2 focus-visible:ring-brand-orange/40 text-brand-text placeholder:text-brand-muted";
 
 type TrackedLine = {
   id?: string;
@@ -66,10 +59,6 @@ export function OrderTrackingBlock({
   requireEmail?: boolean;
   showItems?: boolean;
 } = {}) {
-  // Orden histórica: se formatea con la moneda GUARDADA de la orden
-  // (order.currency, snapshot al checkout — ver orders.ts), nunca con la moneda
-  // viva del store; el locale sí es el del tenant. Fallback a la moneda viva
-  // (no a un código hardcodeado) para mantener el white-label.
   const { currency, locale } = useCurrency();
   const flags = useFlags();
   const { toast } = useToast();
@@ -93,7 +82,6 @@ export function OrderTrackingBlock({
     setLoading(true);
     setOrder(null);
     try {
-      // Búsqueda por número; si no aparece, reintenta por id (GET /orders/:id).
       let r = await fetch(`${API}/orders/by-number/${encodeURIComponent(n)}`);
       if (r.status === 404) {
         r = await fetch(`${API}/orders/${encodeURIComponent(n)}`);
@@ -104,7 +92,6 @@ export function OrderTrackingBlock({
         return;
       }
       const o = (await r.json()) as TrackedOrder;
-      // Privacidad: si ingresó correo, debe coincidir con el del pedido.
       if (
         email.trim() &&
         o.customerEmail &&
@@ -121,12 +108,9 @@ export function OrderTrackingBlock({
     setLoading(false);
   }
 
-  // Estado/paso DERIVADO del status real (sin activeStep hardcodeado).
   const cancelled = order ? order.status === "cancelled" || order.status === "refunded" : false;
   const activeStep = order ? (STATUS_STEP[order.status] ?? 0) : 0;
-  // Entrega: retiro en sucursal sólo es relevante si el tenant usa sucursales.
   const isPickup = order?.shippingMethod === "pickup";
-  // Formateador ligado a la moneda snapshot de la orden (no a la viva del store).
   const money = (v: number) => formatMoney(v, { currency: order?.currency ?? currency, locale });
 
   return (
@@ -139,34 +123,35 @@ export function OrderTrackingBlock({
           <label htmlFor="ot-nro" className="mb-1 block text-sm text-brand-text">
             N° de pedido <span className="text-[#c0392b]">*</span>
           </label>
-          <input
+          <Input
             id="ot-nro"
             value={nro}
             onChange={(e) => setNro(e.target.value)}
             placeholder="Ej. 000123"
-            className={INPUT_CLS}
           />
         </div>
         <div className="flex-1">
           <label htmlFor="ot-email" className="mb-1 block text-sm text-brand-text">
             Correo {requireEmail && <span className="text-[#c0392b]">*</span>}
           </label>
-          <input
+          <Input
             id="ot-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="correo@ejemplo.com"
-            className={INPUT_CLS}
           />
         </div>
-        <button
+        <Button
           type="submit"
+          variant="solid"
+          shape="round"
+          loading={loading}
           disabled={loading}
-          className="brand-gradient focus-ring h-[44px] shrink-0 rounded-[30px] px-8 text-sm font-semibold text-white disabled:opacity-60"
+          className="brand-gradient h-[44px] shrink-0 px-8"
         >
           {loading ? "Buscando…" : "Rastrear"}
-        </button>
+        </Button>
       </form>
 
       {order && (
@@ -186,7 +171,6 @@ export function OrderTrackingBlock({
             </span>
           </div>
 
-          {/* Entrega: retiro en sucursal sólo si el tenant tiene sucursales activas. */}
           {flags.branches && isPickup && (
             <p className="mb-4 text-sm text-brand-muted">
               Retiro en sucursal
@@ -195,10 +179,10 @@ export function OrderTrackingBlock({
           )}
 
           {cancelled ? (
-            <p className="rounded-md bg-[#fdecea] px-4 py-3 text-sm font-medium text-[#c0392b]">
+            <Alert type="danger" showIcon>
               Este pedido figura como{" "}
               {order.status === "refunded" ? "reembolsado" : "cancelado"}.
-            </p>
+            </Alert>
           ) : (
             <ol className="flex items-center">
               {STEPS.map((s, i) => (

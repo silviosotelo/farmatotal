@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { Input, Button, Tag, PasswordInput } from "@platform/ui";
 import { useAuth } from "@/components/providers/AuthContext";
 import { useToast } from "@/components/providers/ToastContext";
 import { useMoney, useCurrency } from "@/components/providers/CurrencyContext";
@@ -12,25 +13,11 @@ import { formatQty } from "@/lib/units";
 /**
  * Bloque funcional "Mi cuenta" del builder (estilo widget de cuenta de Woo en
  * Elementor): toda la lógica real embebida; se coloca/posiciona desde el builder.
- *
- * Data-bound al API del tenant:
- *  - Datos del cliente: GET {API}/customers?q=<email> (lectura pública del backend)
- *    para resolver el registro real de `customers` por email y obtener su id; cae a
- *    los datos de la sesión (useAuth) mientras carga o si no hay match.
- *  - Pedidos: GET /api/orders (proxy autenticado del storefront → :4000/orders).
- *  - Guardar cambios: PATCH /api/customers/<id> (proxy autenticado del storefront →
- *    :4000/customers/:id). La mutación NO está whitelisteada en el backend y el JWT
- *    se lee del header Authorization (Bearer), por eso pasa por el proxy same-origin
- *    que reenvía la cookie httpOnly ft_at como Bearer — igual que /api/auth/me y
- *    /api/orders. Un fetch directo del browser a {API}/customers/:id devolvería 401.
  */
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
-const inputClass =
-  "w-full bg-search-bg rounded-md h-11 px-3 text-sm outline-none border border-transparent focus-visible:ring-2 focus-visible:ring-brand-orange/40 transition-colors";
-
-const STATUS_COLORS: Record<string, string> = {
+const STATUS_TAG: Record<string, string> = {
   COMPLETED: "bg-green-100 text-green-700",
   PAID: "bg-blue-100 text-blue-700",
   PROCESSING: "bg-yellow-100 text-yellow-700",
@@ -131,8 +118,6 @@ export function AccountBlock({
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
-  // Siembra inicial del formulario desde la sesión (se refina con el registro
-  // de customers cuando llega).
   useEffect(() => {
     if (!user) return;
     setFirstName(user.firstName ?? "");
@@ -141,8 +126,6 @@ export function AccountBlock({
     setPhone(user.phone ?? "");
   }, [user]);
 
-  // Resuelve el registro real de `customers` por email (GET público). Da el id
-  // que necesita el PATCH y los campos canónicos del cliente.
   const loadCustomer = useCallback(async (mail: string) => {
     try {
       const res = await fetch(`${API}/customers?q=${encodeURIComponent(mail)}&perPage=5`);
@@ -166,7 +149,6 @@ export function AccountBlock({
     if (isLoggedIn && user?.email) loadCustomer(user.email);
   }, [isLoggedIn, user?.email, loadCustomer]);
 
-  // Historial de pedidos del usuario (proxy autenticado).
   useEffect(() => {
     if (!isLoggedIn) {
       setOrders([]);
@@ -188,8 +170,6 @@ export function AccountBlock({
     };
   }, [isLoggedIn]);
 
-  // Formatea un importe de pedido: respeta la moneda guardada de la orden si
-  // difiere de la del tenant; si no, usa el formateador vivo (useMoney).
   const fmtOrder = useCallback(
     (value: number, orderCurrency?: string) =>
       orderCurrency && orderCurrency !== currency
@@ -218,7 +198,6 @@ export function AccountBlock({
       }
       const updated = (await res.json().catch(() => null)) as Customer | null;
       if (updated) setCustomer(updated);
-      // Refresca la sesión por si cambió el nombre/email mostrados en el header.
       await refresh();
       toast("Cambios guardados", "success");
     } catch {
@@ -230,8 +209,6 @@ export function AccountBlock({
 
   /* ── Invitado ── */
   if (!isLoggedIn || !user) {
-    const inp =
-      "w-full bg-search-bg rounded-md h-11 px-3 text-sm outline-none border border-transparent focus-visible:ring-2 focus-visible:ring-brand-orange/40 text-brand-text placeholder:text-brand-muted";
     return (
       <div className="ft-container py-12">
         <div className="max-w-md mx-auto border border-[#ededf1] rounded-[12px] p-8 bg-white">
@@ -242,27 +219,37 @@ export function AccountBlock({
           <form onSubmit={handleAuth} className="mt-6 flex flex-col gap-3" noValidate>
             {authMode === "register" && (
               <div className="grid grid-cols-2 gap-3">
-                <input value={authFirst} onChange={(e) => setAuthFirst(e.target.value)} placeholder="Nombre" className={inp} aria-label="Nombre" />
-                <input value={authLast} onChange={(e) => setAuthLast(e.target.value)} placeholder="Apellido" className={inp} aria-label="Apellido" />
+                <Input value={authFirst} onChange={(e) => setAuthFirst(e.target.value)} placeholder="Nombre" aria-label="Nombre" />
+                <Input value={authLast} onChange={(e) => setAuthLast(e.target.value)} placeholder="Apellido" aria-label="Apellido" />
               </div>
             )}
-            <input type="email" required value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder="correo@ejemplo.com" className={inp} aria-label="Email" />
-            <input type="password" required value={authPwd} onChange={(e) => setAuthPwd(e.target.value)} placeholder="Contraseña" className={inp} aria-label="Contraseña" />
+            <Input type="email" required value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder="correo@ejemplo.com" aria-label="Email" />
+            <PasswordInput required value={authPwd} onChange={(e) => setAuthPwd(e.target.value)} placeholder="Contraseña" aria-label="Contraseña" />
             {authMode === "register" && (
-              <input value={authPhone} onChange={(e) => setAuthPhone(e.target.value)} placeholder="Teléfono (opcional)" className={inp} aria-label="Teléfono" />
+              <Input value={authPhone} onChange={(e) => setAuthPhone(e.target.value)} placeholder="Teléfono (opcional)" aria-label="Teléfono" />
             )}
             {authErr ? <p className="text-xs text-[#c0392b]">{authErr}</p> : null}
-            <button type="submit" disabled={authBusy} className="mt-1 brand-gradient focus-ring text-white rounded-[30px] h-11 px-8 text-sm font-semibold inline-flex items-center justify-center disabled:opacity-60">
-              {authBusy ? "Procesando…" : authMode === "login" ? "Iniciar sesión" : "Crear cuenta"}
-            </button>
+            <Button
+              type="submit"
+              variant="solid"
+              shape="round"
+              loading={authBusy}
+              disabled={authBusy}
+              block
+              className="mt-1 brand-gradient h-11"
+            >
+              {authMode === "login" ? "Iniciar sesión" : "Crear cuenta"}
+            </Button>
           </form>
-          <button
+          <Button
             type="button"
+            variant="plain"
+            block
+            className="mt-4 text-sm text-brand-orange-ink hover:underline"
             onClick={() => { setAuthMode((m) => (m === "login" ? "register" : "login")); setAuthErr(""); }}
-            className="mt-4 w-full text-center text-sm text-brand-orange-ink hover:underline"
           >
             {authMode === "login" ? "¿No tenés cuenta? Registrate" : "¿Ya tenés cuenta? Iniciá sesión"}
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -274,13 +261,15 @@ export function AccountBlock({
         <h2 className="font-heading text-2xl text-brand-text">{title}</h2>
         <p className="text-sm text-brand-muted">
           Hola, <span className="font-semibold text-brand-text">{user.firstName}</span>{" "}
-          <button
+          <Button
             type="button"
+            variant="plain"
+            size="md"
+            className="text-brand-orange-ink underline-offset-2 hover:underline"
             onClick={logout}
-            className="focus-ring rounded-sm text-brand-orange-ink underline-offset-2 hover:underline"
           >
             Cerrar sesión
-          </button>
+          </Button>
         </p>
       </div>
 
@@ -293,64 +282,32 @@ export function AccountBlock({
               <form onSubmit={handleSaveDetails} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="acc-fname" className="text-sm text-brand-text mb-1 block">
-                      Nombre
-                    </label>
-                    <input
-                      id="acc-fname"
-                      type="text"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      className={inputClass}
-                    />
+                    <label htmlFor="acc-fname" className="text-sm text-brand-text mb-1 block">Nombre</label>
+                    <Input id="acc-fname" type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
                   </div>
                   <div>
-                    <label htmlFor="acc-lname" className="text-sm text-brand-text mb-1 block">
-                      Apellido
-                    </label>
-                    <input
-                      id="acc-lname"
-                      type="text"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      className={inputClass}
-                    />
+                    <label htmlFor="acc-lname" className="text-sm text-brand-text mb-1 block">Apellido</label>
+                    <Input id="acc-lname" type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} />
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="acc-email" className="text-sm text-brand-text mb-1 block">
-                    Correo electrónico *
-                  </label>
-                  <input
-                    id="acc-email"
-                    type="email"
-                    required
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={inputClass}
-                  />
+                  <label htmlFor="acc-email" className="text-sm text-brand-text mb-1 block">Correo electrónico *</label>
+                  <Input id="acc-email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
                 <div>
-                  <label htmlFor="acc-phone" className="text-sm text-brand-text mb-1 block">
-                    Teléfono
-                  </label>
-                  <input
-                    id="acc-phone"
-                    type="tel"
-                    autoComplete="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className={inputClass}
-                  />
+                  <label htmlFor="acc-phone" className="text-sm text-brand-text mb-1 block">Teléfono</label>
+                  <Input id="acc-phone" type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
                 </div>
-                <button
+                <Button
                   type="submit"
+                  variant="solid"
+                  shape="round"
+                  loading={saving}
                   disabled={saving}
-                  className="brand-gradient focus-ring text-white rounded-[8px] h-[44px] px-8 text-sm font-semibold disabled:opacity-60"
+                  className="brand-gradient h-[44px] px-8"
                 >
                   {saving ? "Guardando..." : "Guardar cambios"}
-                </button>
+                </Button>
               </form>
             </div>
           </section>
@@ -388,6 +345,7 @@ export function AccountBlock({
                         fmtOrder={fmtOrder}
                         locale={locale}
                         showBranchPickup={flags.branches}
+                        statusTagClass={STATUS_TAG}
                       />
                     ))}
                   </tbody>
@@ -409,6 +367,7 @@ function FragmentRow({
   fmtOrder,
   locale,
   showBranchPickup,
+  statusTagClass,
 }: {
   order: OrderItem;
   expanded: boolean;
@@ -416,6 +375,7 @@ function FragmentRow({
   fmtOrder: (value: number, orderCurrency?: string) => string;
   locale: string;
   showBranchPickup: boolean;
+  statusTagClass: Record<string, string>;
 }) {
   const shippingLabel =
     order.shippingMethod === "pickup"
@@ -434,26 +394,23 @@ function FragmentRow({
           {new Date(order.createdAt).toLocaleDateString(locale)}
         </td>
         <td className="px-4 py-3">
-          <span
-            className={
-              "inline-block px-2 py-0.5 rounded-full text-xs font-medium " +
-              (STATUS_COLORS[order.status] ?? "bg-gray-100 text-brand-muted")
-            }
-          >
+          <Tag className={"px-2 py-0.5 rounded-full text-xs font-medium " + (statusTagClass[order.status] ?? "bg-gray-100 text-brand-muted")}>
             {order.status}
-          </span>
+          </Tag>
         </td>
         <td className="px-4 py-3 text-right font-semibold text-brand-text">
           {fmtOrder(order.total, order.currency)}
         </td>
         <td className="px-4 py-3 text-right">
-          <button
+          <Button
             type="button"
+            variant="plain"
+            size="md"
+            className="text-brand-orange-ink text-xs hover:underline"
             onClick={onToggle}
-            className="focus-ring rounded-sm text-brand-orange-ink text-xs hover:underline"
           >
             {expanded ? "Cerrar" : "Ver detalle"}
-          </button>
+          </Button>
         </td>
       </tr>
       {expanded && (

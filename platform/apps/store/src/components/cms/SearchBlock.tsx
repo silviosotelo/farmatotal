@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { Input, Button } from "@platform/ui";
 import { ProductCard } from "@/components/ProductCard";
 import { CatalogStockProvider } from "@/themes/CatalogStock";
 import { tenantHeaders } from "@/lib/tenant";
@@ -30,9 +31,6 @@ function adapt(p: Record<string, unknown>): Product {
   };
 }
 
-// Reconocimiento de voz: API nativa del navegador (sin dependencias). Se usa solo
-// si el navegador la soporta; el resultado del dictado dispara la MISMA búsqueda
-// por texto contra el API (no es un motor de voz aparte).
 type SpeechRecognitionLike = {
   lang: string;
   continuous: boolean;
@@ -52,23 +50,6 @@ function getSpeechRecognition(): (new () => SpeechRecognitionLike) | null {
   return w.SpeechRecognition || w.webkitSpeechRecognition || null;
 }
 
-/**
- * Bloque data-bound "Resultados de búsqueda" del builder. Lee el término de la
- * URL (`?q=`), trae productos del catálogo del tenant (`/catalog/products?q=`) y
- * los muestra con la grilla + badges de stock del tema activo (ProductCard se
- * re-tinta solo). La URL `?q=` es la única fuente de verdad: el formulario de
- * texto, el dictado por voz y el botón de escaneo navegan a `?q=...` y eso
- * re-dispara la búsqueda. Editable/posicionable desde el builder.
- *
- * Voz: usa la Web Speech API nativa del navegador (sin librerías); si el
- * navegador no la soporta, el botón se oculta.
- *
- * Escaneo de código de barras: NO existe un componente/plugin de escáner
- * reutilizable ni una librería de escaneo en el proyecto, así que el botón
- * "Escanear" cae a la búsqueda por texto (enfoca el input para tipear/pegar el
- * código, que se busca igual contra el API). Cuando se agregue un componente de
- * escáner reutilizable, basta con cablear su resultado a `runSearch(code)`.
- */
 export function SearchBlock({
   perPage = 48,
   columns = 5,
@@ -93,7 +74,6 @@ export function SearchBlock({
   const [voiceSupported, setVoiceSupported] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sincroniza el input con la URL (back/forward, dictado, escaneo).
   useEffect(() => {
     setTerm(q);
   }, [q]);
@@ -102,8 +82,6 @@ export function SearchBlock({
     setVoiceSupported(getSpeechRecognition() !== null);
   }, []);
 
-  // Trae resultados cuando cambia `?q=`. Mismo patrón data-bound que CatalogBlock:
-  // fetch directo al API del tenant con los headers de tenant.
   useEffect(() => {
     if (!q) {
       setItems([]);
@@ -124,7 +102,6 @@ export function SearchBlock({
       .catch(() => setLoaded(true));
   }, [q, perPage]);
 
-  // Punto único de disparo: navega a `?q=...` preservando el resto del querystring.
   const runSearch = (value: string) => {
     const next = value.trim();
     const params = new URLSearchParams(sp.toString());
@@ -138,7 +115,6 @@ export function SearchBlock({
     runSearch(term);
   };
 
-  // Voz: dicta → rellena el input → corre la misma búsqueda por texto.
   const onVoice = () => {
     const Recognition = getSpeechRecognition();
     if (!Recognition || listening) return;
@@ -159,7 +135,6 @@ export function SearchBlock({
     rec.start();
   };
 
-  // Escaneo: sin componente/librería de escáner reutilizable, cae a texto.
   const onScan = () => {
     inputRef.current?.focus();
   };
@@ -174,7 +149,7 @@ export function SearchBlock({
       <section className={className || "ft-container py-6"}>
         <form onSubmit={onSubmit} autoComplete="off" className="relative mb-6 flex items-center gap-2">
           <div className="relative flex-1">
-            <input
+            <Input
               ref={inputRef}
               type="search"
               name="q"
@@ -184,20 +159,21 @@ export function SearchBlock({
               aria-label="Buscar productos"
               className="h-12 w-full rounded-full border border-[#ededf1] bg-search-bg pl-5 pr-12 text-sm text-brand-text placeholder:text-brand-muted transition-colors focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/40"
             />
-            <button
+            <Button
               type="submit"
+              variant="plain"
               aria-label="Buscar"
               className="brand-gradient focus-ring absolute right-1 top-1 flex size-10 items-center justify-center rounded-full text-white"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5" aria-hidden="true">
                 <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 3.473 9.78l3.123 3.124a.75.75 0 1 0 1.061-1.06l-3.124-3.124A5.5 5.5 0 0 0 9 3.5ZM5 9a4 4 0 1 1 8 0 4 4 0 0 1-8 0Z" clipRule="evenodd" />
               </svg>
-            </button>
+            </Button>
           </div>
 
-          {/* Escanear código de barras — cae a búsqueda por texto (sin escáner reutilizable). */}
-          <button
+          <Button
             type="button"
+            variant="plain"
             onClick={onScan}
             aria-label="Escanear código de barras"
             title="Escanear código de barras"
@@ -206,12 +182,12 @@ export function SearchBlock({
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5" aria-hidden="true">
               <path d="M3 5v14M7 5v14M11 5v14M14 5v14M18 5v14M21 5v14" />
             </svg>
-          </button>
+          </Button>
 
-          {/* Voz — Web Speech API nativa; dispara la misma búsqueda por texto. */}
           {voiceSupported && (
-            <button
+            <Button
               type="button"
+              variant="plain"
               onClick={onVoice}
               aria-label="Buscar por voz"
               aria-pressed={listening}
@@ -226,7 +202,7 @@ export function SearchBlock({
                 <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                 <path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8" />
               </svg>
-            </button>
+            </Button>
           )}
         </form>
 

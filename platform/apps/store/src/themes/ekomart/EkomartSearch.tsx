@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Input, Button } from "@platform/ui";
 
 /**
  * Buscador del header Ekomart. Cliente: maneja el estado del input y navega
@@ -19,15 +20,15 @@ export function EkomartSearch() {
 
   return (
     <form onSubmit={handleSubmit} className="search-header" autoComplete="off">
-      <input
+      <Input
         type="text"
         placeholder="Buscar productos..."
         value={term}
         onChange={(e) => setTerm(e.target.value)}
       />
-      <button type="submit" className="rts-btn btn-primary search-btn-inline" aria-label="Buscar">
+      <Button type="submit" variant="plain" className="rts-btn btn-primary search-btn-inline" aria-label="Buscar">
         <i className="fa-light fa-magnifying-glass" />
-      </button>
+      </Button>
     </form>
   );
 }

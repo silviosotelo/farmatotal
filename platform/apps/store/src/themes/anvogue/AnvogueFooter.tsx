@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Send } from "lucide-react";
+import { Input, Button } from "@platform/ui";
 
 /**
  * Footer del tema Anvogue (fashion): columnas (info, accesos rápidos, atención),
@@ -71,18 +72,19 @@ export function AnvogueFooter({ brandName }: { brandName?: string }) {
                 Suscribite para recibir novedades y ofertas.
               </p>
               <form action="#" className="relative mt-4 h-[52px] w-full">
-                <input
+                <Input
                   type="email"
                   placeholder="Ingresá tu e-mail"
                   className="h-full w-full rounded-xl border border-[#E9E9E9] bg-white pl-4 pr-14 text-sm focus:border-[#1F1F1F] focus:outline-none"
                 />
-                <button
+                <Button
                   type="submit"
+                  variant="plain"
                   aria-label="Suscribirse"
                   className="absolute right-1 top-1 flex h-[44px] w-[44px] items-center justify-center rounded-xl bg-[#1F1F1F] text-white transition-colors hover:bg-[var(--brand-orange)]"
                 >
                   <ArrowRight size={22} />
-                </button>
+                </Button>
               </form>
               <div className="mt-5 flex items-center gap-3 text-sm text-[#696C70]">
                 <Send size={18} className="text-[#1F1F1F]" />

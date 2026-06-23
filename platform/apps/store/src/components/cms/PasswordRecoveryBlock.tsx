@@ -2,38 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Input, Button } from "@platform/ui";
 import { useToast } from "@/components/providers/ToastContext";
 
-/**
- * Bloque funcional "Recuperar contraseña" del builder: formulario que pide el
- * email y dispara el flujo de recuperación contra el API del tenant. Toda la
- * lógica (estado, validación, llamada real) embebida; se coloca/posiciona desde
- * el builder. Markup config-driven, white-label (sin marca/moneda hardcodeadas).
- *
- * IMPORTANTE — pendiente de backend: a la fecha apps/api NO expone un endpoint de
- * recuperación de contraseña (las rutas de /auth son login, refresh, logout,
- * bootstrap, register y me). Por eso el bloque:
- *   1) llama al endpoint REAL convenido (`/auth/forgot-password`) — no fake;
- *   2) muestra un aviso visible de "pendiente de backend";
- *   3) ante 404/error NO simula éxito: surface el error honesto.
- * Cuando el backend implemente la ruta, basta poner BACKEND_READY = true y el
- * bloque ya queda funcional sin más cambios.
- */
-
-// Cliente: el API público se consume directo (igual que los hooks de lib/checkout.ts).
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
-// Endpoint convenido para el flujo de recuperación. Cambiar acá si el backend lo
-// expone con otro path.
 const FORGOT_PASSWORD_ENDPOINT = "/auth/forgot-password";
-
-// El backend aún NO implementa el endpoint (verificado en apps/api/modules/auth).
-// Mientras sea false se muestra el aviso de "pendiente de backend". Poner true
-// cuando la ruta exista.
 const BACKEND_READY = false;
 
 type Status = "idle" | "loading" | "sent" | "error";
-
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function PasswordRecoveryBlock({
@@ -62,7 +38,6 @@ export function PasswordRecoveryBlock({
       setMessage("Ingresá un email válido.");
       return;
     }
-
     setStatus("loading");
     setMessage("");
     try {
@@ -73,7 +48,6 @@ export function PasswordRecoveryBlock({
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { message?: string } | null;
-        // 404 = endpoint aún no implementado en el backend (no fingimos éxito).
         const detail =
           res.status === 404
             ? "El servicio de recuperación no está disponible todavía. Intentá más tarde."
@@ -101,10 +75,7 @@ export function PasswordRecoveryBlock({
         <p className="mt-2 text-sm text-brand-muted">{description}</p>
 
         {!BACKEND_READY && (
-          <div
-            role="status"
-            className="mt-5 rounded-lg border border-brand-orange/40 bg-[#fff4ec] px-4 py-3 text-sm text-brand-orange"
-          >
+          <div role="status" className="mt-5 rounded-lg border border-brand-orange/40 bg-[#fff4ec] px-4 py-3 text-sm text-brand-orange">
             Pendiente de backend: el endpoint de recuperación de contraseña aún no
             está disponible en el API. El formulario queda listo y se activará
             automáticamente cuando el backend lo implemente.
@@ -129,7 +100,7 @@ export function PasswordRecoveryBlock({
               <label htmlFor="recovery-email" className="text-sm font-semibold text-brand-text">
                 Email
               </label>
-              <input
+              <Input
                 id="recovery-email"
                 type="email"
                 autoComplete="email"
@@ -139,7 +110,6 @@ export function PasswordRecoveryBlock({
                   if (status === "error") setStatus("idle");
                 }}
                 placeholder="tu@email.com"
-                className="h-[44px] rounded-[8px] border border-[#ededf1] bg-search-bg px-4 text-sm text-brand-text placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange transition-colors"
                 aria-invalid={status === "error"}
               />
             </div>
@@ -150,18 +120,19 @@ export function PasswordRecoveryBlock({
               </p>
             )}
 
-            <button
+            <Button
               type="submit"
+              variant="solid"
+              shape="round"
+              loading={status === "loading"}
               disabled={status === "loading"}
-              className="brand-gradient focus-ring text-white rounded-[30px] h-[44px] px-6 text-sm font-semibold flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
+              block
+              className="brand-gradient h-[44px] text-sm font-semibold"
             >
               {status === "loading" ? "Enviando…" : submitLabel}
-            </button>
+            </Button>
 
-            <Link
-              href={loginHref}
-              className="text-xs text-brand-muted hover:text-brand-orange transition-colors text-center underline"
-            >
+            <Link href={loginHref} className="text-xs text-brand-muted hover:text-brand-orange transition-colors text-center underline">
               Volver a iniciar sesión
             </Link>
           </form>

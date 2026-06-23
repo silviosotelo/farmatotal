@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { Input, Button } from "@platform/ui";
 import { useCart } from "@/components/providers/CartContext";
 import { useToast } from "@/components/providers/ToastContext";
 import { useMoney } from "@/components/providers/CurrencyContext";
@@ -63,6 +64,7 @@ export function CartBlock({ showCoupon = true }: { showCoupon?: boolean } = {}) 
           <ul className="divide-y divide-[#ededf1]">
             {lines.map(({ product, quantity }) => (
               <li key={product.id} className="py-5">
+                {/* Desktop row */}
                 <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 items-center">
                   <div className="flex items-center gap-4">
                     <div className="relative size-20 flex-none border border-[#ededf1] rounded-lg overflow-hidden bg-white">
@@ -74,18 +76,44 @@ export function CartBlock({ showCoupon = true }: { showCoupon?: boolean } = {}) 
                   </div>
                   <p className="font-price text-sm text-brand-orange text-right">{money(product.priceWeb)}</p>
                   <div className="flex items-center justify-center gap-1">
-                    <button onClick={() => setQty(product.id, decQty(quantity, product.unitStep ?? 1))} className="size-8 rounded-full border border-[#ededf1] bg-search-bg flex items-center justify-center text-brand-text hover:border-brand-orange transition-colors text-base leading-none" aria-label="Disminuir cantidad">−</button>
-                    <span className="min-w-8 px-1 text-center text-sm font-semibold text-brand-text whitespace-nowrap">{formatQty(quantity)} {unitLabel(product)}</span>
-                    <button onClick={() => setQty(product.id, stepQty(quantity, product.unitStep ?? 1, 1))} className="size-8 rounded-full border border-[#ededf1] bg-search-bg flex items-center justify-center text-brand-text hover:border-brand-orange transition-colors text-base leading-none" aria-label="Aumentar cantidad">+</button>
+                    <Button
+                      shape="circle"
+                      size="md"
+                      variant="default"
+                      onClick={() => setQty(product.id, decQty(quantity, product.unitStep ?? 1))}
+                      aria-label="Disminuir cantidad"
+                    >
+                      −
+                    </Button>
+                    <span className="min-w-8 px-1 text-center text-sm font-semibold text-brand-text whitespace-nowrap">
+                      {formatQty(quantity)} {unitLabel(product)}
+                    </span>
+                    <Button
+                      shape="circle"
+                      size="md"
+                      variant="default"
+                      onClick={() => setQty(product.id, stepQty(quantity, product.unitStep ?? 1, 1))}
+                      aria-label="Aumentar cantidad"
+                    >
+                      +
+                    </Button>
                   </div>
                   <p className="font-price text-sm font-semibold text-brand-text text-right">{money(product.priceWeb * quantity)}</p>
-                  <button onClick={() => removeItem(product.id)} className="text-brand-muted hover:text-[#c0392b] transition-colors p-1" aria-label={`Quitar ${product.title}`}>
+                  <Button
+                    shape="circle"
+                    size="md"
+                    variant="plain"
+                    className="text-brand-muted hover:text-[#c0392b]"
+                    onClick={() => removeItem(product.id)}
+                    aria-label={`Quitar ${product.title}`}
+                  >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
                       <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
                     </svg>
-                  </button>
+                  </Button>
                 </div>
 
+                {/* Mobile row */}
                 <div className="lg:hidden flex gap-4">
                   <div className="relative size-20 flex-none border border-[#ededf1] rounded-lg overflow-hidden bg-white">
                     <Image src={product.image} alt={product.title} fill sizes="80px" className="object-contain p-1" />
@@ -97,16 +125,41 @@ export function CartBlock({ showCoupon = true }: { showCoupon?: boolean } = {}) 
                     <p className="font-price text-sm text-brand-orange mt-1">{money(product.priceWeb)}</p>
                     <div className="flex items-center gap-3 mt-2">
                       <div className="flex items-center gap-1">
-                        <button onClick={() => setQty(product.id, decQty(quantity, product.unitStep ?? 1))} className="size-7 rounded-full border border-[#ededf1] bg-search-bg flex items-center justify-center text-brand-text hover:border-brand-orange transition-colors text-sm" aria-label="Disminuir cantidad">−</button>
-                        <span className="min-w-7 px-1 text-center text-sm font-semibold text-brand-text whitespace-nowrap">{formatQty(quantity)} {unitLabel(product)}</span>
-                        <button onClick={() => setQty(product.id, stepQty(quantity, product.unitStep ?? 1, 1))} className="size-7 rounded-full border border-[#ededf1] bg-search-bg flex items-center justify-center text-brand-text hover:border-brand-orange transition-colors text-sm" aria-label="Aumentar cantidad">+</button>
+                        <Button
+                          shape="circle"
+                          size="md"
+                          variant="default"
+                          onClick={() => setQty(product.id, decQty(quantity, product.unitStep ?? 1))}
+                          aria-label="Disminuir cantidad"
+                        >
+                          −
+                        </Button>
+                        <span className="min-w-7 px-1 text-center text-sm font-semibold text-brand-text whitespace-nowrap">
+                          {formatQty(quantity)} {unitLabel(product)}
+                        </span>
+                        <Button
+                          shape="circle"
+                          size="md"
+                          variant="default"
+                          onClick={() => setQty(product.id, stepQty(quantity, product.unitStep ?? 1, 1))}
+                          aria-label="Aumentar cantidad"
+                        >
+                          +
+                        </Button>
                       </div>
                       <p className="font-price text-sm font-semibold text-brand-text">{money(product.priceWeb * quantity)}</p>
-                      <button onClick={() => removeItem(product.id)} className="ml-auto text-brand-muted hover:text-[#c0392b] transition-colors" aria-label={`Quitar ${product.title}`}>
+                      <Button
+                        shape="circle"
+                        size="md"
+                        variant="plain"
+                        className="ml-auto text-brand-muted hover:text-[#c0392b]"
+                        onClick={() => removeItem(product.id)}
+                        aria-label={`Quitar ${product.title}`}
+                      >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
                           <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
                         </svg>
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -115,20 +168,38 @@ export function CartBlock({ showCoupon = true }: { showCoupon?: boolean } = {}) 
           </ul>
 
           {showCoupon && (
-          <div className="mt-6 pt-6 border-t border-[#ededf1]">
-            <p className="text-sm font-semibold text-brand-text mb-3">Cupón de descuento</p>
-            {coupon ? (
-              <div className="flex items-center gap-3">
-                <span className="inline-flex items-center gap-2 rounded-full bg-[#fff4ec] border border-brand-orange px-4 py-1.5 text-sm font-semibold text-brand-orange">{coupon.code}</span>
-                <button onClick={removeCoupon} className="text-xs text-brand-muted hover:text-[#c0392b] transition-colors underline">Quitar</button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <input type="text" value={couponInput} onChange={(e) => setCouponInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()} placeholder="Ingresá tu código" className="flex-1 h-[44px] rounded-[8px] border border-[#ededf1] bg-search-bg px-4 text-sm text-brand-text placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange transition-colors" />
-                <button onClick={handleApplyCoupon} className="brand-gradient focus-ring text-white rounded-[30px] h-[44px] px-6 text-sm font-semibold whitespace-nowrap">Aplicar cupón</button>
-              </div>
-            )}
-          </div>
+            <div className="mt-6 pt-6 border-t border-[#ededf1]">
+              <p className="text-sm font-semibold text-brand-text mb-3">Cupón de descuento</p>
+              {coupon ? (
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[#fff4ec] border border-brand-orange px-4 py-1.5 text-sm font-semibold text-brand-orange">
+                    {coupon.code}
+                  </span>
+                  <Button variant="plain" size="md" className="text-xs text-brand-muted hover:text-[#c0392b] underline" onClick={removeCoupon}>
+                    Quitar
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
+                    placeholder="Ingresá tu código"
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="solid"
+                    shape="round"
+                    className="h-[44px] px-6 text-sm font-semibold whitespace-nowrap"
+                    onClick={handleApplyCoupon}
+                  >
+                    Aplicar cupón
+                  </Button>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
@@ -152,9 +223,20 @@ export function CartBlock({ showCoupon = true }: { showCoupon?: boolean } = {}) 
               </div>
             </dl>
             <div className="mt-6 flex flex-col gap-3">
-              <Link href="/caja" className="brand-gradient focus-ring text-white rounded-[30px] h-[44px] px-6 text-sm font-semibold flex items-center justify-center">Finalizar compra</Link>
-              <Link href="/catalogo" className="focus-ring text-brand-text border border-[#ededf1] rounded-[30px] h-[44px] px-6 text-sm font-semibold flex items-center justify-center hover:border-brand-orange hover:text-brand-orange transition-colors">Seguir comprando</Link>
-              <button onClick={clear} className="text-xs text-brand-muted hover:text-[#c0392b] transition-colors underline text-center mt-1">Vaciar carrito</button>
+              <Link href="/caja" className="brand-gradient focus-ring text-white rounded-[30px] h-[44px] px-6 text-sm font-semibold flex items-center justify-center">
+                Finalizar compra
+              </Link>
+              <Link href="/catalogo" className="focus-ring text-brand-text border border-[#ededf1] rounded-[30px] h-[44px] px-6 text-sm font-semibold flex items-center justify-center hover:border-brand-orange hover:text-brand-orange transition-colors">
+                Seguir comprando
+              </Link>
+              <Button
+                variant="plain"
+                size="md"
+                className="text-xs text-brand-muted hover:text-[#c0392b] underline text-center mt-1"
+                onClick={clear}
+              >
+                Vaciar carrito
+              </Button>
             </div>
           </div>
         </aside>

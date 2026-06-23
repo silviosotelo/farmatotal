@@ -2,6 +2,7 @@
 
 import { useCallback, useState, useEffect } from "react";
 import Link from "next/link";
+import { Input, Button } from "@platform/ui";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { useAuth } from "@/components/providers/AuthContext";
 import { useToast } from "@/components/providers/ToastContext";
@@ -14,9 +15,6 @@ type Section = "escritorio" | "pedidos" | "direcciones" | "detalles";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
-const inputClass =
-  "w-full bg-search-bg rounded-md h-11 px-3 text-sm outline-none border border-transparent focus-visible:ring-2 focus-visible:ring-brand-orange/40";
-
 const STATUS_COLORS: Record<string, string> = {
   COMPLETED: "bg-green-100 text-green-700",
   PAID: "bg-blue-100 text-blue-700",
@@ -26,7 +24,6 @@ const STATUS_COLORS: Record<string, string> = {
   CANCELLED: "bg-red-100 text-red-700",
 };
 
-/** Registro de cliente del backend (subset usado por el formulario de detalles). */
 interface Customer {
   id: string;
   email: string | null;
@@ -57,20 +54,11 @@ interface OrderItem {
   createdAt: string;
 }
 
-/**
- * Contenido nativo de /mi-cuenta. Sirve de respaldo cuando el documento del
- * builder ("mi-cuenta") no está publicado. Data-bound al API del tenant: pedidos
- * vía /api/orders (proxy autenticado) y guardado de datos vía PATCH
- * /api/customers/<id> (mismos endpoints que AccountBlock).
- */
 export default function MiCuentaNative() {
   const { user, isLoggedIn, login, register, logout, refresh } = useAuth();
   const { toast } = useToast();
-  // Órdenes históricas: se formatean con la moneda guardada de cada orden
-  // (order.currency), nunca con la moneda viva del store. El locale es el del tenant.
   const { locale } = useCurrency();
 
-  /* ── Guest state ── */
   const [tab, setTab] = useState<Tab>("login");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPass, setLoginPass] = useState("");
@@ -79,24 +67,19 @@ export default function MiCuentaNative() {
   const [regName, setRegName] = useState("");
   const [regLast, setRegLast] = useState("");
 
-  /* ── Dashboard state ── */
   const [section, setSection] = useState<Section>("escritorio");
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
 
-  /* ── Cliente real (tabla customers) ── */
   const [customer, setCustomer] = useState<Customer | null>(null);
 
-  /* ── Details form ── */
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
   const [lastName, setLastName] = useState(user?.lastName ?? "");
   const [detailEmail, setDetailEmail] = useState(user?.email ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [saving, setSaving] = useState(false);
 
-  // Siembra inicial del formulario desde la sesión (se refina con el registro
-  // de customers cuando llega).
   useEffect(() => {
     if (user) {
       setFirstName(user.firstName ?? "");
@@ -106,8 +89,6 @@ export default function MiCuentaNative() {
     }
   }, [user]);
 
-  // Resuelve el registro real de `customers` por email (GET público). Da el id
-  // que necesita el PATCH y los campos canónicos del cliente.
   const loadCustomer = useCallback(async (mail: string) => {
     try {
       const res = await fetch(`${API}/customers?q=${encodeURIComponent(mail)}&perPage=5`);
@@ -123,7 +104,7 @@ export default function MiCuentaNative() {
       setDetailEmail(match.email ?? "");
       setPhone(match.phone ?? "");
     } catch {
-      /* sin match → se usan los datos de la sesión */
+      /* sin match */
     }
   }, []);
 
@@ -131,7 +112,6 @@ export default function MiCuentaNative() {
     if (isLoggedIn && user?.email) loadCustomer(user.email);
   }, [isLoggedIn, user?.email, loadCustomer]);
 
-  // Fetch orders when user logs in
   useEffect(() => {
     if (!isLoggedIn) {
       setOrders([]);
@@ -165,8 +145,6 @@ export default function MiCuentaNative() {
     setCustomer(null);
   };
 
-  // Guarda los datos del cliente en el backend (PATCH proxy autenticado), igual
-  // que AccountBlock. Requiere el id resuelto del registro de customers.
   const handleSaveDetails = async (e: React.FormEvent) => {
     e.preventDefault();
     const id = customer?.id;
@@ -187,7 +165,6 @@ export default function MiCuentaNative() {
       }
       const updated = (await res.json().catch(() => null)) as Customer | null;
       if (updated) setCustomer(updated);
-      // Refresca la sesión por si cambió el nombre/email mostrados en el header.
       await refresh();
       toast("Cambios guardados", "success");
     } catch {
@@ -209,16 +186,16 @@ export default function MiCuentaNative() {
       <h1 className="sr-only">Mi Cuenta</h1>
       <Breadcrumbs items={[{ label: "Mi Cuenta" }]} />
 
-      {/* ── GUEST ── */}
+      {/* GUEST */}
       {!isLoggedIn && (
         <div className="ft-container py-10">
           <div className="max-w-lg mx-auto border border-[#ededf1] rounded-[10px] p-8">
-            {/* Tabs */}
             <div className="flex justify-center gap-8 mb-8 border-b border-[#ededf1] pb-4">
               {(["login", "register"] as Tab[]).map((t) => (
-                <button
+                <Button
                   key={t}
                   type="button"
+                  variant="plain"
                   onClick={() => setTab(t)}
                   aria-pressed={tab === t}
                   className={
@@ -228,121 +205,144 @@ export default function MiCuentaNative() {
                   }
                 >
                   {t === "login" ? "Iniciar sesión" : "Registrarse"}
-                </button>
+                </Button>
               ))}
             </div>
 
-            {/* LOGIN */}
             {tab === "login" && (
               <form onSubmit={handleLogin} className="flex flex-col gap-5">
                 <div>
                   <label htmlFor="login-email" className="text-sm text-brand-text mb-1 block">Email *</label>
-                  <input id="login-email" type="email" autoComplete="username" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className={inputClass} />
+                  <Input id="login-email" type="email" autoComplete="username" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} />
                 </div>
                 <div>
                   <label htmlFor="login-pass" className="text-sm text-brand-text mb-1 block">Contraseña *</label>
-                  <input id="login-pass" type="password" autoComplete="current-password" required value={loginPass} onChange={(e) => setLoginPass(e.target.value)} className={inputClass} />
+                  <Input id="login-pass" type="password" autoComplete="current-password" required value={loginPass} onChange={(e) => setLoginPass(e.target.value)} />
                 </div>
-                <button type="submit" className="brand-gradient focus-ring text-white rounded-[8px] h-[48px] w-full text-sm font-semibold">
+                <Button type="submit" variant="solid" shape="round" block className="brand-gradient h-[48px] text-sm font-semibold">
                   Iniciar sesión
-                </button>
+                </Button>
                 <Link href="/recuperar-contrasena" className="focus-ring rounded-sm text-sm text-brand-orange-ink font-medium underline-offset-2 hover:underline">
                   ¿Olvidaste tu contraseña?
                 </Link>
               </form>
             )}
 
-            {/* REGISTER */}
             {tab === "register" && (
               <form onSubmit={handleRegister} className="flex flex-col gap-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm text-brand-text mb-1 block">Nombre *</label>
-                    <input type="text" required value={regName} onChange={(e) => setRegName(e.target.value)} className={inputClass} />
+                    <Input type="text" required value={regName} onChange={(e) => setRegName(e.target.value)} />
                   </div>
                   <div>
                     <label className="text-sm text-brand-text mb-1 block">Apellido *</label>
-                    <input type="text" required value={regLast} onChange={(e) => setRegLast(e.target.value)} className={inputClass} />
+                    <Input type="text" required value={regLast} onChange={(e) => setRegLast(e.target.value)} />
                   </div>
                 </div>
                 <div>
                   <label className="text-sm text-brand-text mb-1 block">Email *</label>
-                  <input type="email" required value={regEmail} onChange={(e) => setRegEmail(e.target.value)} className={inputClass} />
+                  <Input type="email" required value={regEmail} onChange={(e) => setRegEmail(e.target.value)} />
                 </div>
                 <div>
                   <label className="text-sm text-brand-text mb-1 block">Contraseña *</label>
-                  <input type="password" required minLength={6} value={regPass} onChange={(e) => setRegPass(e.target.value)} className={inputClass} />
+                  <Input type="password" required minLength={6} value={regPass} onChange={(e) => setRegPass(e.target.value)} />
                 </div>
                 <p className="text-xs text-brand-muted">
                   Al registrarte aceptás nuestra{" "}
                   <Link href="/politica-de-privacidad" className="text-brand-orange-ink underline">política de privacidad</Link>.
                 </p>
-                <button type="submit" className="brand-gradient focus-ring text-white rounded-[8px] h-[48px] w-full text-sm font-semibold">
+                <Button type="submit" variant="solid" shape="round" block className="brand-gradient h-[48px] text-sm font-semibold">
                   Registrarse
-                </button>
+                </Button>
               </form>
             )}
           </div>
         </div>
       )}
 
-      {/* ── DASHBOARD ── */}
+      {/* DASHBOARD */}
       {isLoggedIn && user && (
         <div className="ft-container py-8">
           <p className="text-brand-muted text-sm mb-6">
             Hola, <span className="font-semibold text-brand-text">{user.firstName}</span>{" "}
             (¿No sos vos?{" "}
-            <button type="button" onClick={handleLogout} className="text-brand-orange-ink underline-offset-2 hover:underline text-sm">Cerrar sesión</button>)
+            <Button type="button" variant="plain" onClick={handleLogout} className="text-brand-orange-ink underline-offset-2 hover:underline text-sm">
+              Cerrar sesión
+            </Button>)
           </p>
 
           <div className="flex flex-col md:flex-row gap-8">
-            {/* Sidebar nav */}
             <aside className="md:w-56 flex-shrink-0">
               <nav className="border border-[#ededf1] rounded-[10px] overflow-hidden">
                 {navItems.map((item) => (
-                  <button key={item.id} type="button" onClick={() => setSection(item.id)}
-                    className={"w-full text-left px-5 py-3 text-sm transition-colors border-b border-[#ededf1] last:border-0 " + (section === item.id ? "bg-brand-orange text-white font-semibold" : "text-brand-text hover:bg-search-bg")}>
+                  <Button
+                    key={item.id}
+                    type="button"
+                    variant="plain"
+                    block
+                    onClick={() => setSection(item.id)}
+                    className={
+                      "rounded-none border-b border-[#ededf1] last:border-0 text-left px-5 py-3 text-sm transition-colors " +
+                      (section === item.id ? "bg-brand-orange text-white font-semibold" : "text-brand-text hover:bg-search-bg")
+                    }
+                  >
                     {item.label}
-                  </button>
+                  </Button>
                 ))}
-                <button type="button" onClick={handleLogout} className="w-full text-left px-5 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors">
+                <Button
+                  type="button"
+                  variant="plain"
+                  block
+                  onClick={handleLogout}
+                  className="rounded-none text-left px-5 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                >
                   Cerrar sesión
-                </button>
+                </Button>
               </nav>
             </aside>
 
-            {/* Content */}
             <div className="flex-1 min-w-0">
 
-              {/* ESCRITORIO */}
               {section === "escritorio" && (
                 <div className="space-y-6">
                   <h2 className="font-heading text-xl font-bold text-brand-text">Escritorio</h2>
                   <p className="text-sm text-brand-muted leading-relaxed">
                     Desde el panel de tu cuenta podés ver tus{" "}
-                    <button type="button" onClick={() => setSection("pedidos")} className="text-brand-orange-ink hover:underline">pedidos recientes</button>,{" "}
+                    <Button type="button" variant="plain" onClick={() => setSection("pedidos")} className="text-brand-orange-ink hover:underline text-sm p-0">
+                      pedidos recientes
+                    </Button>,{" "}
                     administrar tus{" "}
-                    <button type="button" onClick={() => setSection("direcciones")} className="text-brand-orange-ink hover:underline">direcciones</button>{" "}
+                    <Button type="button" variant="plain" onClick={() => setSection("direcciones")} className="text-brand-orange-ink hover:underline text-sm p-0">
+                      direcciones
+                    </Button>{" "}
                     y{" "}
-                    <button type="button" onClick={() => setSection("detalles")} className="text-brand-orange-ink hover:underline">editar tus datos</button>.
+                    <Button type="button" variant="plain" onClick={() => setSection("detalles")} className="text-brand-orange-ink hover:underline text-sm p-0">
+                      editar tus datos
+                    </Button>.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {navItems.slice(1).map((item) => (
-                      <button key={item.id} type="button" onClick={() => setSection(item.id)}
-                        className="border border-[#ededf1] rounded-[10px] p-5 text-left hover:border-brand-orange/40 hover:bg-search-bg transition-colors">
+                      <Button
+                        key={item.id}
+                        type="button"
+                        variant="plain"
+                        block
+                        onClick={() => setSection(item.id)}
+                        className="border border-[#ededf1] rounded-[10px] p-5 text-left hover:border-brand-orange/40 hover:bg-search-bg transition-colors"
+                      >
                         <span className="block font-semibold text-brand-text text-sm mb-1">{item.label}</span>
                         <span className="text-xs text-brand-muted">
                           {item.id === "pedidos" && `${orders.length} pedido(s)`}
                           {item.id === "direcciones" && `${user.addresses?.length ?? 0} dirección(es)`}
                           {item.id === "detalles" && user.email}
                         </span>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* PEDIDOS */}
               {section === "pedidos" && (
                 <div className="space-y-4">
                   <h2 className="font-heading text-xl font-bold text-brand-text">Pedidos</h2>
@@ -375,10 +375,14 @@ export default function MiCuentaNative() {
                                 </td>
                                 <td className="px-4 py-3 text-right font-semibold text-brand-text">{formatMoney(order.total, { currency: order.currency ?? "PYG", locale })}</td>
                                 <td className="px-4 py-3 text-right">
-                                  <button type="button" onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
-                                    className="text-brand-orange-ink text-xs hover:underline">
+                                  <Button
+                                    type="button"
+                                    variant="plain"
+                                    onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                                    className="text-brand-orange-ink text-xs hover:underline"
+                                  >
                                     {expandedOrder === order.id ? "Cerrar" : "Ver detalle"}
-                                  </button>
+                                  </Button>
                                 </td>
                               </tr>
                               {expandedOrder === order.id && (
@@ -412,7 +416,6 @@ export default function MiCuentaNative() {
                 </div>
               )}
 
-              {/* DIRECCIONES */}
               {section === "direcciones" && (
                 <div className="space-y-4">
                   <h2 className="font-heading text-xl font-bold text-brand-text">Direcciones</h2>
@@ -436,7 +439,6 @@ export default function MiCuentaNative() {
                 </div>
               )}
 
-              {/* DETALLES */}
               {section === "detalles" && (
                 <div className="space-y-4">
                   <h2 className="font-heading text-xl font-bold text-brand-text">Detalles de la cuenta</h2>
@@ -444,24 +446,31 @@ export default function MiCuentaNative() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label htmlFor="det-fname" className="text-sm text-brand-text mb-1 block">Nombre</label>
-                        <input id="det-fname" type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputClass} />
+                        <Input id="det-fname" type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
                       </div>
                       <div>
                         <label htmlFor="det-lname" className="text-sm text-brand-text mb-1 block">Apellido</label>
-                        <input id="det-lname" type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputClass} />
+                        <Input id="det-lname" type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} />
                       </div>
                     </div>
                     <div>
                       <label htmlFor="det-email" className="text-sm text-brand-text mb-1 block">Correo electrónico *</label>
-                      <input id="det-email" type="email" required value={detailEmail} onChange={(e) => setDetailEmail(e.target.value)} className={inputClass} />
+                      <Input id="det-email" type="email" required value={detailEmail} onChange={(e) => setDetailEmail(e.target.value)} />
                     </div>
                     <div>
                       <label htmlFor="det-phone" className="text-sm text-brand-text mb-1 block">Teléfono</label>
-                      <input id="det-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
+                      <Input id="det-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
                     </div>
-                    <button type="submit" disabled={saving} className="brand-gradient focus-ring text-white rounded-[8px] h-[44px] px-8 text-sm font-semibold disabled:opacity-60">
+                    <Button
+                      type="submit"
+                      variant="solid"
+                      shape="round"
+                      loading={saving}
+                      disabled={saving}
+                      className="brand-gradient h-[44px] px-8 text-sm font-semibold"
+                    >
                       {saving ? "Guardando..." : "Guardar cambios"}
-                    </button>
+                    </Button>
                   </form>
                 </div>
               )}

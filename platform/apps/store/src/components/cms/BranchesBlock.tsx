@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import { Input, Button, Select, Tag } from "@platform/ui";
 import { useFlags } from "@/components/providers/FeatureFlagsContext";
 import {
   fetchSucursales,
@@ -12,8 +13,6 @@ import {
   type Sucursal,
 } from "@/lib/sucursales";
 
-// Leaflet toca window → debe cargarse solo en cliente (ssr:false). Permitido porque
-// este bloque es "use client".
 const BranchesMap = dynamic(() => import("./BranchesMap"), {
   ssr: false,
   loading: () => (
@@ -23,6 +22,7 @@ const BranchesMap = dynamic(() => import("./BranchesMap"), {
   ),
 });
 
+type SelOpt = { value: string; label: string };
 type Geo = { status: "idle" | "locating" | "ok" | "error"; msg?: string };
 
 export function BranchesBlock({ className }: { className?: string } = {}) {
@@ -44,7 +44,6 @@ export function BranchesBlock({ className }: { className?: string } = {}) {
   const cities = useMemo(() => zonasOf(all), [all]);
   const depts = useMemo(() => departmentsOf(all), [all]);
 
-  // Ciudades disponibles según el departamento elegido (selects encadenados).
   const citiesForDept = useMemo(
     () => (dept === "Todos" ? cities : cities.filter((c) => departmentOf(c) === dept)),
     [cities, dept],
@@ -70,7 +69,7 @@ export function BranchesBlock({ className }: { className?: string } = {}) {
 
   const nearestId = useMemo(() => {
     if (!userPos) return null;
-    return filtered.filter((s) => s.lat && s.lng)[0]?.id ?? null; // ya ordenado por distancia
+    return filtered.filter((s) => s.lat && s.lng)[0]?.id ?? null;
   }, [filtered, userPos]);
 
   function locate() {
@@ -98,8 +97,8 @@ export function BranchesBlock({ className }: { className?: string } = {}) {
 
   if (!flags.branches) return null;
 
-  const ctrl =
-    "h-11 w-full rounded-md border border-[#ededf1] bg-white px-3 text-sm text-brand-text outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40";
+  const deptOptions: SelOpt[] = depts.map((d) => ({ value: d, label: d }));
+  const cityOptions: SelOpt[] = citiesForDept.map((c) => ({ value: c, label: c }));
 
   return (
     <section className={className || "ft-container py-8"}>
@@ -112,50 +111,50 @@ export function BranchesBlock({ className }: { className?: string } = {}) {
         {/* Filtros + listado */}
         <div className="flex min-w-0 flex-col gap-4">
           <div className="flex flex-col gap-3 rounded-[12px] border border-[#ededf1] bg-white p-4">
-            <input
+            <Input
               type="search"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Buscar por nombre o dirección…"
-              className={ctrl}
               aria-label="Buscar sucursal"
             />
             <div className="grid grid-cols-2 gap-3">
-              <select
-                value={dept}
-                onChange={(e) => {
-                  setDept(e.target.value);
+              <Select
+                value={dept !== "Todos" ? { value: dept, label: dept } : null}
+                onChange={(opt) => {
+                  setDept((opt as SelOpt | null)?.value ?? "Todos");
                   setCity("Todas");
                 }}
-                className={ctrl}
+                options={deptOptions}
+                placeholder="Departamento"
+                isClearable
                 aria-label="Departamento"
-              >
-                <option value="Todos">Departamento</option>
-                {depts.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-              <select value={city} onChange={(e) => setCity(e.target.value)} className={ctrl} aria-label="Ciudad">
-                <option value="Todas">Ciudad</option>
-                {citiesForDept.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+              />
+              <Select
+                value={city !== "Todas" ? { value: city, label: city } : null}
+                onChange={(opt) => setCity((opt as SelOpt | null)?.value ?? "Todas")}
+                options={cityOptions}
+                placeholder="Ciudad"
+                isClearable
+                aria-label="Ciudad"
+              />
             </div>
-            <button
+            <Button
               type="button"
-              onClick={locate}
+              variant="default"
+              shape="round"
+              block
+              loading={geo.status === "locating"}
               disabled={geo.status === "locating"}
-              className="flex h-11 items-center justify-center gap-2 rounded-[30px] border border-brand-orange px-4 text-sm font-semibold text-brand-orange-ink transition hover:bg-brand-orange hover:text-white disabled:opacity-60"
+              className="border-brand-orange text-brand-orange-ink hover:bg-brand-orange hover:text-white h-11"
+              onClick={locate}
             >
               {geo.status === "locating" ? "Obteniendo tu ubicación…" : "Usar mi ubicación"}
-            </button>
+            </Button>
             {geo.msg ? (
-              <p className={`text-xs ${geo.status === "error" ? "text-[#c0392b]" : "text-brand-muted"}`}>{geo.msg}</p>
+              <p className={`text-xs ${geo.status === "error" ? "text-[#c0392b]" : "text-brand-muted"}`}>
+                {geo.msg}
+              </p>
             ) : null}
           </div>
 
@@ -169,11 +168,13 @@ export function BranchesBlock({ className }: { className?: string } = {}) {
                 const isSel = s.id === selectedId;
                 return (
                   <li key={s.id}>
-                    <button
+                    <Button
                       type="button"
+                      variant="plain"
+                      block
                       onClick={() => pick(s)}
                       className={
-                        "flex w-full items-start gap-3 p-4 text-left transition hover:bg-search-bg " +
+                        "flex w-full items-start gap-3 p-4 text-left transition hover:bg-search-bg rounded-none " +
                         (isSel ? "bg-search-bg" : "")
                       }
                     >
@@ -185,9 +186,9 @@ export function BranchesBlock({ className }: { className?: string } = {}) {
                         <span className="flex items-center gap-2">
                           <span className="truncate font-semibold text-brand-text">{s.name}</span>
                           {isNearest ? (
-                            <span className="shrink-0 rounded-full bg-[#16a34a]/10 px-2 py-0.5 text-[11px] font-semibold text-[#16a34a]">
+                            <Tag className="shrink-0 rounded-full bg-[#16a34a]/10 px-2 py-0.5 text-[11px] font-semibold text-[#16a34a]">
                               Más cercana
-                            </span>
+                            </Tag>
                           ) : null}
                         </span>
                         <span className="mt-0.5 block text-xs text-brand-muted">
@@ -201,7 +202,7 @@ export function BranchesBlock({ className }: { className?: string } = {}) {
                           </span>
                         ) : null}
                       </span>
-                    </button>
+                    </Button>
                   </li>
                 );
               })

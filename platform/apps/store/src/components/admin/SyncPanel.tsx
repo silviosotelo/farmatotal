@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Input, Button, Select, Checkbox, Alert } from "@platform/ui";
+
+type SelOpt = { value: string; label: string };
 
 interface SyncResult {
   ok: boolean;
@@ -32,6 +35,12 @@ const DEFAULT_STOCK_MAPPINGS = [
   { source: "art_codigo", target: "sku" },
   { source: "branch_id", target: "branchId" },
   { source: "quantity", target: "quantity", transform: "int" },
+];
+
+const SYNC_OPTIONS: SelOpt[] = [
+  { value: "products", label: "Productos" },
+  { value: "stock", label: "Stock" },
+  { value: "categories", label: "Categorías" },
 ];
 
 export default function SyncPanel() {
@@ -98,6 +107,8 @@ export default function SyncPanel() {
     setSyncType(type as "products" | "stock" | "categories");
   }
 
+  const syncOpt = SYNC_OPTIONS.find((o) => o.value === syncType) ?? SYNC_OPTIONS[0];
+
   return (
     <div className="bg-white rounded-xl shadow p-6">
       <h2 className="font-semibold text-lg mb-4">Ejecutar Sync</h2>
@@ -107,62 +118,64 @@ export default function SyncPanel() {
         <div className="space-y-4">
           <div>
             <label className="text-sm text-gray-500 block mb-1">Tipo de sync</label>
-            <select
-              value={syncType}
-              onChange={(e) => updateMappingType(e.target.value)}
-              className="border rounded-lg px-3 py-2 w-full text-sm"
-            >
-              <option value="products">Productos</option>
-              <option value="stock">Stock</option>
-              <option value="categories">Categorías</option>
-            </select>
+            <Select
+              value={syncOpt}
+              onChange={(opt) => updateMappingType((opt as SelOpt | null)?.value ?? "products")}
+              options={SYNC_OPTIONS}
+              isSearchable={false}
+            />
           </div>
 
           <div>
             <label className="text-sm text-gray-500 block mb-1">Datos (JSON array)</label>
-            <textarea
+            <Input
+              textArea
               value={data}
               onChange={(e) => setData(e.target.value)}
               rows={8}
-              className="border rounded-lg px-3 py-2 w-full text-sm font-mono"
+              className="font-mono text-sm"
               placeholder={`[{"art_codigo":"779001","art_desc":"Paracetamol","art_precio_vta":9000}]`}
             />
           </div>
 
           <div>
             <label className="text-sm text-gray-500 block mb-1">Mappings (JSON)</label>
-            <textarea
+            <Input
+              textArea
               value={mappings}
               onChange={(e) => setMappings(e.target.value)}
               rows={6}
-              className="border rounded-lg px-3 py-2 w-full text-sm font-mono"
+              className="font-mono text-sm"
             />
           </div>
 
           <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={dryRun} onChange={(e) => setDryRun(e.target.checked)} className="rounded" />
-              <span className="text-sm">Dry run (preview)</span>
-            </label>
-            <button
-              onClick={runSync}
+            <Checkbox checked={dryRun} onChange={(checked) => setDryRun(checked as boolean)}>
+              Dry run (preview)
+            </Checkbox>
+            <Button
+              variant="solid"
+              loading={loading}
               disabled={loading}
-              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm"
+              className="bg-green-600 hover:bg-green-700 px-6 py-2 text-sm"
+              onClick={runSync}
             >
-              {loading ? "Ejecutando..." : dryRun ? "Preview" : "Ejecutar Sync"}
-            </button>
+              {dryRun ? "Preview" : "Ejecutar Sync"}
+            </Button>
           </div>
         </div>
 
         {/* Right: Results */}
         <div>
           {error && (
-            <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-4 text-sm">{error}</div>
+            <Alert type="danger" showIcon className="mb-4">
+              {error}
+            </Alert>
           )}
 
           {result && (
             <div className="space-y-4">
-              <div className={`p-4 rounded-lg ${result.ok ? "bg-green-50" : "bg-yellow-50"}`}>
+              <Alert type={result.ok ? "success" : "warning"} showIcon>
                 <p className="font-semibold text-sm">{result.dryRun ? "Preview" : "Resultado"}</p>
                 <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
                   <div>Procesados: <span className="font-bold">{result.itemsProcessed}</span></div>
@@ -171,15 +184,15 @@ export default function SyncPanel() {
                   <div>Omitidos: <span className="font-bold text-yellow-600">{result.itemsSkipped}</span></div>
                   <div>Duración: <span className="font-bold">{result.duration}ms</span></div>
                 </div>
-              </div>
+              </Alert>
 
               {result.errors.length > 0 && (
-                <div className="bg-red-50 p-4 rounded-lg">
-                  <p className="font-semibold text-sm text-red-700 mb-2">Errores ({result.errors.length})</p>
-                  <ul className="text-xs text-red-600 space-y-1 max-h-40 overflow-auto">
+                <Alert type="danger" showIcon>
+                  <p className="font-semibold text-sm mb-2">Errores ({result.errors.length})</p>
+                  <ul className="text-xs space-y-1 max-h-40 overflow-auto">
                     {result.errors.slice(0, 20).map((e, i) => <li key={i}>{e}</li>)}
                   </ul>
-                </div>
+                </Alert>
               )}
 
               {result.preview && result.preview.length > 0 && (

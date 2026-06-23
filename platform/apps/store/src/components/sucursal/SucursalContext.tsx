@@ -47,11 +47,12 @@ export function SucursalProvider({ children }: { children: ReactNode }) {
       }
       const found = storedId ? list.find((s) => s.id === storedId) : undefined;
       // En /sucursales NO auto-abrimos el modal: esa página ES el selector (mapa +
-      // filtros), el modal lo taparía. En el resto, modal obligatorio si no hay elegida.
-      const onSucursalesPage =
-        typeof window !== "undefined" && /^\/sucursales\/?$/.test(window.location.pathname);
+      // filtros), el modal lo taparía. En /pago tampoco: ahí carga el vPOS de Bancard
+      // (y /pago/retorno) y el modal lo taparía. En el resto, modal obligatorio.
+      const noModalPath =
+        typeof window !== "undefined" && /^\/(sucursales|pago)(\/|$)/.test(window.location.pathname);
       if (found) setSelected(found);
-      else if (!onSucursalesPage) setIsOpen(true);
+      else if (!noModalPath) setIsOpen(true);
     });
     return () => {
       cancelled = true;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Input, Button, Tag } from "@platform/ui";
 
 interface Block {
   id: string;
@@ -77,12 +78,12 @@ export default function PageEditor({
         <div className="bg-white rounded-xl shadow p-4">
           <h3 className="font-semibold mb-3">Propiedades</h3>
           <label className="text-xs text-gray-500 block mb-1">Título</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} className="border rounded px-2 py-1.5 w-full mb-3" />
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} className="mb-3" />
           <label className="text-xs text-gray-500 block mb-1">Slug</label>
-          <input value={slug} onChange={(e) => setSlug(e.target.value)} className="border rounded px-2 py-1.5 w-full mb-3 font-mono text-sm" />
-          <span className={`inline-block px-2 py-0.5 rounded-full text-xs ${page.status === "PUBLISHED" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}>
+          <Input value={slug} onChange={(e) => setSlug(e.target.value)} className="mb-3 font-mono text-sm" />
+          <Tag className={`inline-block px-2 py-0.5 rounded-full text-xs ${page.status === "PUBLISHED" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}>
             {page.status}
-          </span>
+          </Tag>
         </div>
 
         {/* Add block */}
@@ -90,14 +91,16 @@ export default function PageEditor({
           <h3 className="font-semibold mb-3">Agregar bloque</h3>
           <div className="grid grid-cols-2 gap-2">
             {BLOCK_TYPES.map((bt) => (
-              <button
+              <Button
                 key={bt.type}
+                variant="default"
+                size="md"
                 onClick={() => addBlock(bt.type)}
-                className="flex items-center gap-1 p-2 border rounded-lg text-xs hover:bg-green-50 hover:border-green-300 transition-colors"
+                className="flex items-center gap-1 text-xs hover:border-green-300 hover:bg-green-50"
               >
                 <span>{bt.icon}</span>
                 <span>{bt.label}</span>
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -122,9 +125,9 @@ export default function PageEditor({
                       <span className="font-medium text-sm">{bt?.label ?? block.type}</span>
                     </div>
                     <div className="flex gap-1">
-                      <button type="button" onClick={() => moveBlock(block.id, "up")} disabled={idx === 0} className="px-2 py-1 text-xs border rounded hover:bg-gray-100 disabled:opacity-30">↑</button>
-                      <button type="button" onClick={() => moveBlock(block.id, "down")} disabled={idx === blocks.length - 1} className="px-2 py-1 text-xs border rounded hover:bg-gray-100 disabled:opacity-30">↓</button>
-                      <button type="button" onClick={() => removeBlock(block.id)} className="px-2 py-1 text-xs border rounded text-red-600 hover:bg-red-50">✕</button>
+                      <Button type="button" variant="default" size="md" disabled={idx === 0} onClick={() => moveBlock(block.id, "up")}>↑</Button>
+                      <Button type="button" variant="default" size="md" disabled={idx === blocks.length - 1} onClick={() => moveBlock(block.id, "down")}>↓</Button>
+                      <Button type="button" variant="default" size="md" className="text-red-600 hover:bg-red-50" onClick={() => removeBlock(block.id)}>✕</Button>
                     </div>
                   </div>
                   {/* Block props editor */}
@@ -132,24 +135,27 @@ export default function PageEditor({
                     {Object.entries(block.props).map(([key, val]) => (
                       <div key={key}>
                         <label className="text-xs text-gray-400">{key}</label>
-                        <input
+                        <Input
+                          size="md"
                           value={typeof val === "string" ? val : JSON.stringify(val)}
                           onChange={(e) => {
                             let v: unknown = e.target.value;
                             try { v = JSON.parse(e.target.value); } catch {}
                             updateBlockProps(block.id, key, v);
                           }}
-                          className="border rounded px-2 py-1 w-full text-xs font-mono"
+                          className="font-mono"
                         />
                       </div>
                     ))}
-                    <button
+                    <Button
                       type="button"
-                      onClick={() => updateBlockProps(block.id, `prop${Object.keys(block.props).length + 1}`, "")}
+                      variant="plain"
+                      size="md"
                       className="text-xs text-green-600 hover:underline"
+                      onClick={() => updateBlockProps(block.id, `prop${Object.keys(block.props).length + 1}`, "")}
                     >
                       + Agregar propiedad
-                    </button>
+                    </Button>
                   </div>
                 </div>
               );
@@ -162,12 +168,12 @@ export default function PageEditor({
           </div>
 
           <div className="flex gap-2">
-            <button type="submit" disabled={isPending} className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50">
+            <Button type="submit" variant="solid" loading={isPending} disabled={isPending} className="bg-green-600 hover:bg-green-700 px-6 py-2">
               {isPending ? "Guardando..." : "Guardar borrador"}
-            </button>
-            <button type="button" onClick={() => startTransition(() => publishAction())} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+            </Button>
+            <Button type="button" variant="solid" className="bg-blue-600 hover:bg-blue-700 px-6 py-2" onClick={() => startTransition(() => publishAction())}>
               Publicar
-            </button>
+            </Button>
           </div>
         </form>
       </div>

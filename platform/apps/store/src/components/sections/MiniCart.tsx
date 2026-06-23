@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "@platform/ui";
 import { useCart } from "@/components/providers/CartContext";
 import { useMoney } from "@/components/providers/CurrencyContext";
 import { decQty, formatQty, stepQty, unitLabel } from "@/lib/units";
@@ -47,18 +48,30 @@ export function MiniCart() {
       >
         <div className="brand-gradient flex items-center justify-between px-5 py-4 text-white">
           <h2 className="font-heading text-base font-bold">Tu carrito ({formatQty(count)})</h2>
-          <button type="button" onClick={closeCart} aria-label="Cerrar carrito" className="focus-ring rounded-full px-2 text-2xl leading-none">
+          <Button
+            type="button"
+            variant="plain"
+            shape="circle"
+            onClick={closeCart}
+            aria-label="Cerrar carrito"
+            className="text-2xl leading-none text-white hover:bg-white/20"
+          >
             ×
-          </button>
+          </Button>
         </div>
 
         {lines.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
             <div className="flex size-24 items-center justify-center rounded-full bg-search-bg text-3xl">🛒</div>
             <p className="text-brand-muted">Tu carrito está vacío.</p>
-            <button onClick={closeCart} className="brand-gradient focus-ring rounded-[30px] px-6 py-2.5 text-sm font-semibold text-white">
+            <Button
+              variant="solid"
+              shape="round"
+              onClick={closeCart}
+              className="brand-gradient px-6 py-2.5 text-sm font-semibold"
+            >
               Seguir comprando
-            </button>
+            </Button>
           </div>
         ) : (
           <>
@@ -81,13 +94,36 @@ export function MiniCart() {
                     <span className="font-price mt-1 text-sm font-bold text-brand-orange">{money(l.product.priceWeb)}</span>
                     <div className="mt-1 flex items-center gap-2">
                       <div className="flex items-center rounded border border-[#ededf1] text-sm">
-                        <button onClick={() => setQty(l.product.id, decQty(l.quantity, l.product.unitStep ?? 1))} aria-label="Restar" className="focus-ring px-2 leading-none">−</button>
-                        <span className="min-w-7 whitespace-nowrap px-1 text-center tabular-nums">{formatQty(l.quantity)} {unitLabel(l.product)}</span>
-                        <button onClick={() => setQty(l.product.id, stepQty(l.quantity, l.product.unitStep ?? 1, 1))} aria-label="Sumar" className="focus-ring px-2 leading-none">+</button>
+                        <Button
+                          variant="plain"
+                          size="md"
+                          onClick={() => setQty(l.product.id, decQty(l.quantity, l.product.unitStep ?? 1))}
+                          aria-label="Restar"
+                          className="px-2 leading-none"
+                        >
+                          −
+                        </Button>
+                        <span className="min-w-7 whitespace-nowrap px-1 text-center tabular-nums">
+                          {formatQty(l.quantity)} {unitLabel(l.product)}
+                        </span>
+                        <Button
+                          variant="plain"
+                          size="md"
+                          onClick={() => setQty(l.product.id, stepQty(l.quantity, l.product.unitStep ?? 1, 1))}
+                          aria-label="Sumar"
+                          className="px-2 leading-none"
+                        >
+                          +
+                        </Button>
                       </div>
-                      <button onClick={() => removeItem(l.product.id)} className="focus-ring rounded text-xs text-brand-muted hover:text-[#c0392b]">
+                      <Button
+                        variant="plain"
+                        size="md"
+                        onClick={() => removeItem(l.product.id)}
+                        className="text-xs text-brand-muted hover:text-[#c0392b]"
+                      >
                         Quitar
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </li>

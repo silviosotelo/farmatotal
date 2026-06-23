@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "@platform/ui";
 import { TOP_NAV } from "@/lib/data";
 import type { NavItem } from "@/lib/api";
 import { UserIcon, CartIcon, MenuIcon, ChevronDownIcon } from "@/components/icons";
@@ -13,14 +14,6 @@ import { SearchBar, MegaMenu, TopBar } from "@/components/sections/Header";
 import { useFlags } from "@/components/providers/FeatureFlagsContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
-/**
- * Bloques del HEADER para el builder — el encabezado deja de ser un widget opaco
- * y pasa a ser construible: cada pieza es un bloque colocable/reordenable, y las
- * partes interactivas (buscador, menú, carrito, sucursal) son bloques funcionales
- * (estilo Elementor header builder). El layout (gradiente, filas) se arma con
- * primitivas Box en el documento `header`.
- */
 
 export function HeaderTopBarBlock() {
   return <TopBar topNav={TOP_NAV} />;
@@ -61,16 +54,18 @@ export function HeaderCategoriesBlock() {
   }, []);
   return (
     <div className="relative shrink-0">
-      <button
+      <Button
+        type="button"
+        variant="plain"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 rounded-md px-1 py-0.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
+        className="flex items-center gap-1.5 rounded-md px-1 py-0.5 text-sm font-medium text-white hover:opacity-90"
         aria-haspopup="true"
         aria-expanded={open}
       >
         <MenuIcon width={20} height={20} />
         <span>Categorías</span>
         <ChevronDownIcon width={16} height={16} />
-      </button>
+      </Button>
       {open && cats.length > 0 && <MegaMenu onClose={() => setOpen(false)} categories={cats} />}
     </div>
   );
@@ -91,10 +86,12 @@ export function HeaderAccountBlock() {
 export function HeaderCartBlock() {
   const { count, openCart } = useCart();
   return (
-    <button
+    <Button
       type="button"
+      variant="plain"
+      shape="circle"
       onClick={openCart}
-      className="relative shrink-0 rounded-full p-2 text-white transition-colors hover:bg-white/20"
+      className="relative shrink-0 p-2 text-white hover:bg-white/20"
       aria-label={`Carrito (${count} ítems)`}
     >
       <CartIcon width={24} height={24} />
@@ -103,7 +100,7 @@ export function HeaderCartBlock() {
           {formatQty(count)}
         </span>
       )}
-    </button>
+    </Button>
   );
 }
 

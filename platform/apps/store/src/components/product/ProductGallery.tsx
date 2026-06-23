@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { Button } from "@platform/ui";
 import { cn } from "@/lib/utils";
 
 export function ProductGallery({ images, alt, discount }: { images: string[]; alt: string; discount?: number }) {
@@ -24,18 +25,20 @@ export function ProductGallery({ images, alt, discount }: { images: string[]; al
       {list.length > 1 && (
         <div className="flex gap-2">
           {list.map((img, i) => (
-            <button
+            <Button
               key={i}
               type="button"
+              variant={i === active ? "default" : "plain"}
+              shape="none"
               onClick={() => setActive(i)}
               aria-label={`Ver imagen ${i + 1}`}
               className={cn(
-                "focus-ring relative size-16 shrink-0 overflow-hidden rounded-md border bg-white p-1 transition",
+                "relative size-16 shrink-0 overflow-hidden rounded-md border bg-white p-1 transition",
                 i === active ? "border-brand-orange" : "border-[#ededf1] hover:border-brand-muted",
               )}
             >
               <Image src={img} alt="" fill sizes="64px" className="object-contain" />
-            </button>
+            </Button>
           ))}
         </div>
       )}

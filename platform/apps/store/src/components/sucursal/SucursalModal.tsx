@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Button, Tag } from "@platform/ui";
 import { type Sucursal } from "@/lib/sucursales";
 import { useSucursal } from "./SucursalContext";
 import { LocationIcon } from "@/components/icons";
@@ -18,9 +19,7 @@ export function SucursalModal() {
   const [geo, setGeo] = useState<GeoState>({ status: "idle" });
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  // Escape to close + body-scroll lock + focus trap + focus restore (a11y)
   useEffect(() => {
-    // Tenant sin sucursales: no abrir/lockear scroll aunque el provider pidiera abrir.
     if (!isOpen || !flags.branches) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
 
@@ -33,7 +32,6 @@ export function SucursalModal() {
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        // Modal obligatorio: no se cierra con Escape hasta elegir sucursal.
         if (!mandatory) close();
         return;
       }
@@ -55,7 +53,6 @@ export function SucursalModal() {
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    // move focus into the dialog
     requestAnimationFrame(() => getFocusable()[0]?.focus());
 
     return () => {
@@ -93,7 +90,6 @@ export function SucursalModal() {
 
   if (!isOpen || !flags.branches) return null;
 
-  // order list so the nearest (if any) comes first
   const ordered: Sucursal[] =
     geo.status === "ok" && geo.nearestId
       ? [...list].sort((a, b) => (a.id === geo.nearestId ? -1 : b.id === geo.nearestId ? 1 : 0))
@@ -113,18 +109,18 @@ export function SucursalModal() {
         className="flex max-h-[88vh] w-full max-w-[600px] flex-col overflow-hidden rounded-[12px] bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* header */}
         <div className="brand-gradient relative px-6 py-5 text-white">
-          {/* X solo si ya hay sucursal elegida (modal obligatorio en 1ra visita) */}
           {!mandatory && (
-            <button
+            <Button
               type="button"
+              variant="plain"
+              shape="circle"
               onClick={close}
               aria-label="Cerrar"
-              className="absolute right-4 top-4 flex size-7 items-center justify-center rounded-full bg-white/25 text-white transition hover:bg-white/40"
+              className="absolute right-4 top-4 size-7 bg-white/25 text-white hover:bg-white/40"
             >
               ×
-            </button>
+            </Button>
           )}
           <h2 className="font-heading text-lg font-bold leading-snug">
             Bienvenido a nuestra tienda en línea.
@@ -136,58 +132,55 @@ export function SucursalModal() {
           </p>
         </div>
 
-        {/* geolocation */}
         <div className="border-b border-[#ededf1] px-6 py-4">
-          <button
+          <Button
             type="button"
+            variant="default"
+            shape="round"
             onClick={useMyLocation}
+            loading={geo.status === "locating"}
             disabled={geo.status === "locating"}
-            className="flex items-center gap-2 rounded-[30px] border border-brand-orange px-4 py-2 text-sm font-medium text-brand-orange transition hover:bg-brand-orange hover:text-white disabled:opacity-60"
+            className="border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-white"
           >
             <LocationIcon className="size-4" />
             {geo.status === "locating" ? "Obteniendo tu ubicación..." : "Usar mi ubicación"}
-          </button>
+          </Button>
           {geo.message && (
-            <p
-              className={cn(
-                "mt-2 text-sm",
-                geo.status === "error" ? "text-[#e74c3c]" : "text-brand-text",
-              )}
-            >
+            <p className={cn("mt-2 text-sm", geo.status === "error" ? "text-[#e74c3c]" : "text-brand-text")}>
               {geo.message}
             </p>
           )}
         </div>
 
-        {/* zona filter */}
         <div className="flex flex-wrap gap-2 border-b border-[#ededf1] px-6 py-3">
           {["Todas", ...zonas].map((z) => (
-            <button
+            <Button
               key={z}
               type="button"
+              variant={zona === z ? "solid" : "default"}
+              shape="round"
+              size="md"
               onClick={() => setZona(z)}
-              className={cn(
-                "rounded-full px-3 py-1 text-xs font-medium transition",
-                zona === z ? "bg-brand-orange text-white" : "bg-search-bg text-brand-text hover:bg-[#e7e8ee]",
-              )}
+              className={zona === z ? "bg-brand-orange text-white border-brand-orange" : "bg-search-bg text-brand-text border-transparent hover:bg-[#e7e8ee]"}
             >
               {z}
-            </button>
+            </Button>
           ))}
         </div>
 
-        {/* store list */}
         <ul className="flex-1 divide-y divide-[#ededf1] overflow-y-auto">
           {ordered.map((s) => {
             const isNearest = geo.status === "ok" && geo.nearestId === s.id;
             const isSelected = selected?.id === s.id;
             return (
               <li key={s.id}>
-                <button
+                <Button
                   type="button"
+                  variant="plain"
+                  block
                   onClick={() => select(s)}
                   className={cn(
-                    "flex w-full items-start gap-3 px-6 py-3 text-left transition hover:bg-search-bg",
+                    "flex items-start gap-3 px-6 py-3 text-left rounded-none",
                     isSelected && "bg-[#fff4e6]",
                   )}
                 >
@@ -196,16 +189,16 @@ export function SucursalModal() {
                     <span className="flex items-center gap-2">
                       <span className="font-medium text-brand-text">{s.name}</span>
                       {isNearest && (
-                        <span className="rounded bg-brand-orange px-1.5 py-0.5 text-[10px] font-bold text-white">
+                        <Tag className="rounded bg-brand-orange px-1.5 py-0.5 text-[10px] font-bold text-white">
                           Más cercana
-                        </span>
+                        </Tag>
                       )}
                       {isSelected && <span className="text-brand-orange">✓</span>}
                     </span>
                     <span className="block text-xs text-brand-muted">{s.address}</span>
                     <span className="block text-xs text-brand-muted">{s.zona}</span>
                   </span>
-                </button>
+                </Button>
               </li>
             );
           })}

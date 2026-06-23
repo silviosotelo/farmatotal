@@ -1,12 +1,22 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { Input, Button, Select } from "@platform/ui";
 import type { Product } from "@/types";
 import { ProductCard } from "@/components/ProductCard";
 
 type SortKey = "relevancia" | "precio-asc" | "precio-desc" | "descuento" | "nombre-az";
+type SelOpt = { value: string; label: string };
 
 const PER_PAGE_OPTIONS = [12, 24, 36] as const;
+
+const SORT_OPTIONS: SelOpt[] = [
+  { value: "relevancia", label: "Orden predeterminado" },
+  { value: "precio-asc", label: "Precio: bajo a alto" },
+  { value: "precio-desc", label: "Precio: alto a bajo" },
+  { value: "descuento", label: "Mayor descuento" },
+  { value: "nombre-az", label: "Nombre A-Z" },
+];
 
 function clamp(val: number, min: number, max: number) {
   return Math.min(Math.max(val, min), max);
@@ -59,20 +69,15 @@ export function ProductGrid({ products, title }: { products: Product[]; title?: 
     setPage(1);
   }
 
-  function handleMinPrice(val: string) {
-    setMinPrice(val);
-    setPage(1);
-  }
-
-  function handleMaxPrice(val: string) {
-    setMaxPrice(val);
-    setPage(1);
-  }
-
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  const sortOpt = SORT_OPTIONS.find((s) => s.value === sort) ?? SORT_OPTIONS[0];
+  const perPageOpt: SelOpt = { value: String(perPage), label: `Mostrar ${perPage}` };
 
   return (
     <div>
+      {title && <h1 className="mb-6 font-heading text-2xl font-bold text-brand-text">{title}</h1>}
+
       {/* Toolbar */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-[#ededf1] pb-4">
         {/* Left: price filter */}
@@ -81,24 +86,26 @@ export function ProductGrid({ products, title }: { products: Product[]; title?: 
             Filtrar por precio
           </span>
           <div className="flex items-center gap-1">
-            <input
+            <Input
               type="number"
               min={0}
-              placeholder="Mín ₲"
+              placeholder="Mín"
               value={minPrice}
-              onChange={(e) => handleMinPrice(e.target.value)}
+              onChange={(e) => { setMinPrice(e.target.value); setPage(1); }}
               aria-label="Precio mínimo"
-              className="h-8 w-24 rounded border border-[#ededf1] bg-white px-2 text-sm text-brand-text placeholder:text-brand-muted/60 focus:outline-none focus:ring-2 focus:ring-brand-orange/50"
+              size="md"
+              className="w-24"
             />
             <span className="text-brand-muted">–</span>
-            <input
+            <Input
               type="number"
               min={0}
-              placeholder="Máx ₲"
+              placeholder="Máx"
               value={maxPrice}
-              onChange={(e) => handleMaxPrice(e.target.value)}
+              onChange={(e) => { setMaxPrice(e.target.value); setPage(1); }}
               aria-label="Precio máximo"
-              className="h-8 w-24 rounded border border-[#ededf1] bg-white px-2 text-sm text-brand-text placeholder:text-brand-muted/60 focus:outline-none focus:ring-2 focus:ring-brand-orange/50"
+              size="md"
+              className="w-24"
             />
           </div>
           <span className="text-sm text-brand-muted">
@@ -108,30 +115,22 @@ export function ProductGrid({ products, title }: { products: Product[]; title?: 
 
         {/* Right: sort + per-page */}
         <div className="flex flex-wrap items-center gap-3">
-          <select
-            value={sort}
-            onChange={(e) => handleSort(e.target.value as SortKey)}
+          <Select
+            value={sortOpt}
+            onChange={(opt) => handleSort(((opt as SelOpt | null)?.value ?? "relevancia") as SortKey)}
+            options={SORT_OPTIONS}
+            isSearchable={false}
             aria-label="Ordenar productos"
-            className="h-10 rounded border border-[#ededf1] bg-white px-3 text-sm text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-orange/50"
-          >
-            <option value="relevancia">Orden predeterminado</option>
-            <option value="precio-asc">Precio: bajo a alto</option>
-            <option value="precio-desc">Precio: alto a bajo</option>
-            <option value="descuento">Mayor descuento</option>
-            <option value="nombre-az">Nombre A-Z</option>
-          </select>
-          <select
-            value={perPage}
-            onChange={(e) => handlePerPage(Number(e.target.value))}
+            className="min-w-[200px]"
+          />
+          <Select
+            value={perPageOpt}
+            onChange={(opt) => handlePerPage(Number((opt as SelOpt | null)?.value ?? "12"))}
+            options={PER_PAGE_OPTIONS.map((n) => ({ value: String(n), label: `Mostrar ${n}` }))}
+            isSearchable={false}
             aria-label="Productos por página"
-            className="h-10 rounded border border-[#ededf1] bg-white px-3 text-sm text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-orange/50"
-          >
-            {PER_PAGE_OPTIONS.map((n) => (
-              <option key={n} value={n}>
-                Mostrar {n}
-              </option>
-            ))}
-          </select>
+            className="min-w-[130px]"
+          />
         </div>
       </div>
 
@@ -152,40 +151,42 @@ export function ProductGrid({ products, title }: { products: Product[]; title?: 
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-10 flex items-center justify-center gap-1">
-          <button
+          <Button
             type="button"
-            onClick={() => goPage(safePage - 1)}
+            variant="default"
+            size="md"
+            shape="circle"
             disabled={safePage === 1}
+            onClick={() => goPage(safePage - 1)}
             aria-label="Página anterior"
-            className="flex size-9 items-center justify-center rounded border border-[#ededf1] text-sm text-brand-text transition-colors hover:border-brand-orange hover:text-brand-orange disabled:pointer-events-none disabled:opacity-40"
           >
             ‹
-          </button>
+          </Button>
           {pageNumbers.map((p) => (
-            <button
+            <Button
               key={p}
               type="button"
+              variant={p === safePage ? "solid" : "default"}
+              size="md"
+              shape="circle"
               onClick={() => goPage(p)}
               aria-label={`Página ${p}`}
               aria-current={p === safePage ? "page" : undefined}
-              className={
-                p === safePage
-                  ? "flex size-9 items-center justify-center rounded bg-brand-orange text-sm font-medium text-white"
-                  : "flex size-9 items-center justify-center rounded border border-[#ededf1] text-sm text-brand-text transition-colors hover:border-brand-orange hover:text-brand-orange"
-              }
             >
               {p}
-            </button>
+            </Button>
           ))}
-          <button
+          <Button
             type="button"
-            onClick={() => goPage(safePage + 1)}
+            variant="default"
+            size="md"
+            shape="circle"
             disabled={safePage === totalPages}
+            onClick={() => goPage(safePage + 1)}
             aria-label="Página siguiente"
-            className="flex size-9 items-center justify-center rounded border border-[#ededf1] text-sm text-brand-text transition-colors hover:border-brand-orange hover:text-brand-orange disabled:pointer-events-none disabled:opacity-40"
           >
             ›
-          </button>
+          </Button>
         </div>
       )}
     </div>

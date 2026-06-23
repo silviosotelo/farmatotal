@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@platform/ui";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation } from "swiper/modules";
 import "swiper/css/bundle";
@@ -14,8 +15,8 @@ export type ProductTab = { label: string; products: Product[] };
 export function AnvogueProductTabs({ tabs }: { tabs: ProductTab[] }) {
   const available = tabs.filter((t) => t.products.length > 0);
   const [active, setActive] = useState(0);
-  const prevRef = useRef<HTMLButtonElement>(null);
-  const nextRef = useRef<HTMLButtonElement>(null);
+  const prevRef = useRef<HTMLButtonElement>(null!);
+  const nextRef = useRef<HTMLButtonElement>(null!);
 
   if (!available.length) return null;
   const current = available[Math.min(active, available.length - 1)];
@@ -26,16 +27,17 @@ export function AnvogueProductTabs({ tabs }: { tabs: ProductTab[] }) {
         <div className="heading flex flex-col items-center text-center">
           <div className="menu-tab flex items-center gap-2 p-1 bg-[#F7F7F7] rounded-2xl">
             {available.map((t, i) => (
-              <button
+              <Button
                 key={t.label}
                 type="button"
+                variant="plain"
                 onClick={() => setActive(i)}
                 className={`tab-item relative ${heading5} py-2 px-5 rounded-2xl cursor-pointer duration-500 ${
                   i === active ? "bg-white text-[#1F1F1F]" : "text-[#696C70] hover:text-[#1F1F1F]"
                 }`}
               >
                 {t.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -68,20 +70,24 @@ export function AnvogueProductTabs({ tabs }: { tabs: ProductTab[] }) {
             ))}
           </Swiper>
 
-          <button
+          <Button
             ref={prevRef}
+            type="button"
+            variant="plain"
             aria-label="Anterior"
             className="absolute -left-2 top-1/3 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1F1F1F] shadow-md transition-colors hover:bg-[#1F1F1F] hover:text-white"
           >
             <ChevronLeft size={20} />
-          </button>
-          <button
+          </Button>
+          <Button
             ref={nextRef}
+            type="button"
+            variant="plain"
             aria-label="Siguiente"
             className="absolute -right-2 top-1/3 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1F1F1F] shadow-md transition-colors hover:bg-[#1F1F1F] hover:text-white"
           >
             <ChevronRight size={20} />
-          </button>
+          </Button>
         </div>
       </div>
     </div>

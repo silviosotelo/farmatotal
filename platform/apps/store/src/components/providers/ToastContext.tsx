@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import { Notification } from "@platform/ui";
 
 type ToastType = "success" | "error" | "info";
 interface Toast {
@@ -16,37 +17,34 @@ interface ToastCtx {
 const Ctx = createContext<ToastCtx | null>(null);
 let counter = 0;
 
+// Ecme Notification uses "danger" instead of "error"
+const toEcmeType = (t: ToastType) =>
+  (t === "error" ? "danger" : t) as "success" | "danger" | "info";
+
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const toast = useCallback((message: string, type: ToastType = "success") => {
     const id = ++counter;
     setToasts((t) => [...t, { id, message, type }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3200);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3500);
   }, []);
 
   return (
     <Ctx.Provider value={{ toast }}>
       {children}
-      <div className="pointer-events-none fixed right-4 top-4 z-[3000] flex w-[min(92vw,340px)] flex-col gap-2">
+      <div className="pointer-events-none fixed right-4 top-4 z-[3000] flex flex-col gap-2">
         {toasts.map((t) => (
-          <div
+          <Notification
             key={t.id}
-            role="status"
-            className={
-              "pointer-events-auto flex items-start gap-2 rounded-lg border-l-4 bg-white px-4 py-3 text-sm shadow-lg animate-[ft-fade-in_.2s_ease] " +
-              (t.type === "success"
-                ? "border-brand-orange text-brand-text"
-                : t.type === "error"
-                  ? "border-[#c0392b] text-[#c0392b]"
-                  : "border-brand-blue text-brand-text")
-            }
+            type={toEcmeType(t.type)}
+            closable
+            duration={0}
+            onClose={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
+            className="pointer-events-auto"
           >
-            <span aria-hidden="true">
-              {t.type === "success" ? "✓" : t.type === "error" ? "⚠" : "ℹ"}
-            </span>
-            <span className="flex-1">{t.message}</span>
-          </div>
+            {t.message}
+          </Notification>
         ))}
       </div>
     </Ctx.Provider>

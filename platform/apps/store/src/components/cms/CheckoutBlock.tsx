@@ -3,8 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { Input, Button, Select, Alert, Radio, Spinner } from "@platform/ui";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "@/components/providers/CartContext";
 import { useSucursal } from "@/components/sucursal/SucursalContext";
 import { useToast } from "@/components/providers/ToastContext";
@@ -17,11 +18,12 @@ import { useShippingQuote, useTaxConfig, usePaymentMethods, defaultRate, compute
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const GEO_KEY = "ft_geo";
 
+type SelOpt = { value: string; label: string };
 type FieldRole = "name" | "firstName" | "lastName" | "email" | "phone" | "city" | "address" | "";
 type Field = {
   key: string;
   label: string;
-  type: "text" | "email" | "tel" | "textarea" | "select" | "city" | "department";
+  type: "text" | "email" | "tel" | "textarea" | "select" | "city" | "department" | "location";
   required: boolean;
   width: "full" | "half";
   enabled?: boolean;
@@ -29,7 +31,6 @@ type Field = {
   options?: string[];
 };
 
-// Formulario por defecto = todos los campos (editable desde el admin → mod_checkout).
 const DEFAULT_FIELDS: Field[] = [
   { key: "firstName", label: "Nombre", type: "text", width: "half", required: true, enabled: true, role: "firstName" },
   { key: "lastName", label: "Apellido", type: "text", width: "half", required: false, enabled: true, role: "lastName" },
@@ -38,22 +39,35 @@ const DEFAULT_FIELDS: Field[] = [
   { key: "department", label: "Departamento", type: "department", width: "half", required: false, enabled: true },
   { key: "city", label: "Ciudad", type: "city", width: "half", required: false, enabled: true, role: "city" },
   { key: "address", label: "Dirección", type: "text", width: "full", required: false, enabled: true, role: "address" },
+  { key: "location", label: "Ubicación exacta de entrega", type: "location", width: "full", required: false, enabled: true },
 ];
 
 const CheckoutMap = dynamic(() => import("./CheckoutMap"), {
   ssr: false,
-  loading: () => <div className="flex h-full items-center justify-center bg-search-bg text-sm text-brand-muted">Cargando mapa…</div>,
+  loading: () => (
+    <div className="flex h-full items-center justify-center bg-search-bg gap-2">
+      <Spinner size="md" />
+      <span className="text-sm text-brand-muted">Cargando mapa…</span>
+    </div>
+  ),
 });
 
-const INPUT_CLS =
-  "w-full bg-search-bg rounded-md h-11 px-3 text-sm outline-none border border-transparent focus-visible:ring-2 focus-visible:ring-brand-orange/40 text-brand-text placeholder:text-brand-muted";
 const LABEL_CLS = "block text-sm font-medium text-brand-text mb-1";
 const SECTION_CLS = "rounded-xl border border-[#ededf1] bg-white p-6";
 const BILLING_ROLES: FieldRole[] = ["name", "firstName", "lastName", "email", "phone", "city", "address"];
 
+const PAY_NOTICE: Record<string, string> = {
+  rechazado: "Tu pago fue rechazado. Revisá los datos de la tarjeta o probá con otra y volvé a intentar.",
+  cancelado: "Cancelaste el pago. Tu carrito sigue acá: podés reintentar cuando quieras.",
+  pendiente: "No pudimos confirmar tu pago a tiempo. Si ya se debitó, te contactaremos; podés reintentar.",
+  error: "Hubo un inconveniente al procesar el pago. Intentá de nuevo.",
+};
+
 export function CheckoutBlock() {
   const money = useMoney();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const payNotice = PAY_NOTICE[searchParams.get("pago") ?? ""] ?? "";
   const { lines, subtotal, coupon, discount, total, clear } = useCart();
   const { selected } = useSucursal();
   const { toast } = useToast();
@@ -78,6 +92,7 @@ export function CheckoutBlock() {
 
   const enabledFields = fields.filter((f) => f.enabled !== false);
   const byRole = (r: FieldRole) => enabledFields.find((f) => f.role === r);
+  const locField = enabledFields.find((f) => f.type === "location");
   const requiresShipping = lines.some((l) => (l.product.productType ?? "physical") === "physical");
 
   const ship = useShippingQuote({ enabled: requiresShipping, city: values[byRole("city")?.key ?? "city"] ?? "", subtotal });
@@ -109,7 +124,6 @@ export function CheckoutBlock() {
     } catch { /* ignore */ }
   }, []);
 
-  // Precarga ciudad/departamento desde la sucursal elegida.
   useEffect(() => {
     if (!selected?.zona) return;
     const cityF = fields.find((f) => f.type === "city");
@@ -126,6 +140,7 @@ export function CheckoutBlock() {
     setLoc(p);
     try { if (p) localStorage.setItem(GEO_KEY, JSON.stringify(p)); } catch { /* ignore */ }
   }
+
   function locate() {
     if (!("geolocation" in navigator)) { setGeoMsg("Tu navegador no permite geolocalización."); return; }
     setGeoMsg("Obteniendo tu ubicación…");
@@ -155,14 +170,16 @@ export function CheckoutBlock() {
     e.preventDefault();
     const billing = buildBilling();
     if (!billing.name || !billing.email) { toast("Completá al menos nombre y email.", "error"); return; }
-    const missing = enabledFields.find((f) => f.required && !(values[f.key]?.trim()));
+    const missing = enabledFields.find((f) => f.required && f.type !== "location" && !(values[f.key]?.trim()));
     if (missing) { toast(`Completá: ${missing.label}`, "error"); return; }
+    if (locField?.required && requiresShipping && !isPickup && !loc) {
+      toast(`Marcá tu ${locField.label.toLowerCase()} en el mapa`, "error"); return;
+    }
     setSubmitting(true);
     try {
       const chosen = payOptions.find((o) => o.key === paymentKey);
       const paymentMethod = paymentKey === "bancard" ? "online" : "contraentrega";
       const shippingMethod = requiresShipping && !isPickup ? "delivery" : "pickup";
-      // customFields = todo campo activo que NO mapea a un dato estándar del pedido.
       const customFields: Record<string, string> = {};
       for (const f of enabledFields) {
         if (BILLING_ROLES.includes(f.role ?? "")) continue;
@@ -180,7 +197,7 @@ export function CheckoutBlock() {
           shippingMethodId: shippingMethod === "delivery" ? (ship.selectedId ?? undefined) : undefined,
           taxRateId: rate?.id,
           branchId: flags.branches && shippingMethod === "pickup" ? selected?.branchId : undefined,
-          location: shippingMethod === "delivery" ? loc ?? undefined : undefined,
+          location: locField && shippingMethod === "delivery" ? loc ?? undefined : undefined,
           customFields: Object.keys(customFields).length ? customFields : undefined,
           billing,
         }),
@@ -190,8 +207,8 @@ export function CheckoutBlock() {
       try {
         localStorage.setItem("ft_last_order_v1", JSON.stringify({ id: order.number, date: new Date().toISOString(), status: order.status, total: order.total, sucursal: isPickup ? selected?.name : undefined, paymentMethod: chosen?.name, lines: lines.map(({ product, quantity }) => ({ title: product.title, sku: product.sku, quantity, price: product.priceWeb, image: product.image })) }));
       } catch { /* ignore */ }
-      clear();
       if (paymentMethod === "online") { window.location.href = `/pago/${order.id}`; return; }
+      clear();
       router.push("/pedido-recibido");
     } catch {
       toast("Error de conexión. Intentá de nuevo.", "error");
@@ -201,35 +218,53 @@ export function CheckoutBlock() {
   }
 
   function renderField(f: Field) {
+    if (f.type === "location") return null;
     const id = `f-${f.key}`;
     const val = values[f.key] ?? "";
     const common = { id, value: val };
     let control;
     if (f.type === "department") {
       control = (
-        <select id={id} value={val} className={INPUT_CLS} onChange={(e) => { setVal(f.key, e.target.value); const cityF = fields.find((x) => x.type === "city"); if (cityF) setVal(cityF.key, ""); }}>
-          <option value="">Elegí un departamento</option>
-          {departamentos.map((d) => <option key={d} value={d}>{d}</option>)}
-        </select>
+        <Select
+          inputId={id}
+          value={val ? { value: val, label: val } : null}
+          onChange={(opt) => {
+            const v = (opt as SelOpt | null)?.value ?? "";
+            setVal(f.key, v);
+            const cityF = fields.find((x) => x.type === "city");
+            if (cityF) setVal(cityF.key, "");
+          }}
+          options={departamentos.map((d) => ({ value: d, label: d }))}
+          placeholder="Elegí un departamento"
+          isClearable
+        />
       );
     } else if (f.type === "city") {
       control = (
-        <select id={id} value={val} className={INPUT_CLS} onChange={(e) => setVal(f.key, e.target.value)}>
-          <option value="">Elegí una ciudad</option>
-          {ciudades.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
+        <Select
+          inputId={id}
+          value={val ? { value: val, label: val } : null}
+          onChange={(opt) => setVal(f.key, (opt as SelOpt | null)?.value ?? "")}
+          options={ciudades.map((c) => ({ value: c, label: c }))}
+          placeholder="Elegí una ciudad"
+          isClearable
+        />
       );
     } else if (f.type === "textarea") {
-      control = <textarea {...common} className={INPUT_CLS + " h-auto py-2 resize-y"} rows={3} onChange={(e) => setVal(f.key, e.target.value)} />;
+      control = <Input textArea {...common} className="resize-y" rows={3} onChange={(e) => setVal(f.key, e.target.value)} />;
     } else if (f.type === "select") {
       control = (
-        <select id={id} value={val} className={INPUT_CLS} onChange={(e) => setVal(f.key, e.target.value)}>
-          <option value="">Elegí una opción</option>
-          {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
-        </select>
+        <Select
+          inputId={id}
+          value={val ? { value: val, label: val } : null}
+          onChange={(opt) => setVal(f.key, (opt as SelOpt | null)?.value ?? "")}
+          options={(f.options ?? []).map((o) => ({ value: o, label: o }))}
+          placeholder="Elegí una opción"
+          isClearable
+        />
       );
     } else {
-      control = <input {...common} type={f.type === "email" ? "email" : f.type === "tel" ? "tel" : "text"} className={INPUT_CLS} onChange={(e) => setVal(f.key, e.target.value)} />;
+      control = <Input {...common} type={f.type === "email" ? "email" : f.type === "tel" ? "tel" : "text"} onChange={(e) => setVal(f.key, e.target.value)} />;
     }
     return (
       <div key={f.key} className={f.width === "full" || f.type === "textarea" ? "sm:col-span-2" : ""}>
@@ -247,6 +282,11 @@ export function CheckoutBlock() {
   return (
     <div className="ft-container py-8">
       <h2 className="font-heading text-2xl text-brand-text mb-6">Finalizar compra</h2>
+      {payNotice ? (
+        <Alert type="warning" showIcon className="mb-6">
+          {payNotice}
+        </Alert>
+      ) : null}
       <form onSubmit={handleSubmit} noValidate>
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 min-w-0 flex flex-col gap-6">
@@ -267,31 +307,45 @@ export function CheckoutBlock() {
                 <p className="text-sm text-brand-muted">No hay métodos de entrega configurados.</p>
               ) : (
                 <>
-                  <div className="flex flex-col gap-3">
-                    {ship.options.map((o) => (
-                      <label key={o.id} className={"flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors " + (ship.selectedId === o.id ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}>
-                        <input type="radio" name="shipMethod" value={o.id} checked={ship.selectedId === o.id} onChange={() => ship.setSelectedId(o.id)} className="accent-brand-orange" />
-                        <span className="flex-1 text-sm font-medium text-brand-text">{o.name}</span>
-                        <span className="font-price text-sm text-brand-text whitespace-nowrap">{o.cost > 0 ? money(o.cost) : "Gratis"}</span>
-                      </label>
-                    ))}
-                  </div>
+                  <Radio.Group value={ship.selectedId ?? ""} onChange={(val) => ship.setSelectedId(String(val))}>
+                    <div className="flex flex-col gap-3">
+                      {ship.options.map((o) => (
+                        <div
+                          key={o.id}
+                          className={"flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors " + (ship.selectedId === o.id ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}
+                        >
+                          <Radio value={o.id} />
+                          <span className="flex-1 text-sm font-medium text-brand-text">{o.name}</span>
+                          <span className="font-price text-sm text-brand-text whitespace-nowrap">{o.cost > 0 ? money(o.cost) : "Gratis"}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </Radio.Group>
                   {isPickup ? (
                     <div className="mt-4 text-sm text-brand-text">
                       {selected ? <span>Retirás en <span className="font-semibold">{selected.name}</span>{selected.address ? <span className="text-brand-muted"> — {selected.address}</span> : null}</span> : <span className="text-brand-muted">Elegí tu sucursal para retirar tu pedido.</span>}
                     </div>
-                  ) : (
+                  ) : locField ? (
                     <div className="mt-4">
                       <div className="mb-2 flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-brand-text">Ubicación exacta de entrega</span>
-                        <button type="button" onClick={locate} className="rounded-[30px] border border-brand-orange px-3 py-1.5 text-xs font-semibold text-brand-orange-ink transition hover:bg-brand-orange hover:text-white">Usar mi ubicación</button>
+                        <span className="text-sm font-medium text-brand-text">{locField.label} {locField.required ? <span className="text-[#c0392b]">*</span> : null}</span>
+                        <Button
+                          type="button"
+                          variant="default"
+                          shape="round"
+                          size="md"
+                          className="border-brand-orange text-brand-orange-ink hover:bg-brand-orange hover:text-white px-3"
+                          onClick={locate}
+                        >
+                          Usar mi ubicación
+                        </Button>
                       </div>
                       <div className="h-[300px] overflow-hidden rounded-lg border border-[#ededf1]">
                         <CheckoutMap value={loc} onChange={(lat, lng) => persistLoc({ lat, lng })} />
                       </div>
                       <p className="mt-1 text-xs text-brand-muted">{geoMsg || "Tocá el mapa o arrastrá el pin para marcar tu dirección exacta."}{loc ? ` (${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)})` : ""}</p>
                     </div>
-                  )}
+                  ) : null}
                 </>
               )}
             </section>
@@ -303,14 +357,19 @@ export function CheckoutBlock() {
               ) : payOptions.length === 0 ? (
                 <p className="text-sm text-brand-muted">No hay medios de pago configurados.</p>
               ) : (
-                <div className="flex flex-col gap-3">
-                  {payOptions.map((o) => (
-                    <label key={o.key} className={"flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors " + (paymentKey === o.key ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}>
-                      <input type="radio" name="payment" value={o.key} checked={paymentKey === o.key} onChange={() => setPaymentKey(o.key)} className="accent-brand-orange" />
-                      <span className="text-sm font-medium text-brand-text">{o.name}</span>
-                    </label>
-                  ))}
-                </div>
+                <Radio.Group value={paymentKey} onChange={(val) => setPaymentKey(String(val))}>
+                  <div className="flex flex-col gap-3">
+                    {payOptions.map((o) => (
+                      <div
+                        key={o.key}
+                        className={"flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors " + (paymentKey === o.key ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}
+                      >
+                        <Radio value={o.key} />
+                        <span className="text-sm font-medium text-brand-text">{o.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Radio.Group>
               )}
             </section>
           </div>
@@ -339,7 +398,17 @@ export function CheckoutBlock() {
                 {rate && taxAmount > 0 && (<div className="flex justify-between"><dt className="text-brand-muted">{taxIncluded ? `${rate.name} incluido` : rate.name}</dt><dd className="font-price text-brand-text">{money(taxAmount)}</dd></div>)}
                 <div className="pt-3 border-t border-[#ededf1] flex justify-between items-baseline"><dt className="font-semibold text-brand-text text-base">Total</dt><dd className="font-price text-brand-orange text-xl font-bold">{money(grandTotal)}</dd></div>
               </dl>
-              <button type="submit" disabled={submitting} className="mt-6 w-full brand-gradient focus-ring text-white rounded-[30px] h-11 px-6 text-sm font-semibold flex items-center justify-center disabled:opacity-60">{submitting ? "Procesando..." : "Realizar pedido"}</button>
+              <Button
+                type="submit"
+                variant="solid"
+                shape="round"
+                loading={submitting}
+                disabled={submitting}
+                block
+                className="mt-6 brand-gradient h-11"
+              >
+                {submitting ? "Procesando..." : "Realizar pedido"}
+              </Button>
             </div>
           </aside>
         </div>

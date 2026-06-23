@@ -112,6 +112,7 @@ function adaptProduct(p: BackendProduct): Product {
     sku: p.sku,
     stock: p.stockCached,
     description: p.description ?? undefined,
+    custom: p.custom ?? null,
     gallery: p.images?.map((i) => i.url),
     unit: p.unit,
     unitStep: p.unitStep,

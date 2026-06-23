@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Input, Button } from "@platform/ui";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { useToast } from "@/components/providers/ToastContext";
 import { formatMoney } from "@/lib/money";
@@ -18,9 +19,6 @@ const STATUS_STEP: Record<string, number> = {
   fulfilled: 2,
   delivered: 3,
 };
-const inputClass =
-  "w-full bg-search-bg rounded-md h-11 px-3 text-sm outline-none border border-transparent focus-visible:ring-2 focus-visible:ring-brand-orange/40";
-
 type TrackedOrder = {
   number: string;
   status: string;
@@ -90,15 +88,15 @@ export default function RastrearPedidoNative() {
         <form onSubmit={submit} className="flex flex-col gap-4 sm:flex-row sm:items-end">
           <div className="flex-1">
             <label htmlFor="t-nro" className="mb-1 block text-sm text-brand-text">N° de pedido *</label>
-            <input id="t-nro" placeholder="Ej. 000123" value={nro} onChange={(e) => setNro(e.target.value)} className={inputClass} />
+            <Input id="t-nro" placeholder="Ej. 000123" value={nro} onChange={(e) => setNro(e.target.value)} />
           </div>
           <div className="flex-1">
             <label htmlFor="t-email" className="mb-1 block text-sm text-brand-text">Correo</label>
-            <input id="t-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
+            <Input id="t-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
-          <button type="submit" disabled={loading} className="brand-gradient focus-ring h-[44px] shrink-0 rounded-[30px] px-8 text-sm font-semibold text-white disabled:opacity-60">
+          <Button type="submit" variant="solid" shape="round" loading={loading} disabled={loading} className="brand-gradient focus-ring h-[44px] shrink-0 px-8 text-sm font-semibold">
             {loading ? "Buscando…" : "Rastrear"}
-          </button>
+          </Button>
         </form>
 
         {order && (

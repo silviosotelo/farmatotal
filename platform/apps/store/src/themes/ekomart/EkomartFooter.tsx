@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Input, Button } from "@platform/ui";
 
 /**
  * Footer del tema Ekomart, white-label (usa brandName, fallback "Tienda").
@@ -85,10 +86,10 @@ export function EkomartFooter({ brandName }: { brandName?: string }) {
                     Suscribite para recibir nuestras ofertas y novedades.
                   </p>
                   <form className="footersubscribe-form" action="#">
-                    <input type="email" placeholder="Tu correo electrónico" required />
-                    <button type="submit" className="rts-btn btn-primary">
+                    <Input type="email" placeholder="Tu correo electrónico" required />
+                    <Button type="submit" variant="plain" className="rts-btn btn-primary">
                       Suscribirme
-                    </button>
+                    </Button>
                   </form>
                 </div>
               </div>
