@@ -4,6 +4,7 @@ import Tag from '@/components/ui/Tag'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
+import { FormItem } from '@/components/ui/Form'
 import DataTable from '@/components/shared/DataTable'
 import {
     apiGetCoupons,
@@ -110,31 +111,34 @@ const Coupons = () => {
                     <h6 className="mb-3">Nuevo cupón</h6>
                     <div className="flex flex-col md:flex-row gap-3 items-end">
                         <div className="flex-1">
-                            <label className="text-sm">Código</label>
-                            <Input
-                                value={code}
-                                onChange={(e) => setCode(e.target.value)}
-                                placeholder="VERANO20"
-                            />
+                            <FormItem label="Código">
+                                <Input
+                                    value={code}
+                                    onChange={(e) => setCode(e.target.value)}
+                                    placeholder="VERANO20"
+                                />
+                            </FormItem>
                         </div>
                         <div className="w-44">
-                            <label className="text-sm">Tipo</label>
-                            <Select
-                                options={typeOptions}
-                                value={typeOptions.find((o) => o.value === type)}
-                                onChange={(o) =>
-                                    setType((o?.value as 'percent' | 'fixed') ?? 'percent')
-                                }
-                            />
+                            <FormItem label="Tipo">
+                                <Select
+                                    options={typeOptions}
+                                    value={typeOptions.find((o) => o.value === type)}
+                                    onChange={(o) =>
+                                        setType((o?.value as 'percent' | 'fixed') ?? 'percent')
+                                    }
+                                />
+                            </FormItem>
                         </div>
                         <div className="w-36">
-                            <label className="text-sm">Valor</label>
-                            <Input
-                                type="number"
-                                value={value}
-                                onChange={(e) => setValue(e.target.value)}
-                                placeholder={type === 'percent' ? '20' : '25000'}
-                            />
+                            <FormItem label="Valor">
+                                <Input
+                                    type="number"
+                                    value={value}
+                                    onChange={(e) => setValue(e.target.value)}
+                                    placeholder={type === 'percent' ? '20' : '25000'}
+                                />
+                            </FormItem>
                         </div>
                         <Button variant="solid" loading={saving} onClick={create}>
                             Crear

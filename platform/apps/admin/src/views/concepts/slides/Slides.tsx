@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
+import Table from '@/components/ui/Table'
+import { FormItem } from '@/components/ui/Form'
 import Button from '@/components/ui/Button'
 import Tag from '@/components/ui/Tag'
 import Switcher from '@/components/ui/Switcher'
@@ -16,6 +18,8 @@ import {
     type Slide,
 } from '@/services/SlideService'
 import useSWR from 'swr'
+
+const { Tr, Th, Td, THead, TBody } = Table
 
 const blank = {
     title: '',
@@ -82,17 +86,15 @@ const Slides = () => {
                 <Card>
                     <h6 className="mb-3">Nuevo banner</h6>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                            <label className="text-sm">Título (interno)</label>
+                        <FormItem label="Título (interno)">
                             <Input
                                 value={form.title}
                                 onChange={(e) =>
                                     setForm({ ...form, title: e.target.value })
                                 }
                             />
-                        </div>
-                        <div>
-                            <label className="text-sm">Link al hacer click</label>
+                        </FormItem>
+                        <FormItem label="Link al hacer click">
                             <Input
                                 value={form.linkHref}
                                 onChange={(e) =>
@@ -100,9 +102,8 @@ const Slides = () => {
                                 }
                                 placeholder="/catalogo"
                             />
-                        </div>
-                        <div>
-                            <label className="text-sm">Imagen Desktop (URL)</label>
+                        </FormItem>
+                        <FormItem label="Imagen Desktop (URL)">
                             <Input
                                 value={form.imageDesktop}
                                 onChange={(e) =>
@@ -112,9 +113,8 @@ const Slides = () => {
                                     })
                                 }
                             />
-                        </div>
-                        <div>
-                            <label className="text-sm">Imagen Mobile (URL)</label>
+                        </FormItem>
+                        <FormItem label="Imagen Mobile (URL)">
                             <Input
                                 value={form.imageMobile}
                                 onChange={(e) =>
@@ -124,28 +124,27 @@ const Slides = () => {
                                     })
                                 }
                             />
-                        </div>
+                        </FormItem>
                     </div>
                     <div className="mt-3">
-                        <label className="text-sm block mb-1">
-                            Días que se muestra (vacío = todos)
-                        </label>
-                        <div className="flex gap-2 flex-wrap">
-                            {DAYS.map((d) => (
-                                <button
-                                    key={d.value}
-                                    type="button"
-                                    onClick={() => toggleDay(d.value)}
-                                    className={`px-3 py-1 rounded-full text-sm border ${
-                                        form.days.includes(d.value)
-                                            ? 'bg-brand-orange text-white border-transparent'
-                                            : 'bg-white text-gray-600 border-gray-300'
-                                    }`}
-                                >
-                                    {d.label}
-                                </button>
-                            ))}
-                        </div>
+                        <FormItem label="Días que se muestra (vacío = todos)">
+                            <div className="flex gap-2 flex-wrap">
+                                {DAYS.map((d) => (
+                                    <button
+                                        key={d.value}
+                                        type="button"
+                                        onClick={() => toggleDay(d.value)}
+                                        className={`px-3 py-1 rounded-full text-sm border ${
+                                            form.days.includes(d.value)
+                                                ? 'bg-brand-orange text-white border-transparent'
+                                                : 'bg-white text-gray-600 border-gray-300'
+                                        }`}
+                                    >
+                                        {d.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </FormItem>
                     </div>
                     <div className="mt-4 flex justify-end">
                         <Button variant="solid" loading={saving} onClick={create}>
@@ -155,22 +154,22 @@ const Slides = () => {
                 </Card>
 
                 <Card>
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="text-left text-gray-400 border-b">
-                                <th className="py-2">Banner</th>
-                                <th>Desktop</th>
-                                <th>Mobile</th>
-                                <th>Días</th>
-                                <th>Estado</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <Table>
+                        <THead>
+                            <Tr className="text-left text-gray-400 border-b">
+                                <Th className="py-2">Banner</Th>
+                                <Th>Desktop</Th>
+                                <Th>Mobile</Th>
+                                <Th>Días</Th>
+                                <Th>Estado</Th>
+                                <Th></Th>
+                            </Tr>
+                        </THead>
+                        <TBody>
                             {slides.map((s) => (
-                                <tr key={s.id} className="border-b last:border-0">
-                                    <td className="py-2 font-medium">{s.title}</td>
-                                    <td>
+                                <Tr key={s.id} className="border-b last:border-0">
+                                    <Td className="py-2 font-medium">{s.title}</Td>
+                                    <Td>
                                         {s.imageDesktop ? (
                                             // eslint-disable-next-line @next/next/no-img-element
                                             <img
@@ -181,8 +180,8 @@ const Slides = () => {
                                         ) : (
                                             '—'
                                         )}
-                                    </td>
-                                    <td>
+                                    </Td>
+                                    <Td>
                                         {s.imageMobile ? (
                                             // eslint-disable-next-line @next/next/no-img-element
                                             <img
@@ -193,8 +192,8 @@ const Slides = () => {
                                         ) : (
                                             '—'
                                         )}
-                                    </td>
-                                    <td>
+                                    </Td>
+                                    <Td>
                                         {s.days.length === 0 ? (
                                             <Tag className="bg-sky-100 text-sky-600">
                                                 Todos
@@ -209,14 +208,14 @@ const Slides = () => {
                                                 )
                                                 .join(' ')
                                         )}
-                                    </td>
-                                    <td>
+                                    </Td>
+                                    <Td>
                                         <Switcher
                                             checked={s.active}
                                             onChange={() => toggleActive(s)}
                                         />
-                                    </td>
-                                    <td className="text-right">
+                                    </Td>
+                                    <Td className="text-right">
                                         <Button
                                             size="xs"
                                             customColorClass={() =>
@@ -226,21 +225,21 @@ const Slides = () => {
                                         >
                                             Borrar
                                         </Button>
-                                    </td>
-                                </tr>
+                                    </Td>
+                                </Tr>
                             ))}
                             {slides.length === 0 && (
-                                <tr>
-                                    <td
+                                <Tr>
+                                    <Td
                                         colSpan={6}
                                         className="py-6 text-center text-gray-400"
                                     >
                                         Sin banners todavía.
-                                    </td>
-                                </tr>
+                                    </Td>
+                                </Tr>
                             )}
-                        </tbody>
-                    </table>
+                        </TBody>
+                    </Table>
                 </Card>
             </div>
         </Loading>

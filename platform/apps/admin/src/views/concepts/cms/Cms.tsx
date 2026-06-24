@@ -1,18 +1,16 @@
 import { useState } from 'react'
 import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
+import Table from '@/components/ui/Table'
+import { FormItem } from '@/components/ui/Form'
 import Button from '@/components/ui/Button'
 import Tag from '@/components/ui/Tag'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
 import Loading from '@/components/shared/Loading'
-import {
-    apiGetPages,
-    apiCreatePage,
-    apiUpdatePage,
-    apiDeletePage,
-    type Page,
-} from '@/services/CmsService'
+import { apiGetPages, apiCreatePage, apiUpdatePage, apiDeletePage, type Page } from '@/services/CmsService'
+
+const { Tr, Th, Td, THead, TBody } = Table
 import useSWR from 'swr'
 import { useNavigate } from 'react-router'
 
@@ -183,20 +181,22 @@ const Cms = () => {
                     <h6 className="mb-3">Nueva página</h6>
                     <div className="flex flex-col md:flex-row gap-3 items-end">
                         <div className="flex-1">
-                            <label className="text-sm">Título</label>
-                            <Input
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                placeholder="Quiénes somos"
-                            />
+                            <FormItem label="Título">
+                                <Input
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    placeholder="Quiénes somos"
+                                />
+                            </FormItem>
                         </div>
                         <div className="flex-1">
-                            <label className="text-sm">Slug</label>
-                            <Input
-                                value={slug}
-                                onChange={(e) => setSlug(e.target.value)}
-                                placeholder="quienes-somos"
-                            />
+                            <FormItem label="Slug">
+                                <Input
+                                    value={slug}
+                                    onChange={(e) => setSlug(e.target.value)}
+                                    placeholder="quienes-somos"
+                                />
+                            </FormItem>
                         </div>
                         <Button variant="solid" loading={saving} onClick={create}>
                             Crear
@@ -205,25 +205,25 @@ const Cms = () => {
                 </Card>
 
                 <Card>
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="text-left text-gray-400 border-b">
-                                <th className="py-2">Título</th>
-                                <th>Slug</th>
-                                <th>Bloques</th>
-                                <th>Estado</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <Table>
+                        <THead>
+                            <Tr className="text-left text-gray-400 border-b">
+                                <Th className="py-2">Título</Th>
+                                <Th>Slug</Th>
+                                <Th>Bloques</Th>
+                                <Th>Estado</Th>
+                                <Th></Th>
+                            </Tr>
+                        </THead>
+                        <TBody>
                             {pages.map((p) => (
-                                <tr key={p.id} className="border-b last:border-0">
-                                    <td className="py-2 font-medium">
+                                <Tr key={p.id} className="border-b last:border-0">
+                                    <Td className="py-2 font-medium">
                                         {p.title}
-                                    </td>
-                                    <td className="text-gray-500">/{p.slug}</td>
-                                    <td>{p.blocks?.length ?? 0}</td>
-                                    <td>
+                                    </Td>
+                                    <Td className="text-gray-500">/{p.slug}</Td>
+                                    <Td>{p.blocks?.length ?? 0}</Td>
+                                    <Td>
                                         <Tag
                                             className={
                                                 p.published
@@ -235,8 +235,8 @@ const Cms = () => {
                                                 ? 'Publicada'
                                                 : 'Borrador'}
                                         </Tag>
-                                    </td>
-                                    <td className="text-right whitespace-nowrap">
+                                    </Td>
+                                    <Td className="text-right whitespace-nowrap">
                                         <Button
                                             size="xs"
                                             variant="solid"
@@ -266,21 +266,21 @@ const Cms = () => {
                                         >
                                             Eliminar
                                         </Button>
-                                    </td>
-                                </tr>
+                                    </Td>
+                                </Tr>
                             ))}
                             {pages.length === 0 && (
-                                <tr>
-                                    <td
+                                <Tr>
+                                    <Td
                                         colSpan={5}
                                         className="py-6 text-center text-gray-400"
                                     >
                                         Sin páginas todavía.
-                                    </td>
-                                </tr>
+                                    </Td>
+                                </Tr>
                             )}
-                        </tbody>
-                    </table>
+                        </TBody>
+                    </Table>
                 </Card>
             </div>
         </Loading>

@@ -4,6 +4,9 @@ import Card from '@/components/ui/Card'
 import Tag from '@/components/ui/Tag'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import Table from '@/components/ui/Table'
+import Select from '@/components/ui/Select'
+import { FormItem } from '@/components/ui/Form'
 import Switcher from '@/components/ui/Switcher'
 import Loading from '@/components/shared/Loading'
 import Notification from '@/components/ui/Notification'
@@ -11,12 +14,13 @@ import toast from '@/components/ui/toast'
 import PlainCustomFields from '@/views/concepts/entity-fields/PlainCustomFields'
 import { apiGetCategories, apiCreateCategory, apiUpdateCategory, type Category } from '@/services/CategoryService'
 
+const { Tr, Th, Td, THead, TBody } = Table
+
 const slugify = (s: string) =>
     s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
 type CatForm = { id?: string; name: string; slug: string; parentId: string; active: boolean; custom: Record<string, unknown> }
 const empty: CatForm = { name: '', slug: '', parentId: '', active: true, custom: {} }
-const selCls = 'h-11 rounded-md border border-gray-200 dark:border-gray-600 bg-transparent px-3 text-sm w-full'
 
 const Categories = () => {
     const { data, isLoading, mutate } = useSWR(['/catalog/categories'], () => apiGetCategories(), { revalidateOnFocus: false })
@@ -65,23 +69,27 @@ const Categories = () => {
                     <Card>
                         <h6 className="mb-3">{form.id ? 'Editar categoría' : 'Nueva categoría'}</h6>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                                <label className="text-sm">Nombre *</label>
+                            <FormItem label="Nombre *">
                                 <Input value={form.name} onChange={(e) => set('name', e.target.value)} />
-                            </div>
-                            <div>
-                                <label className="text-sm">Slug</label>
+                            </FormItem>
+                            <FormItem label="Slug">
                                 <Input value={form.slug} onChange={(e) => set('slug', e.target.value)} placeholder="se genera del nombre" />
-                            </div>
-                            <div>
-                                <label className="text-sm">Categoría padre</label>
-                                <select className={selCls} value={form.parentId} onChange={(e) => set('parentId', e.target.value)}>
-                                    <option value="">(raíz)</option>
-                                    {cats.filter((c) => c.id !== form.id).map((c) => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                            </FormItem>
+                            <FormItem label="Categoría padre">
+                                <Select
+                                    options={[
+                                        { value: '', label: '(raíz)' },
+                                        ...cats.filter((c) => c.id !== form.id).map((c) => ({ value: c.id, label: c.name })),
+                                    ]}
+                                    value={
+                                        [
+                                            { value: '', label: '(raíz)' },
+                                            ...cats.filter((c) => c.id !== form.id).map((c) => ({ value: c.id, label: c.name })),
+                                        ].find((o) => o.value === form.parentId)
+                                    }
+                                    onChange={(o) => set('parentId', o?.value ?? '')}
+                                />
+                            </FormItem>
                             <div className="flex items-center gap-2 pt-6">
                                 <Switcher checked={form.active} onChange={(c) => set('active', c)} />
                                 <span className="text-sm text-gray-600">Activa</span>
@@ -96,23 +104,23 @@ const Categories = () => {
                 )}
 
                 <Card>
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="text-left text-xs text-gray-400">
-                                <th className="py-1">Nombre</th><th>Slug</th><th>Estado</th><th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <Table>
+                        <THead>
+                            <Tr className="text-left text-xs text-gray-400">
+                                <Th className="py-1">Nombre</Th><Th>Slug</Th><Th>Estado</Th><Th></Th>
+                            </Tr>
+                        </THead>
+                        <TBody>
                             {cats.map((c) => (
-                                <tr key={c.id} className="border-t border-gray-100 dark:border-gray-700">
-                                    <td className="py-1.5">{c.name}</td>
-                                    <td className="text-gray-500">{c.slug}</td>
-                                    <td><Tag className={c.active ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-500'}>{c.active ? 'Activa' : 'Inactiva'}</Tag></td>
-                                    <td className="text-right"><Button size="xs" onClick={() => openEdit(c)}>Editar</Button></td>
-                                </tr>
+                                <Tr key={c.id} className="border-t border-gray-100 dark:border-gray-700">
+                                    <Td className="py-1.5">{c.name}</Td>
+                                    <Td className="text-gray-500">{c.slug}</Td>
+                                    <Td><Tag className={c.active ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-500'}>{c.active ? 'Activa' : 'Inactiva'}</Tag></Td>
+                                    <Td className="text-right"><Button size="xs" onClick={() => openEdit(c)}>Editar</Button></Td>
+                                </Tr>
                             ))}
-                        </tbody>
-                    </table>
+                        </TBody>
+                    </Table>
                 </Card>
             </div>
         </Loading>

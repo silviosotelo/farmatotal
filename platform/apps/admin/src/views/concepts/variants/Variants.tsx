@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import Table from '@/components/ui/Table'
+import { FormItem } from '@/components/ui/Form'
 import Tag from '@/components/ui/Tag'
 import Loading from '@/components/shared/Loading'
 import EmptyState from '@/components/shared/EmptyState'
@@ -18,6 +20,8 @@ import {
 } from '@/services/VariantService'
 import { apiGetAttributes } from '@/services/AttributeService'
 import useSWR from 'swr'
+
+const { Tr, Th, Td, THead, TBody } = Table
 
 type ProductLite = { id: string; title: string; sku: string }
 type AttrDef = { name: string; values: string[] }
@@ -97,31 +101,31 @@ const VariantRow = ({
     }
 
     return (
-        <tr className="border-b last:border-0">
+        <Tr className="border-b last:border-0">
             {attrNames.map((name) => (
-                <td key={name} className="py-2 pr-2 text-sm">
+                <Td key={name} className="py-2 pr-2 text-sm">
                     {v.attributes?.[name] ? (
                         <Tag className="bg-indigo-50 text-indigo-600">{v.attributes[name]}</Tag>
                     ) : (
                         <span className="text-gray-300">—</span>
                     )}
-                </td>
+                </Td>
             ))}
-            <td className="py-2 pr-2">
+            <Td className="py-2 pr-2">
                 <Input size="sm" value={sku} onChange={(e) => setSku(e.target.value)} />
-            </td>
-            <td className="py-2 pr-2 w-28">
+            </Td>
+            <Td className="py-2 pr-2 w-28">
                 <Input size="sm" type="number" value={priceWeb} onChange={(e) => setPriceWeb(e.target.value)} placeholder="hereda" />
-            </td>
-            <td className="py-2 pr-2 w-20">
+            </Td>
+            <Td className="py-2 pr-2 w-20">
                 <Input size="sm" type="number" value={stock} onChange={(e) => setStock(e.target.value)} />
-            </td>
-            <td className="py-2">
+            </Td>
+            <Td className="py-2">
                 <Tag className={v.active ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-500'}>
                     {v.active ? 'Activa' : 'Inactiva'}
                 </Tag>
-            </td>
-            <td className="py-2">
+            </Td>
+            <Td className="py-2">
                 <div className="flex justify-end gap-2">
                     <Button size="xs" variant="solid" loading={busy} onClick={save}>
                         Guardar
@@ -133,8 +137,8 @@ const VariantRow = ({
                         <HiOutlineTrash />
                     </Button>
                 </div>
-            </td>
-        </tr>
+            </Td>
+        </Tr>
     )
 }
 
@@ -313,20 +317,22 @@ const Variants = () => {
                             {defs.map((a, i) => (
                                 <div key={i} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
                                     <div className="md:col-span-3">
-                                        <label className="text-sm">Atributo</label>
-                                        <Input
-                                            value={a.name}
-                                            onChange={(e) => setAttrName(i, e.target.value)}
-                                            placeholder="Color"
-                                        />
+                                        <FormItem label="Atributo">
+                                            <Input
+                                                value={a.name}
+                                                onChange={(e) => setAttrName(i, e.target.value)}
+                                                placeholder="Color"
+                                            />
+                                        </FormItem>
                                     </div>
                                     <div className="md:col-span-8">
-                                        <label className="text-sm">Valores (separados por coma)</label>
-                                        <Input
-                                            defaultValue={a.values.join(', ')}
-                                            onBlur={(e) => setAttrValues(i, e.target.value)}
-                                            placeholder="Rojo, Azul, Verde"
-                                        />
+                                        <FormItem label="Valores (separados por coma)">
+                                            <Input
+                                                defaultValue={a.values.join(', ')}
+                                                onBlur={(e) => setAttrValues(i, e.target.value)}
+                                                placeholder="Rojo, Azul, Verde"
+                                            />
+                                        </FormItem>
                                     </div>
                                     <div className="md:col-span-1">
                                         <Button size="sm" variant="plain" icon={<HiOutlineTrash />} onClick={() => removeAttr(i)} />
@@ -377,15 +383,17 @@ const Variants = () => {
                             {variants.length > 0 && (
                                 <div className="flex flex-wrap items-end gap-2">
                                     <div>
-                                        <label className="text-xs text-gray-500">Precio a todas</label>
-                                        <Input size="sm" type="number" value={bulkPrice} onChange={(e) => setBulkPrice(e.target.value)} className="w-28" />
+                                        <FormItem label="Precio a todas">
+                                            <Input size="sm" type="number" value={bulkPrice} onChange={(e) => setBulkPrice(e.target.value)} className="w-28" />
+                                        </FormItem>
                                     </div>
                                     <Button size="sm" loading={bulkBusy} onClick={() => applyBulk('priceWeb', Number(bulkPrice) || 0)}>
                                         Aplicar
                                     </Button>
                                     <div className="ml-2">
-                                        <label className="text-xs text-gray-500">Stock a todas</label>
-                                        <Input size="sm" type="number" value={bulkStock} onChange={(e) => setBulkStock(e.target.value)} className="w-24" />
+                                        <FormItem label="Stock a todas">
+                                            <Input size="sm" type="number" value={bulkStock} onChange={(e) => setBulkStock(e.target.value)} className="w-24" />
+                                        </FormItem>
                                     </div>
                                     <Button size="sm" loading={bulkBusy} onClick={() => applyBulk('stockCached', Number(bulkStock) || 0)}>
                                         Aplicar
@@ -396,36 +404,36 @@ const Variants = () => {
 
                         <Loading loading={loadingVars}>
                             <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="text-left text-gray-400 border-b">
+                                <Table>
+                                    <THead>
+                                        <Tr className="text-left text-gray-400 border-b">
                                             {attrNames.map((n) => (
-                                                <th key={n} className="py-2 pr-2">{n}</th>
+                                                <Th key={n} className="py-2 pr-2">{n}</Th>
                                             ))}
-                                            <th>SKU</th>
-                                            <th>Precio web</th>
-                                            <th>Stock</th>
-                                            <th>Estado</th>
-                                            <th className="text-right">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
+                                            <Th>SKU</Th>
+                                            <Th>Precio web</Th>
+                                            <Th>Stock</Th>
+                                            <Th>Estado</Th>
+                                            <Th className="text-right">Acciones</Th>
+                                        </Tr>
+                                    </THead>
+                                    <TBody>
                                         {variants.map((v) => (
                                             <VariantRow key={v.id} v={v} attrNames={attrNames} onChanged={() => mutate()} />
                                         ))}
                                         {variants.length === 0 && (
-                                            <tr>
-                                                <td colSpan={attrNames.length + 5}>
+                                            <Tr>
+                                                <Td colSpan={attrNames.length + 5}>
                                                     <EmptyState
                                                         compact
                                                         title="Este producto no tiene variaciones"
                                                         description="Definí atributos arriba (color, talle, presentación…) y generá la matriz de variaciones automáticamente."
                                                     />
-                                                </td>
-                                            </tr>
+                                                </Td>
+                                            </Tr>
                                         )}
-                                    </tbody>
-                                </table>
+                                    </TBody>
+                                </Table>
                             </div>
                         </Loading>
                     </Card>

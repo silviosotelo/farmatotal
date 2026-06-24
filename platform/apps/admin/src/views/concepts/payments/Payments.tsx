@@ -4,6 +4,8 @@ import Tabs from '@/components/ui/Tabs'
 import Tag from '@/components/ui/Tag'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
+import Table from '@/components/ui/Table'
+import { FormItem } from '@/components/ui/Form'
 import Switcher from '@/components/ui/Switcher'
 import Button from '@/components/ui/Button'
 import Notification from '@/components/ui/Notification'
@@ -21,6 +23,7 @@ import {
 } from '@/services/PaymentService'
 
 const { TabNav, TabList, TabContent } = Tabs
+const { Tr, Th, Td, THead, TBody } = Table
 
 const gs = (n: number) => '₲ ' + (n ?? 0).toLocaleString('es-PY').replace(/,/g, '.')
 
@@ -70,8 +73,7 @@ const MethodCard = ({ m, onSaved }: { m: PaymentMethod; onSaved: () => void }) =
             {m.fields.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {m.fields.map((f) => (
-                        <div key={f.key}>
-                            <label className="text-sm">{f.label}</label>
+                        <FormItem key={f.key} label={f.label}>
                             {f.type === 'select' ? (
                                 <Select
                                     options={f.options ?? []}
@@ -85,7 +87,7 @@ const MethodCard = ({ m, onSaved }: { m: PaymentMethod; onSaved: () => void }) =
                                     onChange={(e) => set(f.key, e.target.value)}
                                 />
                             )}
-                        </div>
+                        </FormItem>
                     ))}
                 </div>
             )}
@@ -120,18 +122,17 @@ const MethodsTab = () => {
                 <Card>
                     <h6 className="mb-3">Nuevo método de pago (custom)</h6>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                        <div>
-                            <label className="text-sm">Nombre</label>
+                        <FormItem label="Nombre">
                             <Input value={nf.name} onChange={(e) => setNf({ ...nf, name: e.target.value })} placeholder="Ej. Pago en local" />
-                        </div>
-                        <div>
-                            <label className="text-sm">Descripción</label>
+                        </FormItem>
+                        <FormItem label="Descripción">
                             <Input value={nf.description} onChange={(e) => setNf({ ...nf, description: e.target.value })} />
-                        </div>
+                        </FormItem>
                         <div className="flex gap-2 items-end">
                             <div className="flex-1">
-                                <label className="text-sm">Instrucciones</label>
-                                <Input value={nf.instructions} onChange={(e) => setNf({ ...nf, instructions: e.target.value })} placeholder="Texto para el cliente" />
+                                <FormItem label="Instrucciones">
+                                    <Input value={nf.instructions} onChange={(e) => setNf({ ...nf, instructions: e.target.value })} placeholder="Texto para el cliente" />
+                                </FormItem>
                             </div>
                             <Button variant="solid" loading={creating} onClick={create}>Agregar</Button>
                         </div>
@@ -155,21 +156,25 @@ const TransactionsTab = () => {
             {isLoading ? <p className="text-gray-400">Cargando…</p> : items.length === 0 ? (
                 <p className="py-6 text-center text-gray-400">Todavía no hay transacciones.</p>
             ) : (
-                <table className="w-full text-sm">
-                    <thead><tr className="text-left text-gray-400 border-b"><th className="py-2">Fecha</th><th>Pedido</th><th>Cliente</th><th>Proveedor</th><th>Monto</th><th>Estado</th></tr></thead>
-                    <tbody>
+                <Table>
+                    <THead>
+                        <Tr className="text-left text-gray-400 border-b">
+                            <Th className="py-2">Fecha</Th><Th>Pedido</Th><Th>Cliente</Th><Th>Proveedor</Th><Th>Monto</Th><Th>Estado</Th>
+                        </Tr>
+                    </THead>
+                    <TBody>
                         {items.map((t) => (
-                            <tr key={t.id} className="border-b last:border-0">
-                                <td className="py-2 text-xs text-gray-400">{new Date(t.createdAt).toLocaleString('es-PY')}</td>
-                                <td className="font-semibold">{t.orderNumber ?? '—'}</td>
-                                <td>{t.customerName ?? '—'}</td>
-                                <td>{t.provider}</td>
-                                <td>{gs(t.amount)}</td>
-                                <td><Tag className={txTint[t.status] ?? 'bg-gray-100 text-gray-500'}>{t.status}</Tag></td>
-                            </tr>
+                            <Tr key={t.id} className="border-b last:border-0">
+                                <Td className="py-2 text-xs text-gray-400">{new Date(t.createdAt).toLocaleString('es-PY')}</Td>
+                                <Td className="font-semibold">{t.orderNumber ?? '—'}</Td>
+                                <Td>{t.customerName ?? '—'}</Td>
+                                <Td>{t.provider}</Td>
+                                <Td>{gs(t.amount)}</Td>
+                                <Td><Tag className={txTint[t.status] ?? 'bg-gray-100 text-gray-500'}>{t.status}</Tag></Td>
+                            </Tr>
                         ))}
-                    </tbody>
-                </table>
+                    </TBody>
+                </Table>
             )}
         </Card>
     )

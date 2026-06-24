@@ -3,20 +3,16 @@ import useSWR from 'swr'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import Table from '@/components/ui/Table'
+import Select from '@/components/ui/Select'
 import Tag from '@/components/ui/Tag'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
 import { HiOutlineTrash, HiOutlinePlus } from 'react-icons/hi'
 import PluginConfig from '../PluginConfig'
-import {
-    apiGetSyncRuns,
-    apiGetMappings,
-    apiSaveMappings,
-    apiRunImport,
-    type FieldMapping,
-} from '@/services/ErpSyncService'
+import { apiGetSyncRuns, apiGetMappings, apiSaveMappings, apiRunImport, type FieldMapping } from '@/services/ErpSyncService'
 
-const selCls = 'h-9 rounded-md border border-gray-200 dark:border-gray-600 bg-transparent px-2 text-sm'
+const { Tr, Th, Td, THead, TBody } = Table
 
 const MappingEditor = ({ entity }: { entity: string }) => {
     const { data, mutate } = useSWR(['/erp-sync/mappings', entity], () => apiGetMappings(entity), { revalidateOnFocus: false })
@@ -49,15 +45,27 @@ const MappingEditor = ({ entity }: { entity: string }) => {
                     <div className="col-span-4"><Input value={m.sourceName} onChange={(e) => patch(i, { sourceName: e.target.value })} placeholder="STK_ARTICULO" /></div>
                     <div className="col-span-5"><Input value={m.targetName} onChange={(e) => patch(i, { targetName: e.target.value })} placeholder="sku  o  custom.principio_activo" /></div>
                     <div className="col-span-2">
-                        <select className={selCls + ' w-full'} value={m.transform ?? ''} onChange={(e) => patch(i, { transform: e.target.value || null })}>
-                            <option value="">—</option>
-                            <option value="number">número</option>
-                            <option value="boolean">sí/no</option>
-                            <option value="upper">MAYÚS</option>
-                            <option value="lower">minús</option>
-                            <option value="trim">trim</option>
-                            <option value="slug">slug</option>
-                        </select>
+                        <Select
+                            options={[
+                                { value: '', label: '—' },
+                                { value: 'number', label: 'número' },
+                                { value: 'boolean', label: 'sí/no' },
+                                { value: 'upper', label: 'MAYÚS' },
+                                { value: 'lower', label: 'minús' },
+                                { value: 'trim', label: 'trim' },
+                                { value: 'slug', label: 'slug' },
+                            ]}
+                            value={[
+                                { value: '', label: '—' },
+                                { value: 'number', label: 'número' },
+                                { value: 'boolean', label: 'sí/no' },
+                                { value: 'upper', label: 'MAYÚS' },
+                                { value: 'lower', label: 'minús' },
+                                { value: 'trim', label: 'trim' },
+                                { value: 'slug', label: 'slug' },
+                            ].find((o) => o.value === (m.transform ?? ''))}
+                            onChange={(o) => patch(i, { transform: o?.value || null })}
+                        />
                     </div>
                     <div className="col-span-1 text-right"><Button size="xs" variant="plain" icon={<HiOutlineTrash />} onClick={() => remove(i)} /></div>
                 </div>
@@ -124,26 +132,26 @@ const ErpSync = () => {
 
             <Card>
                 <h5 className="mb-3">Historial de sincronizaciones</h5>
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="text-left text-xs text-gray-400">
-                            <th className="py-1">Tipo</th><th>Estado</th><th>Stats</th><th>Fecha</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <Table>
+                    <THead>
+                        <Tr className="text-left text-xs text-gray-400">
+                            <Th className="py-1">Tipo</Th><Th>Estado</Th><Th>Stats</Th><Th>Fecha</Th>
+                        </Tr>
+                    </THead>
+                    <TBody>
                         {(runs?.data ?? []).slice(0, 15).map((r) => (
-                            <tr key={r.id} className="border-t border-gray-100 dark:border-gray-700">
-                                <td className="py-1.5">{r.kind}</td>
-                                <td><Tag className={statusTint[r.status] ?? ''}>{r.status}</Tag></td>
-                                <td className="text-xs text-gray-500">{r.stats ? JSON.stringify(r.stats) : '—'}</td>
-                                <td className="text-xs text-gray-400">{new Date(r.createdAt).toLocaleString('es-PY')}</td>
-                            </tr>
+                            <Tr key={r.id} className="border-t border-gray-100 dark:border-gray-700">
+                                <Td className="py-1.5">{r.kind}</Td>
+                                <Td><Tag className={statusTint[r.status] ?? ''}>{r.status}</Tag></Td>
+                                <Td className="text-xs text-gray-500">{r.stats ? JSON.stringify(r.stats) : '—'}</Td>
+                                <Td className="text-xs text-gray-400">{new Date(r.createdAt).toLocaleString('es-PY')}</Td>
+                            </Tr>
                         ))}
                         {(runs?.data ?? []).length === 0 && (
-                            <tr><td colSpan={4} className="py-3 text-gray-400">Sin sincronizaciones todavía.</td></tr>
+                            <Tr><Td colSpan={4} className="py-3 text-gray-400">Sin sincronizaciones todavía.</Td></Tr>
                         )}
-                    </tbody>
-                </table>
+                    </TBody>
+                </Table>
             </Card>
         </div>
     )

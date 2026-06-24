@@ -3,6 +3,8 @@ import Card from '@/components/ui/Card'
 import Tabs from '@/components/ui/Tabs'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
+import Table from '@/components/ui/Table'
+import { FormItem } from '@/components/ui/Form'
 import Button from '@/components/ui/Button'
 import Tag from '@/components/ui/Tag'
 import Notification from '@/components/ui/Notification'
@@ -26,6 +28,7 @@ import {
 } from '@/services/MailerService'
 
 const { TabNav, TabList, TabContent } = Tabs
+const { Tr, Th, Td, THead, TBody } = Table
 
 const notify = (msg: string, type: 'success' | 'danger' = 'success') =>
     toast.push(<Notification type={type}>{msg}</Notification>, { placement: 'top-center' })
@@ -72,8 +75,8 @@ const TemplatesTab = () => {
                         <Input placeholder="Asunto (acepta {{variables}})" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
                     </div>
                     <div className="md:col-span-2">
-                        <textarea
-                            className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
+                        <Input
+                            textArea
                             rows={4}
                             placeholder="Cuerpo HTML (acepta {{variables}})"
                             value={form.bodyHtml}
@@ -91,24 +94,24 @@ const TemplatesTab = () => {
                 ) : templates.length === 0 ? (
                     <p className="py-6 text-center text-gray-400">Sin plantillas todavía.</p>
                 ) : (
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="text-left text-gray-400 border-b">
-                                <th className="py-2">Clave</th><th>Nombre</th><th>Asunto</th><th>Estado</th><th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <Table>
+                        <THead>
+                            <Tr className="text-left text-gray-400 border-b">
+                                <Th className="py-2">Clave</Th><Th>Nombre</Th><Th>Asunto</Th><Th>Estado</Th><Th></Th>
+                            </Tr>
+                        </THead>
+                        <TBody>
                             {templates.map((t) => (
-                                <tr key={t.id} className="border-b last:border-0">
-                                    <td className="py-2 font-mono text-xs">{t.key}</td>
-                                    <td>{t.name}</td>
-                                    <td className="text-gray-500">{t.subject}</td>
-                                    <td><Tag className={t.active ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-500'}>{t.active ? 'Activa' : 'Inactiva'}</Tag></td>
-                                    <td className="text-right"><Button size="xs" variant="plain" onClick={() => remove(t.id)}>Borrar</Button></td>
-                                </tr>
+                                <Tr key={t.id} className="border-b last:border-0">
+                                    <Td className="py-2 font-mono text-xs">{t.key}</Td>
+                                    <Td>{t.name}</Td>
+                                    <Td className="text-gray-500">{t.subject}</Td>
+                                    <Td><Tag className={t.active ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-500'}>{t.active ? 'Activa' : 'Inactiva'}</Tag></Td>
+                                    <Td className="text-right"><Button size="xs" variant="plain" onClick={() => remove(t.id)}>Borrar</Button></Td>
+                                </Tr>
                             ))}
-                        </tbody>
-                    </table>
+                        </TBody>
+                    </Table>
                 )}
             </Card>
         </div>
@@ -140,20 +143,24 @@ const QueueTab = () => {
             {isLoading ? <p className="text-gray-400">Cargando…</p> : items.length === 0 ? (
                 <p className="py-6 text-center text-gray-400">Cola vacía.</p>
             ) : (
-                <table className="w-full text-sm">
-                    <thead><tr className="text-left text-gray-400 border-b"><th className="py-2">Para</th><th>Asunto</th><th>Estado</th><th>Intentos</th><th></th></tr></thead>
-                    <tbody>
+                <Table>
+                    <THead>
+                        <Tr className="text-left text-gray-400 border-b">
+                            <Th className="py-2">Para</Th><Th>Asunto</Th><Th>Estado</Th><Th>Intentos</Th><Th></Th>
+                        </Tr>
+                    </THead>
+                    <TBody>
                         {items.map((q) => (
-                            <tr key={q.id} className="border-b last:border-0">
-                                <td className="py-2">{q.toEmail}</td>
-                                <td className="text-gray-500">{q.subject}</td>
-                                <td><Tag className={statusTint[q.status]}>{q.status}</Tag></td>
-                                <td>{q.attempts}</td>
-                                <td className="text-right">{q.status === 'failed' && <Button size="xs" onClick={() => retry(q.id)}>Reintentar</Button>}</td>
-                            </tr>
+                            <Tr key={q.id} className="border-b last:border-0">
+                                <Td className="py-2">{q.toEmail}</Td>
+                                <Td className="text-gray-500">{q.subject}</Td>
+                                <Td><Tag className={statusTint[q.status]}>{q.status}</Tag></Td>
+                                <Td>{q.attempts}</Td>
+                                <Td className="text-right">{q.status === 'failed' && <Button size="xs" onClick={() => retry(q.id)}>Reintentar</Button>}</Td>
+                            </Tr>
                         ))}
-                    </tbody>
-                </table>
+                    </TBody>
+                </Table>
             )}
         </Card>
     )
@@ -168,20 +175,24 @@ const LogsTab = () => {
             {isLoading ? <p className="text-gray-400">Cargando…</p> : items.length === 0 ? (
                 <p className="py-6 text-center text-gray-400">Sin envíos registrados.</p>
             ) : (
-                <table className="w-full text-sm">
-                    <thead><tr className="text-left text-gray-400 border-b"><th className="py-2">Fecha</th><th>Para</th><th>Asunto</th><th>Estado</th><th>Proveedor</th></tr></thead>
-                    <tbody>
+                <Table>
+                    <THead>
+                        <Tr className="text-left text-gray-400 border-b">
+                            <Th className="py-2">Fecha</Th><Th>Para</Th><Th>Asunto</Th><Th>Estado</Th><Th>Proveedor</Th>
+                        </Tr>
+                    </THead>
+                    <TBody>
                         {items.map((l) => (
-                            <tr key={l.id} className="border-b last:border-0">
-                                <td className="py-2 text-gray-400 text-xs">{new Date(l.createdAt).toLocaleString('es-PY')}</td>
-                                <td>{l.toEmail}</td>
-                                <td className="text-gray-500">{l.subject}</td>
-                                <td><Tag className={statusTint[l.status] ?? 'bg-gray-100 text-gray-500'}>{l.status}</Tag></td>
-                                <td>{l.provider}</td>
-                            </tr>
+                            <Tr key={l.id} className="border-b last:border-0">
+                                <Td className="py-2 text-gray-400 text-xs">{new Date(l.createdAt).toLocaleString('es-PY')}</Td>
+                                <Td>{l.toEmail}</Td>
+                                <Td className="text-gray-500">{l.subject}</Td>
+                                <Td><Tag className={statusTint[l.status] ?? 'bg-gray-100 text-gray-500'}>{l.status}</Tag></Td>
+                                <Td>{l.provider}</Td>
+                            </Tr>
                         ))}
-                    </tbody>
-                </table>
+                    </TBody>
+                </Table>
             )}
         </Card>
     )
@@ -212,22 +223,21 @@ const ConfigTab = () => {
         <Card>
             <h6 className="mb-3">Proveedor de envío</h6>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl">
-                <div>
-                    <label className="text-sm">Proveedor</label>
+                <FormItem label="Proveedor">
                     <Select options={providerOptions} value={providerOptions.find((o) => o.value === cfg.provider)} onChange={(o) => setCfg({ ...cfg, provider: (o?.value as MailerConfig['provider']) ?? 'log' })} />
-                </div>
+                </FormItem>
                 <div />
-                <div><label className="text-sm">Nombre remitente</label><Input value={cfg.fromName} onChange={(e) => setCfg({ ...cfg, fromName: e.target.value })} /></div>
-                <div><label className="text-sm">Email remitente</label><Input value={cfg.fromEmail} onChange={(e) => setCfg({ ...cfg, fromEmail: e.target.value })} /></div>
+                <FormItem label="Nombre remitente"><Input value={cfg.fromName} onChange={(e) => setCfg({ ...cfg, fromName: e.target.value })} /></FormItem>
+                <FormItem label="Email remitente"><Input value={cfg.fromEmail} onChange={(e) => setCfg({ ...cfg, fromEmail: e.target.value })} /></FormItem>
                 {cfg.provider === 'sendgrid' && (
-                    <div className="md:col-span-2"><label className="text-sm">SendGrid API Key</label><Input type="password" value={cfg.sendgridApiKey ?? ''} onChange={(e) => setCfg({ ...cfg, sendgridApiKey: e.target.value })} /></div>
+                    <div className="md:col-span-2"><FormItem label="SendGrid API Key"><Input type="password" value={cfg.sendgridApiKey ?? ''} onChange={(e) => setCfg({ ...cfg, sendgridApiKey: e.target.value })} /></FormItem></div>
                 )}
                 {cfg.provider === 'smtp' && (
                     <>
-                        <div><label className="text-sm">SMTP Host</label><Input value={cfg.smtp?.host ?? ''} onChange={(e) => setCfg({ ...cfg, smtp: { ...cfg.smtp, host: e.target.value } })} /></div>
-                        <div><label className="text-sm">SMTP Port</label><Input type="number" value={cfg.smtp?.port ?? 587} onChange={(e) => setCfg({ ...cfg, smtp: { ...cfg.smtp, port: Number(e.target.value) } })} /></div>
-                        <div><label className="text-sm">Usuario</label><Input value={cfg.smtp?.user ?? ''} onChange={(e) => setCfg({ ...cfg, smtp: { ...cfg.smtp, user: e.target.value } })} /></div>
-                        <div><label className="text-sm">Password</label><Input type="password" value={cfg.smtp?.pass ?? ''} onChange={(e) => setCfg({ ...cfg, smtp: { ...cfg.smtp, pass: e.target.value } })} /></div>
+                        <FormItem label="SMTP Host"><Input value={cfg.smtp?.host ?? ''} onChange={(e) => setCfg({ ...cfg, smtp: { ...cfg.smtp, host: e.target.value } })} /></FormItem>
+                        <FormItem label="SMTP Port"><Input type="number" value={cfg.smtp?.port ?? 587} onChange={(e) => setCfg({ ...cfg, smtp: { ...cfg.smtp, port: Number(e.target.value) } })} /></FormItem>
+                        <FormItem label="Usuario"><Input value={cfg.smtp?.user ?? ''} onChange={(e) => setCfg({ ...cfg, smtp: { ...cfg.smtp, user: e.target.value } })} /></FormItem>
+                        <FormItem label="Password"><Input type="password" value={cfg.smtp?.pass ?? ''} onChange={(e) => setCfg({ ...cfg, smtp: { ...cfg.smtp, pass: e.target.value } })} /></FormItem>
                     </>
                 )}
             </div>

@@ -3,6 +3,7 @@ import Card from '@/components/ui/Card'
 import Tag from '@/components/ui/Tag'
 import Button from '@/components/ui/Button'
 import Select from '@/components/ui/Select'
+import { FormItem } from '@/components/ui/Form'
 import DataTable from '@/components/shared/DataTable'
 import {
     apiGetReviews,
@@ -155,15 +156,16 @@ const Reviews = () => {
                     <p className="text-gray-500">{reviews.length} valoraciones</p>
                 </div>
                 <div className="w-48">
-                    <label className="text-sm">Estado</label>
-                    <Select
-                        options={statusOptions}
-                        value={statusOptions.find((o) => o.value === filter)}
-                        onChange={(o) => {
-                            setFilter((o?.value as ReviewStatus | 'all') ?? 'pending')
-                            setPageIndex(1)
-                        }}
-                    />
+                    <FormItem label="Estado">
+                        <Select
+                            options={statusOptions}
+                            value={statusOptions.find((o) => o.value === filter)}
+                            onChange={(o) => {
+                                setFilter((o?.value as ReviewStatus | 'all') ?? 'pending')
+                                setPageIndex(1)
+                            }}
+                        />
+                    </FormItem>
                 </div>
             </div>
 

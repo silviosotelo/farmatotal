@@ -4,11 +4,15 @@ import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
+import Table from '@/components/ui/Table'
+import { FormItem } from '@/components/ui/Form'
 import Tag from '@/components/ui/Tag'
 import Switcher from '@/components/ui/Switcher'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
 import Loading from '@/components/shared/Loading'
+
+const { Tr, Th, Td, THead, TBody } = Table
 import { HiOutlineTrash } from 'react-icons/hi'
 import {
     apiGetUsers,
@@ -102,24 +106,28 @@ const Users = () => {
                 <h6 className="mb-3">Nuevo usuario</h6>
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
                     <div className="md:col-span-3">
-                        <label className="text-sm">Email</label>
-                        <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="persona@empresa.com" />
+                        <FormItem label="Email">
+                            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="persona@empresa.com" />
+                        </FormItem>
                     </div>
                     <div className="md:col-span-3">
-                        <label className="text-sm">Nombre</label>
-                        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" />
+                        <FormItem label="Nombre">
+                            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" />
+                        </FormItem>
                     </div>
                     <div className="md:col-span-2">
-                        <label className="text-sm">Contraseña</label>
-                        <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="mín. 6" />
+                        <FormItem label="Contraseña">
+                            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="mín. 6" />
+                        </FormItem>
                     </div>
                     <div className="md:col-span-2">
-                        <label className="text-sm">Rol</label>
-                        <Select
-                            options={ROLES}
-                            value={ROLES.find((r) => r.value === role)}
-                            onChange={(opt) => opt && setRole(opt.value)}
-                        />
+                        <FormItem label="Rol">
+                            <Select
+                                options={ROLES}
+                                value={ROLES.find((r) => r.value === role)}
+                                onChange={(opt) => opt && setRole(opt.value)}
+                            />
+                        </FormItem>
                     </div>
                     <div className="md:col-span-2">
                         <Button block variant="solid" loading={creating} onClick={create}>
@@ -132,49 +140,49 @@ const Users = () => {
             <Card>
                 <h6 className="mb-3">Usuarios ({users.length})</h6>
                 <Loading loading={isLoading}>
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="text-left text-gray-400 border-b">
-                                <th className="py-2">Usuario</th>
-                                <th>Rol</th>
-                                <th>Activo</th>
-                                <th>Último acceso</th>
-                                <th className="text-right">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <Table>
+                        <THead>
+                            <Tr className="text-left text-gray-400 border-b">
+                                <Th className="py-2">Usuario</Th>
+                                <Th>Rol</Th>
+                                <Th>Activo</Th>
+                                <Th>Último acceso</Th>
+                                <Th className="text-right">Acciones</Th>
+                            </Tr>
+                        </THead>
+                        <TBody>
                             {users.map((u) => (
-                                <tr key={u.id} className="border-b last:border-0">
-                                    <td className="py-2">
+                                <Tr key={u.id} className="border-b last:border-0">
+                                    <Td className="py-2">
                                         <div className="font-medium">{u.name || '—'}</div>
                                         <div className="text-xs text-gray-400">{u.email}</div>
-                                    </td>
-                                    <td className="w-40">
+                                    </Td>
+                                    <Td className="w-40">
                                         <Select
                                             size="sm"
                                             options={ROLES}
                                             value={ROLES.find((r) => r.value === u.role)}
                                             onChange={(opt) => opt && changeRole(u, opt.value)}
                                         />
-                                    </td>
-                                    <td>
+                                    </Td>
+                                    <Td>
                                         <div className="flex items-center gap-2">
                                             <Switcher checked={u.active} onChange={() => toggleActive(u)} />
                                             <Tag className={u.active ? roleColor.customer : 'bg-gray-100 text-gray-500'}>
                                                 {u.active ? 'Activo' : 'Inactivo'}
                                             </Tag>
                                         </div>
-                                    </td>
-                                    <td className="text-gray-500">
+                                    </Td>
+                                    <Td className="text-gray-500">
                                         {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString('es-PY') : '—'}
-                                    </td>
-                                    <td className="text-right">
+                                    </Td>
+                                    <Td className="text-right">
                                         <Button size="xs" variant="plain" icon={<HiOutlineTrash />} onClick={() => remove(u)} />
-                                    </td>
-                                </tr>
+                                    </Td>
+                                </Tr>
                             ))}
-                        </tbody>
-                    </table>
+                        </TBody>
+                    </Table>
                 </Loading>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-400">
                     {ROLES.map((r) => (

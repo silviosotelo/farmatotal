@@ -2,10 +2,13 @@ import { useMemo, useState } from 'react'
 import useSWR from 'swr'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import Table from '@/components/ui/Table'
 import Loading from '@/components/shared/Loading'
 import Chart from '@/components/shared/Chart'
 import EmptyState from '@/components/shared/EmptyState'
 import { apiGetSalesReport } from '@/services/ReportService'
+
+const { Tr, Th, Td, THead, TBody } = Table
 
 const PRESETS = [
     { key: '7', label: '7 días', days: 7 },
@@ -106,27 +109,27 @@ const Reports = () => {
                     <Card>
                         <h6 className="mb-4">Productos más vendidos</h6>
                         {data?.topProducts.length ? (
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="text-left text-gray-400 border-b">
-                                        <th className="py-2">Producto</th>
-                                        <th className="text-right">Unid.</th>
-                                        <th className="text-right">Ingresos</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                            <Table>
+                                <THead>
+                                    <Tr className="text-left text-gray-400 border-b">
+                                        <Th className="py-2">Producto</Th>
+                                        <Th className="text-right">Unid.</Th>
+                                        <Th className="text-right">Ingresos</Th>
+                                    </Tr>
+                                </THead>
+                                <TBody>
                                     {data.topProducts.map((p) => (
-                                        <tr key={p.sku} className="border-b last:border-0">
-                                            <td className="py-2">
+                                        <Tr key={p.sku} className="border-b last:border-0">
+                                            <Td className="py-2">
                                                 <div className="font-medium line-clamp-1">{p.title}</div>
                                                 <div className="text-xs text-gray-400">{p.sku}</div>
-                                            </td>
-                                            <td className="text-right">{p.units}</td>
-                                            <td className="text-right">{gs(p.revenue)}</td>
-                                        </tr>
+                                            </Td>
+                                            <Td className="text-right">{p.units}</Td>
+                                            <Td className="text-right">{gs(p.revenue)}</Td>
+                                        </Tr>
                                     ))}
-                                </tbody>
-                            </table>
+                                </TBody>
+                            </Table>
                         ) : (
                             <EmptyState compact title="Sin datos en el período" />
                         )}

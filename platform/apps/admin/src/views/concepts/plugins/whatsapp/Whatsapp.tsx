@@ -3,6 +3,8 @@ import Card from '@/components/ui/Card'
 import Tabs from '@/components/ui/Tabs'
 import Tag from '@/components/ui/Tag'
 import Input from '@/components/ui/Input'
+import Table from '@/components/ui/Table'
+import { FormItem } from '@/components/ui/Form'
 import Button from '@/components/ui/Button'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
@@ -19,6 +21,7 @@ import {
 
 const { TabNav, TabList, TabContent } = Tabs
 const notify = (m: string) => toast.push(<Notification type="success">{m}</Notification>, { placement: 'top-center' })
+const { Tr, Th, Td, THead, TBody } = Table
 
 const TemplatesTab = () => {
     const { data, isLoading, mutate } = useSWR(['wa-tpl'], () => apiWaTemplates(), { revalidateOnFocus: false })
@@ -36,17 +39,30 @@ const TemplatesTab = () => {
                     <Input placeholder="Nombre" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
                     <Input placeholder="Categoría (utility/marketing)" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })} />
                     <div className="md:col-span-2">
-                        <textarea className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm" rows={3} placeholder="Mensaje (acepta {{variables}})" value={f.content} onChange={(e) => setF({ ...f, content: e.target.value })} />
+                        <Input textArea rows={3} placeholder="Mensaje (acepta {{variables}})" value={f.content} onChange={(e) => setF({ ...f, content: e.target.value })} />
                     </div>
                 </div>
                 <div className="mt-3"><Button variant="solid" onClick={create}>Crear</Button></div>
             </Card>
             <Card>
                 {isLoading ? <p className="text-gray-400">Cargando…</p> : items.length === 0 ? <p className="py-6 text-center text-gray-400">Sin plantillas.</p> : (
-                    <table className="w-full text-sm"><thead><tr className="text-left text-gray-400 border-b"><th className="py-2">Nombre</th><th>Categoría</th><th>Mensaje</th><th></th></tr></thead>
-                    <tbody>{items.map((t) => (
-                        <tr key={t.id} className="border-b last:border-0"><td className="py-2 font-semibold">{t.name}</td><td>{t.category}</td><td className="text-gray-500 max-w-md truncate">{t.content}</td><td className="text-right"><Button size="xs" variant="plain" onClick={async () => { await apiWaDeleteTemplate(t.id); await mutate() }}>Borrar</Button></td></tr>
-                    ))}</tbody></table>
+                    <Table>
+                        <THead>
+                            <Tr className="text-left text-gray-400 border-b">
+                                <Th className="py-2">Nombre</Th><Th>Categoría</Th><Th>Mensaje</Th><Th></Th>
+                            </Tr>
+                        </THead>
+                        <TBody>
+                            {items.map((t) => (
+                                <Tr key={t.id} className="border-b last:border-0">
+                                    <Td className="py-2 font-semibold">{t.name}</Td>
+                                    <Td>{t.category}</Td>
+                                    <Td className="text-gray-500 max-w-md truncate">{t.content}</Td>
+                                    <Td className="text-right"><Button size="xs" variant="plain" onClick={async () => { await apiWaDeleteTemplate(t.id); await mutate() }}>Borrar</Button></Td>
+                                </Tr>
+                            ))}
+                        </TBody>
+                    </Table>
                 )}
             </Card>
         </div>
@@ -70,10 +86,23 @@ const WorkflowsTab = () => {
             </Card>
             <Card>
                 {isLoading ? <p className="text-gray-400">Cargando…</p> : items.length === 0 ? <p className="py-6 text-center text-gray-400">Sin workflows.</p> : (
-                    <table className="w-full text-sm"><thead><tr className="text-left text-gray-400 border-b"><th className="py-2">Nombre</th><th>Disparador</th><th>Plantilla</th><th></th></tr></thead>
-                    <tbody>{items.map((w) => (
-                        <tr key={w.id} className="border-b last:border-0"><td className="py-2 font-semibold">{w.name}</td><td><Tag className="bg-sky-100 text-sky-600">{w.trigger}</Tag></td><td>{w.templateName}</td><td className="text-right"><Button size="xs" variant="plain" onClick={async () => { await apiWaDeleteWorkflow(w.id); await mutate() }}>Borrar</Button></td></tr>
-                    ))}</tbody></table>
+                    <Table>
+                        <THead>
+                            <Tr className="text-left text-gray-400 border-b">
+                                <Th className="py-2">Nombre</Th><Th>Disparador</Th><Th>Plantilla</Th><Th></Th>
+                            </Tr>
+                        </THead>
+                        <TBody>
+                            {items.map((w) => (
+                                <Tr key={w.id} className="border-b last:border-0">
+                                    <Td className="py-2 font-semibold">{w.name}</Td>
+                                    <Td><Tag className="bg-sky-100 text-sky-600">{w.trigger}</Tag></Td>
+                                    <Td>{w.templateName}</Td>
+                                    <Td className="text-right"><Button size="xs" variant="plain" onClick={async () => { await apiWaDeleteWorkflow(w.id); await mutate() }}>Borrar</Button></Td>
+                                </Tr>
+                            ))}
+                        </TBody>
+                    </Table>
                 )}
             </Card>
         </div>
@@ -95,10 +124,23 @@ const LogsTab = () => {
             </Card>
             <Card>
                 {isLoading ? <p className="text-gray-400">Cargando…</p> : items.length === 0 ? <p className="py-6 text-center text-gray-400">Sin mensajes.</p> : (
-                    <table className="w-full text-sm"><thead><tr className="text-left text-gray-400 border-b"><th className="py-2">Fecha</th><th>Teléfono</th><th>Plantilla</th><th>Estado</th></tr></thead>
-                    <tbody>{items.map((l) => (
-                        <tr key={l.id} className="border-b last:border-0"><td className="py-2 text-xs text-gray-400">{new Date(l.createdAt).toLocaleString('es-PY')}</td><td>{l.toPhone}</td><td>{l.templateName}</td><td><Tag className="bg-gray-100 text-gray-600">{l.status}</Tag></td></tr>
-                    ))}</tbody></table>
+                    <Table>
+                        <THead>
+                            <Tr className="text-left text-gray-400 border-b">
+                                <Th className="py-2">Fecha</Th><Th>Teléfono</Th><Th>Plantilla</Th><Th>Estado</Th>
+                            </Tr>
+                        </THead>
+                        <TBody>
+                            {items.map((l) => (
+                                <Tr key={l.id} className="border-b last:border-0">
+                                    <Td className="py-2 text-xs text-gray-400">{new Date(l.createdAt).toLocaleString('es-PY')}</Td>
+                                    <Td>{l.toPhone}</Td>
+                                    <Td>{l.templateName}</Td>
+                                    <Td><Tag className="bg-gray-100 text-gray-600">{l.status}</Tag></Td>
+                                </Tr>
+                            ))}
+                        </TBody>
+                    </Table>
                 )}
             </Card>
         </div>

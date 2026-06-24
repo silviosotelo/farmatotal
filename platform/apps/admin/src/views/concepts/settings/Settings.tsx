@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
+import { FormItem } from '@/components/ui/Form'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
 import { apiGetSetting, apiSetSetting } from '@/services/CmsService'
@@ -62,8 +63,9 @@ function SettingsSection<T>({
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
     <div className="flex items-center justify-between gap-4">
-        <label className="text-sm text-gray-600">{label}</label>
-        <div className="w-72">{children}</div>
+        <FormItem label={label}>
+            <div className="w-72">{children}</div>
+        </FormItem>
     </div>
 )
 

@@ -6,6 +6,7 @@ import Input from '@/components/ui/Input'
 import Tag from '@/components/ui/Tag'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
+import { FormItem } from '@/components/ui/Form'
 import Loading from '@/components/shared/Loading'
 import EmptyState from '@/components/shared/EmptyState'
 import { HiOutlineTrash, HiOutlinePlus } from 'react-icons/hi'
@@ -64,16 +65,18 @@ const Attributes = () => {
                         {attrs.map((a, i) => (
                             <div key={i} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-start border-b pb-3 last:border-0">
                                 <div className="md:col-span-3">
-                                    <label className="text-sm">Atributo</label>
-                                    <Input value={a.name} onChange={(e) => setName(i, e.target.value)} placeholder="Color" />
+                                    <FormItem label="Atributo">
+                                        <Input value={a.name} onChange={(e) => setName(i, e.target.value)} placeholder="Color" />
+                                    </FormItem>
                                 </div>
                                 <div className="md:col-span-8">
-                                    <label className="text-sm">Valores (separados por coma)</label>
-                                    <Input
-                                        defaultValue={a.values.join(', ')}
-                                        onBlur={(e) => setValues(i, e.target.value)}
-                                        placeholder="Rojo, Azul, Verde"
-                                    />
+                                    <FormItem label="Valores (separados por coma)">
+                                        <Input
+                                            defaultValue={a.values.join(', ')}
+                                            onBlur={(e) => setValues(i, e.target.value)}
+                                            placeholder="Rojo, Azul, Verde"
+                                        />
+                                    </FormItem>
                                     {a.values.length > 0 && (
                                         <div className="mt-1 flex flex-wrap gap-1">
                                             {a.values.map((v) => (

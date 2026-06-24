@@ -5,6 +5,7 @@ import Tag from '@/components/ui/Tag'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Switcher from '@/components/ui/Switcher'
+import { FormItem } from '@/components/ui/Form'
 import Button from '@/components/ui/Button'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
@@ -74,8 +75,8 @@ const PluginConfig = ({ pluginKey, embedded = false }: { pluginKey: string; embe
         }
         return (
             <div key={f.key} className="mb-3">
-                <label className="text-sm">{f.label}</label>
-                {f.type === 'select' ? (
+                <FormItem label={f.label}>
+                    {f.type === 'select' ? (
                     <Select
                         options={f.options ?? []}
                         value={(f.options ?? []).find((o) => o.value === values[f.key])}
@@ -90,6 +91,7 @@ const PluginConfig = ({ pluginKey, embedded = false }: { pluginKey: string; embe
                     />
                 )}
                 {f.help && <p className="mt-1 text-xs text-gray-400">{f.help}</p>}
+                </FormItem>
             </div>
         )
     }

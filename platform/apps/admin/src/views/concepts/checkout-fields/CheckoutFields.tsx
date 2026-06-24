@@ -6,6 +6,8 @@ import Input from '@/components/ui/Input'
 import Switcher from '@/components/ui/Switcher'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
+import Select from '@/components/ui/Select'
+import { FormItem } from '@/components/ui/Form'
 import Loading from '@/components/shared/Loading'
 import { HiOutlineTrash, HiOutlinePlus, HiOutlineArrowUp, HiOutlineArrowDown } from 'react-icons/hi'
 import {
@@ -98,27 +100,37 @@ const CheckoutFields = () => {
                                     <Input value={f.label} onChange={(e) => patch(i, { label: e.target.value })} placeholder="Ej. Nombre completo" />
                                 </div>
                                 <div className="col-span-6 lg:col-span-2">
-                                    <select className={selCls} value={f.role ?? ''} onChange={(e) => patch(i, { role: e.target.value as CheckoutField['role'] })}>
-                                        {FIELD_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-                                    </select>
+                                    <Select
+                                        options={FIELD_ROLES.map((r) => ({ value: r.value, label: r.label }))}
+                                        value={FIELD_ROLES.find((r) => r.value === f.role) ?? undefined}
+                                        onChange={(o) => patch(i, { role: (o?.value as CheckoutField['role']) ?? '' })}
+                                    />
                                 </div>
                                 <div className="col-span-6 lg:col-span-2">
-                                    <select className={selCls} value={f.type} onChange={(e) => patch(i, { type: e.target.value as CheckoutField['type'] })}>
-                                        <option value="text">Texto</option>
-                                        <option value="email">Email</option>
-                                        <option value="tel">Teléfono</option>
-                                        <option value="textarea">Texto largo</option>
-                                        <option value="select">Lista</option>
-                                        <option value="city">Ciudad (select)</option>
-                                        <option value="department">Departamento (select)</option>
-                                        <option value="location">Ubicación (mapa)</option>
-                                    </select>
+                                    <Select
+                                        options={[
+                                            { value: 'text', label: 'Texto' },
+                                            { value: 'email', label: 'Email' },
+                                            { value: 'tel', label: 'Teléfono' },
+                                            { value: 'textarea', label: 'Texto largo' },
+                                            { value: 'select', label: 'Lista' },
+                                            { value: 'city', label: 'Ciudad (select)' },
+                                            { value: 'department', label: 'Departamento (select)' },
+                                            { value: 'location', label: 'Ubicación (mapa)' },
+                                        ]}
+                                        value={{ value: f.type, label: f.type }}
+                                        onChange={(o) => patch(i, { type: (o?.value as CheckoutField['type']) ?? 'text' })}
+                                    />
                                 </div>
                                 <div className="col-span-6 lg:col-span-2">
-                                    <select className={selCls} value={f.width} onChange={(e) => patch(i, { width: e.target.value as CheckoutField['width'] })}>
-                                        <option value="half">Media columna</option>
-                                        <option value="full">Línea completa</option>
-                                    </select>
+                                    <Select
+                                        options={[
+                                            { value: 'half', label: 'Media columna' },
+                                            { value: 'full', label: 'Línea completa' },
+                                        ]}
+                                        value={{ value: f.width, label: f.width === 'half' ? 'Media columna' : 'Línea completa' }}
+                                        onChange={(o) => patch(i, { width: (o?.value as CheckoutField['width']) ?? 'half' })}
+                                    />
                                 </div>
                                 <div className="col-span-3 lg:col-span-1">
                                     <Switcher checked={f.enabled !== false} onChange={(c) => patch(i, { enabled: c })} />

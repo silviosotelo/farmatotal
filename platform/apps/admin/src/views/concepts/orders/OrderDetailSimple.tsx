@@ -2,12 +2,15 @@ import { useState } from 'react'
 import Card from '@/components/ui/Card'
 import Tag from '@/components/ui/Tag'
 import Select from '@/components/ui/Select'
+import Table from '@/components/ui/Table'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
 import Loading from '@/components/shared/Loading'
 import { apiGetOrder, apiUpdateOrderStatus, apiRefundOrder } from '@/services/OrderService'
+
+const { Tr, Th, Td, THead, TBody } = Table
 import { apiGetTaxConfig } from '@/services/TaxService'
 import { useParams, useNavigate } from 'react-router'
 import useSWR from 'swr'
@@ -141,28 +144,28 @@ const OrderDetailSimple = () => {
 
                     <Card>
                         <h6 className="mb-3">Líneas</h6>
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="text-left text-gray-400 border-b">
-                                    <th className="py-2">Producto</th>
-                                    <th>SKU</th>
-                                    <th>Precio</th>
-                                    <th>Cant.</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                        <Table>
+                            <THead>
+                                <Tr className="text-left text-gray-400 border-b">
+                                    <Th className="py-2">Producto</Th>
+                                    <Th>SKU</Th>
+                                    <Th>Precio</Th>
+                                    <Th>Cant.</Th>
+                                    <Th>Total</Th>
+                                </Tr>
+                            </THead>
+                            <TBody>
                                 {o.lines?.map((l) => (
-                                    <tr key={l.id} className="border-b last:border-0">
-                                        <td className="py-2">{l.title}</td>
-                                        <td>{l.sku}</td>
-                                        <td>{gs(l.unitPrice)}</td>
-                                        <td>{l.quantity}</td>
-                                        <td>{gs(l.lineTotal)}</td>
-                                    </tr>
+                                    <Tr key={l.id} className="border-b last:border-0">
+                                        <Td className="py-2">{l.title}</Td>
+                                        <Td>{l.sku}</Td>
+                                        <Td>{gs(l.unitPrice)}</Td>
+                                        <Td>{l.quantity}</Td>
+                                        <Td>{gs(l.lineTotal)}</Td>
+                                    </Tr>
                                 ))}
-                            </tbody>
-                        </table>
+                            </TBody>
+                        </Table>
                         {(() => {
                             const rate =
                                 taxCfg?.rates.find((r) => r.isDefault) ?? taxCfg?.rates[0]

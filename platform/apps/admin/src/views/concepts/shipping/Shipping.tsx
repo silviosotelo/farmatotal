@@ -3,6 +3,7 @@ import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Switcher from '@/components/ui/Switcher'
+import { FormItem } from '@/components/ui/Form'
 import Button from '@/components/ui/Button'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
@@ -76,16 +77,18 @@ const Shipping = () => {
                     <Card key={z.id}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                             <div>
-                                <label className="text-sm">Nombre de la zona</label>
-                                <Input value={z.name} onChange={(e) => patchZone(z.id, { name: e.target.value })} />
+                                <FormItem label="Nombre de la zona">
+                                    <Input value={z.name} onChange={(e) => patchZone(z.id, { name: e.target.value })} />
+                                </FormItem>
                             </div>
                             <div>
-                                <label className="text-sm">Ciudades (separadas por coma)</label>
-                                <Input
-                                    value={z.cities.join(', ')}
-                                    onChange={(e) => patchZone(z.id, { cities: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) })}
-                                    placeholder="Asunción, Luque, San Lorenzo"
-                                />
+                                <FormItem label="Ciudades (separadas por coma)">
+                                    <Input
+                                        value={z.cities.join(', ')}
+                                        onChange={(e) => patchZone(z.id, { cities: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) })}
+                                        placeholder="Asunción, Luque, San Lorenzo"
+                                    />
+                                </FormItem>
                             </div>
                         </div>
 
@@ -101,24 +104,29 @@ const Shipping = () => {
                                     {z.methods.map((m) => (
                                         <div key={m.id} className="grid grid-cols-2 md:grid-cols-6 gap-2 items-end px-3 py-3">
                                             <div className="col-span-2 md:col-span-1">
-                                                <label className="text-xs text-gray-400">Nombre</label>
-                                                <Input size="sm" value={m.name} onChange={(e) => patchMethod(z.id, m.id, { name: e.target.value })} />
+                                                <FormItem label="Nombre">
+                                                    <Input size="sm" value={m.name} onChange={(e) => patchMethod(z.id, m.id, { name: e.target.value })} />
+                                                </FormItem>
                                             </div>
                                             <div>
-                                                <label className="text-xs text-gray-400">Tipo</label>
-                                                <Select size="sm" options={typeOptions} value={typeOptions.find((o) => o.value === m.type)} onChange={(o) => patchMethod(z.id, m.id, { type: (o?.value as ShippingMethod['type']) ?? 'flat' })} />
+                                                <FormItem label="Tipo">
+                                                    <Select size="sm" options={typeOptions} value={typeOptions.find((o) => o.value === m.type)} onChange={(o) => patchMethod(z.id, m.id, { type: (o?.value as ShippingMethod['type']) ?? 'flat' })} />
+                                                </FormItem>
                                             </div>
                                             <div>
-                                                <label className="text-xs text-gray-400">Costo (₲)</label>
-                                                <Input size="sm" type="number" value={m.cost} onChange={(e) => patchMethod(z.id, m.id, { cost: Number(e.target.value) })} />
+                                                <FormItem label="Costo (₲)">
+                                                    <Input size="sm" type="number" value={m.cost} onChange={(e) => patchMethod(z.id, m.id, { cost: Number(e.target.value) })} />
+                                                </FormItem>
                                             </div>
                                             <div>
-                                                <label className="text-xs text-gray-400">Gratis desde (₲)</label>
-                                                <Input size="sm" type="number" value={m.freeFrom} onChange={(e) => patchMethod(z.id, m.id, { freeFrom: Number(e.target.value) })} />
+                                                <FormItem label="Gratis desde (₲)">
+                                                    <Input size="sm" type="number" value={m.freeFrom} onChange={(e) => patchMethod(z.id, m.id, { freeFrom: Number(e.target.value) })} />
+                                                </FormItem>
                                             </div>
                                             <div>
-                                                <label className="text-xs text-gray-400">$/kg</label>
-                                                <Input size="sm" type="number" value={m.perKg} onChange={(e) => patchMethod(z.id, m.id, { perKg: Number(e.target.value) })} />
+                                                <FormItem label="$/kg">
+                                                    <Input size="sm" type="number" value={m.perKg} onChange={(e) => patchMethod(z.id, m.id, { perKg: Number(e.target.value) })} />
+                                                </FormItem>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <Switcher checked={m.active} onChange={(c) => patchMethod(z.id, m.id, { active: c })} />

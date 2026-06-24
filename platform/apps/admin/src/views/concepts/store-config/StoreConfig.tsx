@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import { FormItem } from '@/components/ui/Form'
 import Loading from '@/components/shared/Loading'
 import { apiGetSetting, apiSetSetting } from '@/services/CmsService'
 import useSWR from 'swr'
@@ -103,60 +104,67 @@ const StoreConfig = () => {
                     <h6 className="mb-3">Identidad</h6>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label className="text-sm">Nombre de marca</label>
-                            <Input
-                                value={cfg.brandName ?? ''}
-                                onChange={(e) => set('brandName', e.target.value)}
-                                placeholder="Mi tienda"
-                            />
+                            <FormItem label="Nombre de marca">
+                                <Input
+                                    value={cfg.brandName ?? ''}
+                                    onChange={(e) => set('brandName', e.target.value)}
+                                    placeholder="Mi tienda"
+                                />
+                            </FormItem>
                         </div>
                         <div>
-                            <label className="text-sm">Tagline</label>
-                            <Input
-                                value={cfg.tagline ?? ''}
-                                onChange={(e) => set('tagline', e.target.value)}
-                                placeholder="tu farmacia online"
-                            />
+                            <FormItem label="Tagline">
+                                <Input
+                                    value={cfg.tagline ?? ''}
+                                    onChange={(e) => set('tagline', e.target.value)}
+                                    placeholder="tu farmacia online"
+                                />
+                            </FormItem>
                         </div>
                         <div className="md:col-span-2">
-                            <label className="text-sm">Descripción (SEO)</label>
-                            <Input
-                                value={cfg.description ?? ''}
-                                onChange={(e) => set('description', e.target.value)}
-                                placeholder="Tu tienda online…"
-                            />
+                            <FormItem label="Descripción (SEO)">
+                                <Input
+                                    value={cfg.description ?? ''}
+                                    onChange={(e) => set('description', e.target.value)}
+                                    placeholder="Tu tienda online…"
+                                />
+                            </FormItem>
                         </div>
                         <div>
-                            <label className="text-sm">Logo (URL)</label>
-                            <Input
-                                value={cfg.logoUrl ?? ''}
-                                onChange={(e) => set('logoUrl', e.target.value)}
-                                placeholder="/brand/logo.svg"
-                            />
+                            <FormItem label="Logo (URL)">
+                                <Input
+                                    value={cfg.logoUrl ?? ''}
+                                    onChange={(e) => set('logoUrl', e.target.value)}
+                                    placeholder="/brand/logo.svg"
+                                />
+                            </FormItem>
                         </div>
                         <div>
-                            <label className="text-sm">Favicon (URL)</label>
-                            <Input
-                                value={cfg.faviconUrl ?? ''}
-                                onChange={(e) => set('faviconUrl', e.target.value)}
-                                placeholder="/brand/isotipo.svg"
-                            />
+                            <FormItem label="Favicon (URL)">
+                                <Input
+                                    value={cfg.faviconUrl ?? ''}
+                                    onChange={(e) => set('faviconUrl', e.target.value)}
+                                    placeholder="/brand/isotipo.svg"
+                                />
+                            </FormItem>
                         </div>
                         <div>
-                            <label className="text-sm">Moneda (ISO 4217)</label>
-                            <Input
-                                value={cfg.currency ?? ''}
-                                onChange={(e) => set('currency', e.target.value)}
-                                placeholder="PYG"
-                            />
+                            <FormItem label="Moneda (ISO 4217)">
+                                <Input
+                                    value={cfg.currency ?? ''}
+                                    onChange={(e) => set('currency', e.target.value)}
+                                    placeholder="PYG"
+                                />
+                            </FormItem>
                         </div>
                         <div>
-                            <label className="text-sm">Locale</label>
-                            <Input
-                                value={cfg.locale ?? ''}
-                                onChange={(e) => set('locale', e.target.value)}
-                                placeholder="es-PY"
-                            />
+                            <FormItem label="Locale">
+                                <Input
+                                    value={cfg.locale ?? ''}
+                                    onChange={(e) => set('locale', e.target.value)}
+                                    placeholder="es-PY"
+                                />
+                            </FormItem>
                         </div>
                     </div>
                 </Card>
@@ -197,31 +205,31 @@ const StoreConfig = () => {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {colorFields.map((f) => (
                             <div key={f.key}>
-                                <label className="text-sm">{f.label}</label>
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        type="color"
-                                        className="h-9 w-10 rounded border border-gray-200 bg-transparent"
-                                        value={cfg.colors?.[f.key] || '#000000'}
-                                        onChange={(e) => setColor(f.key, e.target.value)}
-                                    />
-                                    <Input
-                                        value={cfg.colors?.[f.key] ?? ''}
-                                        onChange={(e) => setColor(f.key, e.target.value)}
-                                        placeholder="#f16522"
-                                    />
-                                </div>
+                                <FormItem label={f.label}>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="color"
+                                            className="h-9 w-10 rounded border border-gray-200 bg-transparent"
+                                            value={cfg.colors?.[f.key] || '#000000'}
+                                            onChange={(e) => setColor(f.key, e.target.value)}
+                                        />
+                                        <Input
+                                            value={cfg.colors?.[f.key] ?? ''}
+                                            onChange={(e) => setColor(f.key, e.target.value)}
+                                            placeholder="#f16522"
+                                        />
+                                    </div>
+                                </FormItem>
                             </div>
                         ))}
                         <div className="col-span-2 md:col-span-3">
-                            <label className="text-sm">
-                                Gradiente del header (CSS completo)
-                            </label>
-                            <Input
-                                value={cfg.colors?.gradient ?? ''}
-                                onChange={(e) => setColor('gradient', e.target.value)}
-                                placeholder="linear-gradient(100deg, #f16522 0%, #ffca05 100%)"
-                            />
+                            <FormItem label="Gradiente del header (CSS completo)">
+                                <Input
+                                    value={cfg.colors?.gradient ?? ''}
+                                    onChange={(e) => setColor('gradient', e.target.value)}
+                                    placeholder="linear-gradient(100deg, #f16522 0%, #ffca05 100%)"
+                                />
+                            </FormItem>
                         </div>
                     </div>
                 </Card>

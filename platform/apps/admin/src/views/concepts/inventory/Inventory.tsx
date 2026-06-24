@@ -1,20 +1,15 @@
 import { useRef, useState } from 'react'
 import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
+import Table from '@/components/ui/Table'
 import Button from '@/components/ui/Button'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
 import EmptyState from '@/components/shared/EmptyState'
 import { useTenantFlags } from '@/services/features'
-import {
-    apiSearchProducts,
-    apiGetProductInventory,
-    apiSetInventory,
-    apiImportInventory,
-    inventoryExportUrl,
-    type ProductLite,
-    type InventoryRow,
-} from '@/services/InventoryService'
+import { apiSearchProducts, apiGetProductInventory, apiSetInventory, apiImportInventory, inventoryExportUrl, type ProductLite, type InventoryRow } from '@/services/InventoryService'
+
+const { Tr, Th, Td, THead, TBody } = Table
 
 /** Parse simple de CSV con header sku,branch_code,stock (tolera comillas básicas). */
 function parseInventoryCsv(text: string): { sku: string; branchCode: string; stock: number }[] {
@@ -107,9 +102,7 @@ const Inventory = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <a href={inventoryExportUrl()} target="_blank" rel="noreferrer">
-                        <Button size="sm">Exportar CSV</Button>
-                    </a>
+                    <Button size="sm" onClick={() => window.open(inventoryExportUrl(), '_blank')}>Exportar CSV</Button>
                     <Button size="sm" variant="solid" loading={importing} onClick={() => fileRef.current?.click()}>
                         Importar CSV
                     </Button>
@@ -170,23 +163,23 @@ const Inventory = () => {
             {selected && (
                 <Card>
                     <h6 className="mb-3">{selected.name}</h6>
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="text-left text-gray-400 border-b">
-                                <th className="py-2">Sucursal</th>
-                                <th>Reservado</th>
-                                <th className="w-40">Stock</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <Table>
+                        <THead>
+                            <Tr className="text-left text-gray-400 border-b">
+                                <Th className="py-2">Sucursal</Th>
+                                <Th>Reservado</Th>
+                                <Th className="w-40">Stock</Th>
+                            </Tr>
+                        </THead>
+                        <TBody>
                             {rows.map((r) => (
-                                <tr
+                                <Tr
                                     key={r.branchId}
                                     className="border-b last:border-0"
                                 >
-                                    <td className="py-2">{r.branchName}</td>
-                                    <td>{r.reserved}</td>
-                                    <td>
+                                    <Td className="py-2">{r.branchName}</Td>
+                                    <Td>{r.reserved}</Td>
+                                    <Td>
                                         <Input
                                             type="number"
                                             defaultValue={r.stock}
@@ -197,11 +190,11 @@ const Inventory = () => {
                                                 )
                                             }
                                         />
-                                    </td>
-                                </tr>
+                                    </Td>
+                                </Tr>
                             ))}
-                        </tbody>
-                    </table>
+                        </TBody>
+                    </Table>
                     <p className="text-xs text-gray-400 mt-2">
                         El stock total del producto se recalcula automáticamente.
                     </p>

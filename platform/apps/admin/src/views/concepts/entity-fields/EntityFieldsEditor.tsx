@@ -6,6 +6,8 @@ import Input from '@/components/ui/Input'
 import Switcher from '@/components/ui/Switcher'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
+import Select from '@/components/ui/Select'
+import { FormItem } from '@/components/ui/Form'
 import Loading from '@/components/shared/Loading'
 import Tag from '@/components/ui/Tag'
 import { HiOutlineTrash, HiOutlinePlus, HiOutlineArrowUp, HiOutlineArrowDown } from 'react-icons/hi'
@@ -117,23 +119,31 @@ const EntityFieldsEditor = ({
                                             <span className="text-xs text-gray-400 truncate">{f.key}</span>
                                         </>
                                     ) : (
-                                        <select className={selCls} value={f.type} onChange={(e) => patch(i, { type: e.target.value as EntityField['type'] })}>
-                                            <option value="text">Texto</option>
-                                            <option value="number">Número</option>
-                                            <option value="email">Email</option>
-                                            <option value="tel">Teléfono</option>
-                                            <option value="textarea">Texto largo</option>
-                                            <option value="select">Lista</option>
-                                            <option value="boolean">Sí/No</option>
-                                            <option value="date">Fecha</option>
-                                        </select>
+                                        <Select
+                                            options={[
+                                                { value: 'text', label: 'Texto' },
+                                                { value: 'number', label: 'Número' },
+                                                { value: 'email', label: 'Email' },
+                                                { value: 'tel', label: 'Teléfono' },
+                                                { value: 'textarea', label: 'Texto largo' },
+                                                { value: 'select', label: 'Lista' },
+                                                { value: 'boolean', label: 'Sí/No' },
+                                                { value: 'date', label: 'Fecha' },
+                                            ]}
+                                            value={{ value: f.type, label: f.type }}
+                                            onChange={(o) => patch(i, { type: (o?.value as EntityField['type']) ?? 'text' })}
+                                        />
                                     )}
                                 </div>
                                 <div className="col-span-6 lg:col-span-2">
-                                    <select className={selCls} value={f.width} onChange={(e) => patch(i, { width: e.target.value as EntityField['width'] })}>
-                                        <option value="half">Media columna</option>
-                                        <option value="full">Línea completa</option>
-                                    </select>
+                                    <Select
+                                        options={[
+                                            { value: 'half', label: 'Media columna' },
+                                            { value: 'full', label: 'Línea completa' },
+                                        ]}
+                                        value={{ value: f.width, label: f.width === 'half' ? 'Media columna' : 'Línea completa' }}
+                                        onChange={(o) => patch(i, { width: (o?.value as EntityField['width']) ?? 'half' })}
+                                    />
                                 </div>
                                 <div className="col-span-3 lg:col-span-1">
                                     <Switcher checked={f.enabled !== false} onChange={(c) => patch(i, { enabled: c })} />

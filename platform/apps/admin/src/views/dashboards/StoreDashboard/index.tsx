@@ -1,11 +1,14 @@
 import Card from '@/components/ui/Card'
 import Tag from '@/components/ui/Tag'
+import Table from '@/components/ui/Table'
 import Button from '@/components/ui/Button'
 import Loading from '@/components/shared/Loading'
 import Chart from '@/components/shared/Chart'
 import { apiGetOverview, type OverviewStats } from '@/services/StatsService'
 import { apiGetOrderList } from '@/services/OrderService'
 import useSWR from 'swr'
+
+const { Tr, Th, Td, THead, TBody } = Table
 import { Link } from 'react-router'
 import {
     PiPackageDuotone,
@@ -163,30 +166,30 @@ const StoreDashboard = () => {
                             </Link>
                         </div>
                         {orders.length > 0 ? (
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="text-left text-gray-400 border-b">
-                                        <th className="py-2">N°</th>
-                                        <th>Cliente</th>
-                                        <th>Total</th>
-                                        <th>Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                            <Table>
+                                <THead>
+                                    <Tr className="text-left text-gray-400 border-b">
+                                        <Th className="py-2">N°</Th>
+                                        <Th>Cliente</Th>
+                                        <Th>Total</Th>
+                                        <Th>Estado</Th>
+                                    </Tr>
+                                </THead>
+                                <TBody>
                                     {orders.map((o) => (
-                                        <tr key={o.id} className="border-b last:border-0">
-                                            <td className="py-2 font-semibold">{o.number}</td>
-                                            <td>{o.customerName}</td>
-                                            <td>{gs(o.total)}</td>
-                                            <td>
+                                        <Tr key={o.id} className="border-b last:border-0">
+                                            <Td className="py-2 font-semibold">{o.number}</Td>
+                                            <Td>{o.customerName}</Td>
+                                            <Td>{gs(o.total)}</Td>
+                                            <Td>
                                                 <Tag className={statusTint[o.status] ?? 'bg-gray-100 text-gray-500'}>
                                                     {o.status}
                                                 </Tag>
-                                            </td>
-                                        </tr>
+                                            </Td>
+                                        </Tr>
                                     ))}
-                                </tbody>
-                            </table>
+                                </TBody>
+                            </Table>
                         ) : (
                             <div className="py-10 text-center text-gray-400">
                                 Todavía no hay pedidos. Cuando lleguen, aparecen acá.

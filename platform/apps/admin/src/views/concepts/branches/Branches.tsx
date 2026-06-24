@@ -4,6 +4,7 @@ import Tag from '@/components/ui/Tag'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Checkbox from '@/components/ui/Checkbox'
+import { FormItem } from '@/components/ui/Form'
 import Loading from '@/components/shared/Loading'
 import {
     apiGetBranches,
@@ -148,39 +149,47 @@ const Branches = () => {
                         </h6>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
-                                <label className="text-sm">Código *</label>
-                                <Input value={form.code} onChange={(e) => set('code', e.target.value)} placeholder="SUC-01" />
+                                <FormItem label="Código *">
+                                    <Input value={form.code} onChange={(e) => set('code', e.target.value)} placeholder="SUC-01" />
+                                </FormItem>
                             </div>
                             <div>
-                                <label className="text-sm">Nombre *</label>
-                                <Input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Casa Central" />
+                                <FormItem label="Nombre *">
+                                    <Input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Casa Central" />
+                                </FormItem>
                             </div>
                             <div>
-                                <label className="text-sm">Código ERP</label>
-                                <Input value={form.erpCode} onChange={(e) => set('erpCode', e.target.value)} placeholder="STK_SUCURSAL (ej. 1)" />
+                                <FormItem label="Código ERP">
+                                    <Input value={form.erpCode} onChange={(e) => set('erpCode', e.target.value)} placeholder="STK_SUCURSAL (ej. 1)" />
+                                </FormItem>
                                 <p className="mt-1 text-xs text-gray-400">
                                     Código de la sucursal en el ERP (para stock en vivo). Dato operativo.
                                 </p>
                             </div>
                             <div className="md:col-span-2">
-                                <label className="text-sm">Dirección</label>
-                                <Input value={form.address} onChange={(e) => set('address', e.target.value)} />
+                                <FormItem label="Dirección">
+                                    <Input value={form.address} onChange={(e) => set('address', e.target.value)} />
+                                </FormItem>
                             </div>
                             <div>
-                                <label className="text-sm">Ciudad</label>
-                                <Input value={form.city} onChange={(e) => set('city', e.target.value)} />
+                                <FormItem label="Ciudad">
+                                    <Input value={form.city} onChange={(e) => set('city', e.target.value)} />
+                                </FormItem>
                             </div>
                             <div>
-                                <label className="text-sm">Teléfono</label>
-                                <Input value={form.phone} onChange={(e) => set('phone', e.target.value)} />
+                                <FormItem label="Teléfono">
+                                    <Input value={form.phone} onChange={(e) => set('phone', e.target.value)} />
+                                </FormItem>
                             </div>
                             <div>
-                                <label className="text-sm">Latitud</label>
-                                <Input value={form.lat} onChange={(e) => set('lat', e.target.value)} placeholder="-25.30" />
+                                <FormItem label="Latitud">
+                                    <Input value={form.lat} onChange={(e) => set('lat', e.target.value)} placeholder="-25.30" />
+                                </FormItem>
                             </div>
                             <div>
-                                <label className="text-sm">Longitud</label>
-                                <Input value={form.lng} onChange={(e) => set('lng', e.target.value)} placeholder="-57.63" />
+                                <FormItem label="Longitud">
+                                    <Input value={form.lng} onChange={(e) => set('lng', e.target.value)} placeholder="-57.63" />
+                                </FormItem>
                             </div>
                             <PlainCustomFields settingsKey="mod_branch_fields" value={form.custom} onChange={(c) => set('custom', c)} />
                         </div>
