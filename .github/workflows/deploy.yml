@@ -15,5 +15,5 @@ jobs:
         run: |
           rsync -av --delete --exclude='.env*' --exclude='cloudflared/' $GITHUB_WORKSPACE/platform/ /home/soporte/farmatotal/
           cd /home/soporte/farmatotal
-          docker compose -f docker-compose.demo.yml build store admin api
+          docker compose -f docker-compose.demo.yml build --no-cache store admin api
           docker compose -f docker-compose.demo.yml up -d
