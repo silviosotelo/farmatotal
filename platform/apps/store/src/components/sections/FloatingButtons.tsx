@@ -54,7 +54,7 @@ export default function FloatingButtons() {
               onClick={() => setScanMode("scan")}
               aria-label="Escanear código de barras"
               className="flex items-center gap-1.5 px-3 py-2 rounded-l-full rounded-r-none text-white text-[13px] font-medium shadow-md"
-              style={{ backgroundColor: "var(--brand-yellow)" }}
+              style={{ backgroundColor: "var(--brand-orange)" }}
             >
               <BarcodeIcon className="w-4 h-4 shrink-0" />
               <span>Escanear</span>
@@ -67,7 +67,7 @@ export default function FloatingButtons() {
               onClick={() => setScanMode("voice")}
               aria-label="Búsqueda por voz"
               className="flex items-center gap-1.5 px-3 py-2 rounded-l-full rounded-r-none text-white text-[13px] font-medium shadow-md"
-              style={{ backgroundColor: "#e74c3c" }}
+              style={{ backgroundColor: "var(--brand-yellow)" }}
             >
               <MicIcon className="w-4 h-4 shrink-0" />
               <span>Voz</span>
