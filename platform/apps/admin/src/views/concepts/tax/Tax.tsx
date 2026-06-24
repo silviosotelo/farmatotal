@@ -10,9 +10,7 @@ import Loading from '@/components/shared/Loading'
 import EmptyState from '@/components/shared/EmptyState'
 import { HiOutlineTrash, HiOutlinePlus } from 'react-icons/hi'
 import { apiGetTaxConfig, apiSaveTaxConfig, type TaxConfig, type TaxRate } from '@/services/TaxService'
-
-const slug = (s: string) =>
-    s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'tasa'
+import { slug } from '@/utils/slug'
 
 const Tax = () => {
     const { data, isLoading, mutate } = useSWR('/tax/config', apiGetTaxConfig, { revalidateOnFocus: false })

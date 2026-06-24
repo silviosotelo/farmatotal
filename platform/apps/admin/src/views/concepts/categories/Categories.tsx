@@ -13,11 +13,9 @@ import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
 import PlainCustomFields from '@/views/concepts/entity-fields/PlainCustomFields'
 import { apiGetCategories, apiCreateCategory, apiUpdateCategory, type Category } from '@/services/CategoryService'
+import { slug } from '@/utils/slug'
 
 const { Tr, Th, Td, THead, TBody } = Table
-
-const slugify = (s: string) =>
-    s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
 type CatForm = { id?: string; name: string; slug: string; parentId: string; active: boolean; custom: Record<string, unknown> }
 const empty: CatForm = { name: '', slug: '', parentId: '', active: true, custom: {} }
@@ -39,7 +37,7 @@ const Categories = () => {
         try {
             const payload = {
                 name: form.name.trim(),
-                slug: form.slug.trim() || slugify(form.name),
+                slug: form.slug.trim() || slug(form.name),
                 parentId: form.parentId || null,
                 active: form.active,
                 custom: form.custom && Object.keys(form.custom).length ? form.custom : null,

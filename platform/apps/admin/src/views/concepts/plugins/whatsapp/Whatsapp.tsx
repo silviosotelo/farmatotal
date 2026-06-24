@@ -12,6 +12,7 @@ import { Link } from 'react-router'
 import { TbArrowLeft } from 'react-icons/tb'
 import useSWR from 'swr'
 import PluginConfig from '../PluginConfig'
+import { notify } from '@/utils/notify'
 import {
     apiWaTemplates, apiWaCreateTemplate, apiWaDeleteTemplate,
     apiWaWorkflows, apiWaCreateWorkflow, apiWaDeleteWorkflow,
@@ -20,7 +21,6 @@ import {
 } from '@/services/WhatsappService'
 
 const { TabNav, TabList, TabContent } = Tabs
-const notify = (m: string) => toast.push(<Notification type="success">{m}</Notification>, { placement: 'top-center' })
 const { Tr, Th, Td, THead, TBody } = Table
 
 const TemplatesTab = () => {

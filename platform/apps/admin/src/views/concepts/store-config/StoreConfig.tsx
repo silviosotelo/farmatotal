@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import Select from '@/components/ui/Select'
 import { FormItem } from '@/components/ui/Form'
 import Loading from '@/components/shared/Loading'
 import { apiGetSetting, apiSetSetting } from '@/services/CmsService'
@@ -32,6 +33,21 @@ const THEMES: { key: string; name: string; description: string }[] = [
     { key: 'base', name: 'Base (Bacola)', description: 'Farmacia/grocery. Naranja, denso, orientado a catálogo.' },
     { key: 'ekomart', name: 'Ekomart', description: 'Market moderno (Bootstrap). Verde, amplio, con grillas.' },
     { key: 'anvogue', name: 'Anvogue', description: 'Multipropósito moderno (fashion/retail). Limpio, minimalista.' },
+]
+
+const CURRENCY_OPTIONS = [
+    { value: 'PYG', label: 'PYG — Guaraní paraguayo' },
+    { value: 'USD', label: 'USD — Dólar estadounidense' },
+    { value: 'BRL', label: 'BRL — Real brasileño' },
+    { value: 'ARS', label: 'ARS — Peso argentino' },
+    { value: 'EUR', label: 'EUR — Euro' },
+]
+
+const LOCALE_OPTIONS = [
+    { value: 'es-PY', label: 'Español (Paraguay)' },
+    { value: 'pt-BR', label: 'Portugués (Brasil)' },
+    { value: 'es-AR', label: 'Español (Argentina)' },
+    { value: 'en-US', label: 'English (US)' },
 ]
 
 const colorFields: { key: keyof BrandColors; label: string }[] = [
@@ -149,21 +165,13 @@ const StoreConfig = () => {
                             </FormItem>
                         </div>
                         <div>
-                            <FormItem label="Moneda (ISO 4217)">
-                                <Input
-                                    value={cfg.currency ?? ''}
-                                    onChange={(e) => set('currency', e.target.value)}
-                                    placeholder="PYG"
-                                />
+                            <FormItem label="Moneda">
+                                <Select options={CURRENCY_OPTIONS} value={CURRENCY_OPTIONS.find((o) => o.value === (cfg.currency ?? 'PYG'))} onChange={(o) => set('currency', o?.value ?? 'PYG')} />
                             </FormItem>
                         </div>
                         <div>
-                            <FormItem label="Locale">
-                                <Input
-                                    value={cfg.locale ?? ''}
-                                    onChange={(e) => set('locale', e.target.value)}
-                                    placeholder="es-PY"
-                                />
+                            <FormItem label="Idioma / Locale">
+                                <Select options={LOCALE_OPTIONS} value={LOCALE_OPTIONS.find((o) => o.value === (cfg.locale ?? 'es-PY'))} onChange={(o) => set('locale', o?.value ?? 'es-PY')} />
                             </FormItem>
                         </div>
                     </div>

@@ -12,8 +12,6 @@ type StoreCfg = {
     email: string
     phone: string
     address: string
-    currency: string
-    locale: string
 }
 
 function SettingsSection<T>({
@@ -87,7 +85,7 @@ const Settings = () => {
 
             <SettingsSection<StoreCfg>
                 settingKey="store"
-                initial={{ name: '', email: '', phone: '', address: '', currency: 'PYG', locale: 'es-PY' }}
+                initial={{ name: '', email: '', phone: '', address: '' }}
                 render={(v, set) => (
                     <>
                         <Field label="Nombre del negocio">
@@ -101,12 +99,6 @@ const Settings = () => {
                         </Field>
                         <Field label="Dirección">
                             <Input value={v.address} onChange={(e) => set({ ...v, address: e.target.value })} />
-                        </Field>
-                        <Field label="Moneda (ISO 4217)">
-                            <Input value={v.currency} onChange={(e) => set({ ...v, currency: e.target.value })} />
-                        </Field>
-                        <Field label="Locale">
-                            <Input value={v.locale} onChange={(e) => set({ ...v, locale: e.target.value })} />
                         </Field>
                     </>
                 )}

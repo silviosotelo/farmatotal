@@ -92,3 +92,34 @@ export async function apiRefundOrder(id: string, amount?: number, reason?: strin
         data: { amount, reason },
     })
 }
+
+export async function apiCreateOrder(data: {
+    customerName: string
+    customerEmail: string
+    paymentMethod: string
+    shippingMethod?: string
+    lines: { productId: string; quantity: number; unitPrice: number }[]
+}) {
+    return ApiService.fetchDataWithAxios<{ id: string }>({
+        url: '/orders',
+        method: 'post',
+        data,
+    })
+}
+
+export async function apiUpdateOrder(
+    id: string,
+    data: {
+        customerName?: string
+        customerEmail?: string
+        paymentMethod?: string
+        shippingMethod?: string
+        lines?: { productId: string; quantity: number; unitPrice: number }[]
+    },
+) {
+    return ApiService.fetchDataWithAxios<{ id: string }>({
+        url: `/orders/${id}`,
+        method: 'put',
+        data,
+    })
+}

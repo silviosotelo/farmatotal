@@ -18,9 +18,7 @@ import {
     type CheckoutField,
     type CheckoutFieldsConfig,
 } from '@/services/CheckoutFieldsService'
-
-const slug = (s: string) =>
-    s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '') || 'campo'
+import { slug } from '@/utils/slug'
 
 const selCls = 'h-9 rounded-md border border-gray-200 dark:border-gray-600 bg-transparent px-2 text-sm w-full'
 

@@ -7,6 +7,7 @@ import Loading from '@/components/shared/Loading'
 import Chart from '@/components/shared/Chart'
 import EmptyState from '@/components/shared/EmptyState'
 import { apiGetSalesReport } from '@/services/ReportService'
+import { gs } from '@/utils/format'
 
 const { Tr, Th, Td, THead, TBody } = Table
 
@@ -30,9 +31,6 @@ const PAY_LABEL: Record<string, string> = {
     transfer: 'Transferencia',
     bancard: 'Bancard',
 }
-
-const gs = (n: number) =>
-    '₲ ' + new Intl.NumberFormat('es-PY', { maximumFractionDigits: 0 }).format(n || 0)
 
 const Kpi = ({ label, value, hint }: { label: string; value: string; hint?: string }) => (
     <Card className="flex-1">

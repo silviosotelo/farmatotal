@@ -3,7 +3,6 @@ import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Loading from '@/components/shared/Loading'
 import { apiGetCustomerLog } from '@/services/CustomersService'
-import sleep from '@/utils/sleep'
 import dayjs from 'dayjs'
 import isEmpty from 'lodash/isEmpty'
 import {
@@ -118,14 +117,10 @@ const ActivitySection = ({
         },
     )
 
-    const [fetchData, setfetchData] = useState(false)
     const [showNoMoreData, setShowNoMoreData] = useState(false)
 
-    const handleLoadMore = async () => {
-        setfetchData(true)
-        await sleep(500)
+    const handleLoadMore = () => {
         setShowNoMoreData(true)
-        setfetchData(false)
     }
 
     return (
@@ -184,7 +179,7 @@ const ActivitySection = ({
                         No more activities
                     </span>
                 ) : (
-                    <Button loading={fetchData} onClick={handleLoadMore}>
+                    <Button onClick={handleLoadMore}>
                         Load More
                     </Button>
                 )}

@@ -26,12 +26,10 @@ import {
     type LogItem,
     type MailerConfig,
 } from '@/services/MailerService'
+import { notify } from '@/utils/notify'
 
 const { TabNav, TabList, TabContent } = Tabs
 const { Tr, Th, Td, THead, TBody } = Table
-
-const notify = (msg: string, type: 'success' | 'danger' = 'success') =>
-    toast.push(<Notification type={type}>{msg}</Notification>, { placement: 'top-center' })
 
 const statusTint: Record<string, string> = {
     pending: 'bg-amber-100 text-amber-600',

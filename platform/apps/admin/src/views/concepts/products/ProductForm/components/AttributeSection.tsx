@@ -1,3 +1,5 @@
+import useSWR from 'swr'
+import { apiGetCategories } from '@/services/CategoryService'
 import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
@@ -15,20 +17,10 @@ type Options = {
     value: string
 }[]
 
-const categories: Options = [
-    { label: 'Bags', value: 'bags' },
-    { label: 'Cloths', value: 'cloths' },
-    { label: 'Devices', value: 'devices' },
-    { label: 'Shoes', value: 'shoes' },
-    { label: 'Watches', value: 'watches' },
-]
-
-const tags: Options = [
-    { label: 'trend', value: 'trend' },
-    { label: 'unisex', value: 'unisex' },
-]
-
 const AttributeSection = ({ control, errors }: AttributeSectionProps) => {
+    const { data: catData } = useSWR('/catalog/categories', () => apiGetCategories(), { revalidateOnFocus: false })
+    const categories = ((catData?.data ?? []) as Array<{ id: string; name: string }>).map((c) => ({ label: c.name, value: c.id }))
+    const tags: Options = []
     return (
         <Card>
             <h4 className="mb-6">Atributos</h4>

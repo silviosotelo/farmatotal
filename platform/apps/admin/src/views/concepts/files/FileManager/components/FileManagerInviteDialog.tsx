@@ -1,11 +1,10 @@
-import { useState, useRef } from 'react'
+import { useRef } from 'react'
 import Dialog from '@/components/ui/Dialog'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
 import { useFileManagerStore } from '../store/useFileManagerStore'
-import sleep from '@/utils/sleep'
 import classNames from '@/utils/classNames'
 import { TbLink } from 'react-icons/tb'
 
@@ -14,15 +13,11 @@ const FileManagerInviteDialog = () => {
 
     const inputRef = useRef<HTMLInputElement>(null)
 
-    const [inviting, setInviting] = useState(false)
-
     const handleDialogClose = () => {
         setInviteDialog({ id: '', open: false })
     }
 
-    const handleInvite = async () => {
-        setInviting(true)
-        await sleep(500)
+    const handleInvite = () => {
         toast.push(
             <Notification
                 type="success"
@@ -30,7 +25,6 @@ const FileManagerInviteDialog = () => {
             ></Notification>,
             { placement: 'top-end' },
         )
-        setInviting(false)
     }
 
     const handleCopy = async () => {
@@ -67,7 +61,7 @@ const FileManagerInviteDialog = () => {
                                         : 'hover:bg-gray-900',
                                 )
                             }
-                            loading={inviting}
+                            loading={false}
                             onClick={handleInvite}
                         >
                             Invite

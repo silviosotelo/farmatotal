@@ -5,12 +5,12 @@ import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
 import CustomerForm from '../CustomerForm'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import sleep from '@/utils/sleep'
+import { apiCreateCustomer } from '@/services/CustomersService'
 import { TbTrash } from 'react-icons/tb'
 import { useNavigate } from 'react-router'
 import type { CustomerFormSchema } from '../CustomerForm'
 
-const CustomerEdit = () => {
+const CustomerCreate = () => {
     const navigate = useNavigate()
 
     const [discardConfirmationOpen, setDiscardConfirmationOpen] =
@@ -18,15 +18,30 @@ const CustomerEdit = () => {
     const [isSubmiting, setIsSubmiting] = useState(false)
 
     const handleFormSubmit = async (values: CustomerFormSchema) => {
-        console.log('Submitted values', values)
         setIsSubmiting(true)
-        await sleep(800)
-        setIsSubmiting(false)
-        toast.push(
-            <Notification type="success">Customer created!</Notification>,
-            { placement: 'top-center' },
-        )
-        navigate('/concepts/customers/customer-list')
+        try {
+            await apiCreateCustomer({
+                firstName: values.firstName,
+                lastName: values.lastName,
+                email: values.email,
+                phone: values.phoneNumber,
+                addresses: [{ city: values.city, address: values.address }],
+            })
+            toast.push(
+                <Notification type="success">Cliente creado</Notification>,
+                { placement: 'top-center' },
+            )
+            navigate('/concepts/customers/customer-list')
+        } catch (e) {
+            toast.push(
+                <Notification type="danger">
+                    {(e as Error)?.message || 'Error al crear cliente'}
+                </Notification>,
+                { placement: 'top-center' },
+            )
+        } finally {
+            setIsSubmiting(false)
+        }
     }
 
     const handleConfirmDiscard = () => {

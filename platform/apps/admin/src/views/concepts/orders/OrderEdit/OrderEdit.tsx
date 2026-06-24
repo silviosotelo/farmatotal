@@ -6,8 +6,7 @@ import Container from '@/components/shared/Container'
 import Loading from '@/components/shared/Loading'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import OrderForm from '../OrderForm'
-import sleep from '@/utils/sleep'
-import { apiGetOrder } from '@/services/OrderService'
+import { apiGetOrder, apiUpdateOrder } from '@/services/OrderService'
 import useSWR from 'swr'
 import { useParams, useNavigate } from 'react-router'
 import { TbTrash } from 'react-icons/tb'
@@ -88,25 +87,33 @@ const OrderEdit = () => {
     const [isSubmiting, setIsSubmiting] = useState(false)
 
     const handleFormSubmit = async (values: OrderFormSchema) => {
-        console.log('Submitted values', values)
+        if (!id) return
         setIsSubmiting(true)
-        await sleep(800)
-        setIsSubmiting(false)
-        toast.push(
-            <Notification type="success">
-                Order: #{data?.id} updated!
-            </Notification>,
-            { placement: 'top-center' },
-        )
-        navigate('/concepts/orders/order-list')
+        try {
+            await apiUpdateOrder(id, {
+                customerName: `${values.firstName} ${values.lastName}`.trim(),
+                customerEmail: values.email,
+                paymentMethod: values.paymentMethod,
+            })
+            toast.push(
+                <Notification type="success">Pedido actualizado</Notification>,
+                { placement: 'top-center' },
+            )
+            navigate('/concepts/orders/order-list')
+        } catch (e) {
+            toast.push(
+                <Notification type="danger">
+                    {(e as Error)?.message || 'Error al actualizar pedido'}
+                </Notification>,
+                { placement: 'top-center' },
+            )
+        } finally {
+            setIsSubmiting(false)
+        }
     }
 
     const handleConfirmDiscard = () => {
-        setDiscardConfirmationOpen(true)
-        toast.push(<Notification type="success">Order deleted!</Notification>, {
-            placement: 'top-center',
-        })
-        navigate('/concepts/orders/order-list')
+        setDiscardConfirmationOpen(false)
     }
 
     const handleDelete = () => {

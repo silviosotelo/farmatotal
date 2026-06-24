@@ -5,27 +5,48 @@ import toast from '@/components/ui/toast'
 import Container from '@/components/shared/Container'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import OrderForm from '../OrderForm'
-import sleep from '@/utils/sleep'
+import { apiCreateOrder } from '@/services/OrderService'
+import { useOrderFormStore } from '../OrderForm/store/orderFormStore'
 import { useNavigate } from 'react-router'
 import { TbTrash } from 'react-icons/tb'
 import type { OrderFormSchema } from '../OrderForm'
 
 const OrderCreate = () => {
     const navigate = useNavigate()
+    const { selectedProduct } = useOrderFormStore()
 
     const [discardConfirmationOpen, setDiscardConfirmationOpen] =
         useState(false)
     const [isSubmiting, setIsSubmiting] = useState(false)
 
     const handleFormSubmit = async (values: OrderFormSchema) => {
-        console.log('Submitted values', values)
         setIsSubmiting(true)
-        await sleep(800)
-        setIsSubmiting(false)
-        toast.push(<Notification type="success">Order created!</Notification>, {
-            placement: 'top-center',
-        })
-        navigate('/concepts/orders/order-list')
+        try {
+            await apiCreateOrder({
+                customerName: `${values.firstName} ${values.lastName}`.trim(),
+                customerEmail: values.email,
+                paymentMethod: values.paymentMethod,
+                lines: selectedProduct.map((p) => ({
+                    productId: p.id,
+                    quantity: p.quantity,
+                    unitPrice: p.price,
+                })),
+            })
+            toast.push(
+                <Notification type="success">Pedido creado</Notification>,
+                { placement: 'top-center' },
+            )
+            navigate('/concepts/orders/order-list')
+        } catch (e) {
+            toast.push(
+                <Notification type="danger">
+                    {(e as Error)?.message || 'Error al crear pedido'}
+                </Notification>,
+                { placement: 'top-center' },
+            )
+        } finally {
+            setIsSubmiting(false)
+        }
     }
 
     const handleConfirmDiscard = () => {

@@ -11,9 +11,7 @@ import Loading from '@/components/shared/Loading'
 import EmptyState from '@/components/shared/EmptyState'
 import { HiOutlineTrash, HiOutlinePlus } from 'react-icons/hi'
 import { apiGetAttributes, apiSaveAttributes, type GlobalAttribute } from '@/services/AttributeService'
-
-const slug = (s: string) =>
-    s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'attr'
+import { slug } from '@/utils/slug'
 
 const Attributes = () => {
     const { data, isLoading, mutate } = useSWR('/attributes', apiGetAttributes, { revalidateOnFocus: false })

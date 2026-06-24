@@ -96,3 +96,42 @@ export async function apiGetCustomerLog<T, U extends Record<string, unknown>>(
     // El motor aún no tiene log de actividad por cliente.
     return { data: [], loadable: false } as T
 }
+
+export async function apiCreateCustomer(data: {
+    firstName: string
+    lastName: string
+    email: string
+    phone?: string
+    addresses?: Array<{ city?: string; address?: string }>
+}) {
+    return ApiService.fetchDataWithAxios<{ id: string }>({
+        url: '/customers',
+        method: 'post',
+        data,
+    })
+}
+
+export async function apiUpdateCustomer(
+    id: string,
+    data: {
+        firstName?: string
+        lastName?: string
+        email?: string
+        phone?: string
+        active?: boolean
+        addresses?: Array<{ city?: string; address?: string }>
+    },
+) {
+    return ApiService.fetchDataWithAxios<{ id: string }>({
+        url: `/customers/${id}`,
+        method: 'put',
+        data,
+    })
+}
+
+export async function apiDeleteCustomer(id: string) {
+    return ApiService.fetchDataWithAxios({
+        url: `/customers/${id}`,
+        method: 'delete',
+    })
+}

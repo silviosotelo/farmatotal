@@ -18,7 +18,7 @@
  */
 import { registerChaiBlock, registerChaiCollection, registerChaiBlockProps, StylesProp } from '@chaibuilder/sdk/runtime'
 import { registerChaiBlockSettingWidget } from '@chaibuilder/sdk'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import useSWR from 'swr'
 import ApiService from '@/services/ApiService'
 
@@ -619,6 +619,214 @@ function SliderBlock({ styles, blockProps }: CommonProps) {
     )
 }
 
+// ─── Slides / Hero Slider editable (D&D, estilo Elementor) ───
+type SlideItem = {
+    image?: string
+    title?: string
+    subtitle?: string
+    ctaLabel?: string
+    ctaHref?: string
+    align?: 'left' | 'center' | 'right'
+}
+
+type SlidesCarouselProps = {
+    slides?: SlideItem[]
+    height?: number
+    autoplay?: boolean
+    autoplayDelay?: number
+    showArrows?: boolean
+    showDots?: boolean
+    transition?: 'fade' | 'slide'
+    styles?: Record<string, unknown>
+    blockProps?: Record<string, unknown>
+}
+
+function SlidesCarousel({
+    slides = [],
+    height = 420,
+    autoplay = true,
+    autoplayDelay = 5000,
+    showArrows = true,
+    showDots = true,
+    transition = 'fade',
+    styles,
+    blockProps,
+}: SlidesCarouselProps) {
+    const [current, setCurrent] = useState(0)
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+    const total = slides.length || 1
+
+    useEffect(() => {
+        if (!autoplay || total <= 1) return
+        timerRef.current = setInterval(() => {
+            setCurrent((c) => (c + 1) % total)
+        }, autoplayDelay)
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current)
+        }
+    }, [autoplay, autoplayDelay, total])
+
+    const goTo = (i: number) => {
+        setCurrent(i)
+        if (timerRef.current) clearInterval(timerRef.current)
+    }
+    const prev = () => goTo((current - 1 + total) % total)
+    const next = () => goTo((current + 1) % total)
+
+    const slide = slides[current] || {}
+
+    return (
+        <section
+            {...(root(styles, blockProps) as React.HTMLAttributes<HTMLElement>)}
+            style={{ height, position: 'relative', overflow: 'hidden' }}
+        >
+            {slides.map((s, i) => (
+                <div
+                    key={i}
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        backgroundImage: s.image
+                            ? `linear-gradient(rgba(0,0,0,.4),rgba(0,0,0,.4)),url(${s.image})`
+                            : 'linear-gradient(135deg, #111827, #374151)',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        opacity: i === current ? 1 : 0,
+                        transition: transition === 'fade' ? 'opacity 0.6s ease' : 'none',
+                        zIndex: i === current ? 1 : 0,
+                    }}
+                />
+            ))}
+            <div
+                style={{
+                    position: 'relative',
+                    zIndex: 2,
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent:
+                        slide.align === 'center'
+                            ? 'center'
+                            : slide.align === 'right'
+                              ? 'flex-end'
+                              : 'flex-start',
+                }}
+            >
+                <div
+                    style={{
+                        maxWidth: 640,
+                        padding: '0 2rem',
+                        color: '#fff',
+                        textAlign: slide.align || 'left',
+                    }}
+                >
+                    {slide.title && (
+                        <h2 style={{ fontSize: '2.25rem', fontWeight: 700, margin: 0 }}>
+                            {slide.title}
+                        </h2>
+                    )}
+                    {slide.subtitle && (
+                        <p style={{ fontSize: '1.125rem', marginTop: '0.75rem', opacity: 0.85 }}>
+                            {slide.subtitle}
+                        </p>
+                    )}
+                    {slide.ctaLabel && (
+                        <a
+                            href={slide.ctaHref || '#'}
+                            style={{
+                                display: 'inline-block',
+                                marginTop: '1.5rem',
+                                padding: '0.625rem 1.25rem',
+                                borderRadius: '0.5rem',
+                                background: '#fff',
+                                color: '#111',
+                                fontWeight: 600,
+                                fontSize: '0.875rem',
+                                textDecoration: 'none',
+                            }}
+                        >
+                            {slide.ctaLabel}
+                        </a>
+                    )}
+                </div>
+            </div>
+            {showArrows && total > 1 && (
+                <>
+                    <button
+                        onClick={prev}
+                        style={{
+                            position: 'absolute',
+                            left: 12,
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            zIndex: 3,
+                            background: 'rgba(255,255,255,0.2)',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: 40,
+                            height: 40,
+                            cursor: 'pointer',
+                            color: '#fff',
+                            fontSize: 18,
+                        }}
+                    >
+                        ‹
+                    </button>
+                    <button
+                        onClick={next}
+                        style={{
+                            position: 'absolute',
+                            right: 12,
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            zIndex: 3,
+                            background: 'rgba(255,255,255,0.2)',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: 40,
+                            height: 40,
+                            cursor: 'pointer',
+                            color: '#fff',
+                            fontSize: 18,
+                        }}
+                    >
+                        ›
+                    </button>
+                </>
+            )}
+            {showDots && total > 1 && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        bottom: 16,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 3,
+                        display: 'flex',
+                        gap: 8,
+                    }}
+                >
+                    {slides.map((_, i) => (
+                        <button
+                            key={i}
+                            onClick={() => goTo(i)}
+                            style={{
+                                width: i === current ? 24 : 10,
+                                height: 10,
+                                borderRadius: 5,
+                                border: 'none',
+                                background: i === current ? '#fff' : 'rgba(255,255,255,0.4)',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s',
+                            }}
+                        />
+                    ))}
+                </div>
+            )}
+        </section>
+    )
+}
+
 // ─────────────────────────── CategoryCircles (círculos de categorías) ───────────────────────────
 function CirclesBlock({ styles, blockProps }: CommonProps) {
     const cats = useHomeCategories()
@@ -1184,6 +1392,42 @@ export function registerCommerceBlocks() {
                 showDots: { type: 'boolean', title: 'Mostrar puntos', default: true },
                 loop: { type: 'boolean', title: 'Loop infinito', default: true },
                 fade: { type: 'boolean', title: 'Transición fade', default: true },
+            },
+        }) as any,
+    } as any)
+
+    registerChaiBlock(SlidesCarousel as any, {
+        type: 'SlidesCarousel',
+        label: 'Slides / Hero Slider',
+        group: 'Comercio',
+        description: 'Carrusel editable de slides con imágenes, títulos, subtítulos y CTAs. Navegación por flechas y puntos.',
+        props: registerChaiBlockProps({
+            properties: {
+                styles: StylesProp('relative overflow-hidden rounded-2xl'),
+                slides: {
+                    type: 'array',
+                    title: 'Slides',
+                    default: [
+                        { title: 'Bienvenido', subtitle: 'Tu tienda online', ctaLabel: 'Ver productos', ctaHref: '/catalogo', align: 'left' },
+                    ],
+                    items: {
+                        type: 'object',
+                        properties: {
+                            image: { type: 'string', title: 'Imagen de fondo (URL)' },
+                            title: { type: 'string', title: 'Título' },
+                            subtitle: { type: 'string', title: 'Subtítulo' },
+                            ctaLabel: { type: 'string', title: 'Texto del botón' },
+                            ctaHref: { type: 'string', title: 'Enlace del botón' },
+                            align: { type: 'string', title: 'Alineación', enum: ['left', 'center', 'right'], default: 'left' },
+                        },
+                    },
+                },
+                height: { type: 'number', title: 'Altura (px)', default: 420 },
+                autoplay: { type: 'boolean', title: 'Autoplay', default: true },
+                autoplayDelay: { type: 'number', title: 'Delay (ms)', default: 5000 },
+                showArrows: { type: 'boolean', title: 'Flechas', default: true },
+                showDots: { type: 'boolean', title: 'Puntos', default: true },
+                transition: { type: 'string', title: 'Transición', enum: ['fade', 'slide'], default: 'fade' },
             },
         }) as any,
     } as any)

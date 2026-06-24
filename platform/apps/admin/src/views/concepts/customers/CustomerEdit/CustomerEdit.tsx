@@ -4,9 +4,8 @@ import Button from '@/components/ui/Button'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import { apiGetCustomer } from '@/services/CustomersService'
+import { apiGetCustomer, apiUpdateCustomer, apiDeleteCustomer } from '@/services/CustomersService'
 import CustomerForm from '../CustomerForm'
-import sleep from '@/utils/sleep'
 import NoUserFound from '@/assets/svg/NoUserFound'
 import { TbTrash, TbArrowNarrowLeft } from 'react-icons/tb'
 import { useParams, useNavigate } from 'react-router'
@@ -33,14 +32,31 @@ const CustomerEdit = () => {
     const [isSubmiting, setIsSubmiting] = useState(false)
 
     const handleFormSubmit = async (values: CustomerFormSchema) => {
-        console.log('Submitted values', values)
+        if (!id) return
         setIsSubmiting(true)
-        await sleep(800)
-        setIsSubmiting(false)
-        toast.push(<Notification type="success">Changes Saved!</Notification>, {
-            placement: 'top-center',
-        })
-        navigate('/concepts/customers/customer-list')
+        try {
+            await apiUpdateCustomer(id, {
+                firstName: values.firstName,
+                lastName: values.lastName,
+                email: values.email,
+                phone: values.phoneNumber,
+                addresses: [{ city: values.city, address: values.address }],
+            })
+            toast.push(
+                <Notification type="success">Cliente actualizado</Notification>,
+                { placement: 'top-center' },
+            )
+            navigate('/concepts/customers/customer-list')
+        } catch (e) {
+            toast.push(
+                <Notification type="danger">
+                    {(e as Error)?.message || 'Error al actualizar cliente'}
+                </Notification>,
+                { placement: 'top-center' },
+            )
+        } finally {
+            setIsSubmiting(false)
+        }
     }
 
     const getDefaultValues = () => {
@@ -65,13 +81,23 @@ const CustomerEdit = () => {
         return {}
     }
 
-    const handleConfirmDelete = () => {
-        setDeleteConfirmationOpen(true)
-        toast.push(
-            <Notification type="success">Customer deleted!</Notification>,
-            { placement: 'top-center' },
-        )
-        navigate('/concepts/customers/customer-list')
+    const handleConfirmDelete = async () => {
+        if (!id) return
+        try {
+            await apiDeleteCustomer(id)
+            toast.push(
+                <Notification type="success">Cliente eliminado</Notification>,
+                { placement: 'top-center' },
+            )
+            navigate('/concepts/customers/customer-list')
+        } catch (e) {
+            toast.push(
+                <Notification type="danger">
+                    {(e as Error)?.message || 'Error al eliminar cliente'}
+                </Notification>,
+                { placement: 'top-center' },
+            )
+        }
     }
 
     const handleDelete = () => {

@@ -20,20 +20,12 @@ import {
 } from '@/services/VariantService'
 import { apiGetAttributes } from '@/services/AttributeService'
 import useSWR from 'swr'
+import { slug } from '@/utils/slug'
 
 const { Tr, Th, Td, THead, TBody } = Table
 
 type ProductLite = { id: string; title: string; sku: string }
 type AttrDef = { name: string; values: string[] }
-
-const slug = (s: string) =>
-    s
-        .toString()
-        .normalize('NFD')
-        .replace(/[̀-ͯ]/g, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
 
 /** Firma estable de un set de atributos para deduplicar combinaciones. */
 const sig = (attrs: Record<string, string> | null | undefined) =>

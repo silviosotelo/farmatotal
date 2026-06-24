@@ -11,21 +11,21 @@ import Button from '@/components/ui/Button'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
 import Loading from '@/components/shared/Loading'
+import { Link } from 'react-router'
+import { TbSettings } from 'react-icons/tb'
 import useSWR from 'swr'
 import {
     apiGetPaymentMethods,
     apiSavePaymentMethod,
-    apiCreateCustomMethod,
     apiDeleteCustomMethod,
     apiGetTransactions,
     type PaymentMethod,
     type Transaction,
 } from '@/services/PaymentService'
+import { gs } from '@/utils/format'
 
 const { TabNav, TabList, TabContent } = Tabs
 const { Tr, Th, Td, THead, TBody } = Table
-
-const gs = (n: number) => '₲ ' + (n ?? 0).toLocaleString('es-PY').replace(/,/g, '.')
 
 const txTint: Record<string, string> = {
     pending: 'bg-amber-100 text-amber-600',
@@ -34,7 +34,24 @@ const txTint: Record<string, string> = {
     rolled_back: 'bg-gray-100 text-gray-500',
 }
 
-const MethodCard = ({ m, onSaved }: { m: PaymentMethod; onSaved: () => void }) => {
+const GatewayCard = ({ m }: { m: PaymentMethod }) => (
+    <Card>
+        <div className="flex items-start justify-between gap-3">
+            <div>
+                <h6>{m.name}</h6>
+                <p className="mt-1 text-sm text-gray-500">{m.description}</p>
+                <Tag className={m.enabled ? 'bg-emerald-100 text-emerald-600 mt-2' : 'bg-gray-100 text-gray-500 mt-2'}>
+                    {m.enabled ? 'Activo' : 'Inactivo'}
+                </Tag>
+            </div>
+            <Link to={`/concepts/plugins/${m.key}`}>
+                <Button size="sm" icon={<TbSettings />}>Configurar</Button>
+            </Link>
+        </div>
+    </Card>
+)
+
+const CustomMethodCard = ({ m, onSaved }: { m: PaymentMethod; onSaved: () => void }) => {
     const [enabled, setEnabled] = useState(m.enabled)
     const [values, setValues] = useState<Record<string, unknown>>(m.values ?? {})
     const [saving, setSaving] = useState(false)
@@ -54,7 +71,6 @@ const MethodCard = ({ m, onSaved }: { m: PaymentMethod; onSaved: () => void }) =
         }
     }
     const del = async () => {
-        if (!m.custom) return
         await apiDeleteCustomMethod(m.key)
         onSaved()
     }
@@ -64,7 +80,7 @@ const MethodCard = ({ m, onSaved }: { m: PaymentMethod; onSaved: () => void }) =
                 <div>
                     <div className="flex items-center gap-2">
                         <h6>{m.name}</h6>
-                        {m.custom && <Tag className="bg-amber-100 text-amber-600">Custom</Tag>}
+                        <Tag className="bg-amber-100 text-amber-600">Custom</Tag>
                     </div>
                     <p className="mt-1 text-sm text-gray-500">{m.description}</p>
                 </div>
@@ -93,7 +109,7 @@ const MethodCard = ({ m, onSaved }: { m: PaymentMethod; onSaved: () => void }) =
             )}
             <div className="mt-4 flex items-center gap-2">
                 <Button variant="solid" loading={saving} onClick={save}>Guardar</Button>
-                {m.custom && <Button variant="plain" onClick={del}>Eliminar</Button>}
+                <Button variant="plain" onClick={del}>Eliminar</Button>
             </div>
         </Card>
     )
@@ -102,46 +118,17 @@ const MethodCard = ({ m, onSaved }: { m: PaymentMethod; onSaved: () => void }) =
 const MethodsTab = () => {
     const { data, isLoading, mutate } = useSWR(['/payments/methods'], () => apiGetPaymentMethods(), { revalidateOnFocus: false })
     const methods = (data?.data ?? []) as PaymentMethod[]
-    const [nf, setNf] = useState({ name: '', description: '', instructions: '' })
-    const [creating, setCreating] = useState(false)
-    const create = async () => {
-        if (!nf.name.trim()) return
-        setCreating(true)
-        try {
-            await apiCreateCustomMethod(nf)
-            setNf({ name: '', description: '', instructions: '' })
-            await mutate()
-            toast.push(<Notification type="success">Método creado</Notification>, { placement: 'top-center' })
-        } finally {
-            setCreating(false)
-        }
-    }
     return (
         <Loading loading={isLoading}>
             <div className="flex flex-col gap-4">
-                <Card>
-                    <h6 className="mb-3">Nuevo método de pago (custom)</h6>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                        <FormItem label="Nombre">
-                            <Input value={nf.name} onChange={(e) => setNf({ ...nf, name: e.target.value })} placeholder="Ej. Pago en local" />
-                        </FormItem>
-                        <FormItem label="Descripción">
-                            <Input value={nf.description} onChange={(e) => setNf({ ...nf, description: e.target.value })} />
-                        </FormItem>
-                        <div className="flex gap-2 items-end">
-                            <div className="flex-1">
-                                <FormItem label="Instrucciones">
-                                    <Input value={nf.instructions} onChange={(e) => setNf({ ...nf, instructions: e.target.value })} placeholder="Texto para el cliente" />
-                                </FormItem>
-                            </div>
-                            <Button variant="solid" loading={creating} onClick={create}>Agregar</Button>
-                        </div>
-                    </div>
-                </Card>
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                    {methods.map((m) => (
-                        <MethodCard key={m.key} m={m} onSaved={() => mutate()} />
-                    ))}
+                    {methods.map((m) =>
+                        m.custom ? (
+                            <CustomMethodCard key={m.key} m={m} onSaved={() => mutate()} />
+                        ) : (
+                            <GatewayCard key={m.key} m={m} />
+                        ),
+                    )}
                 </div>
             </div>
         </Loading>

@@ -8,6 +8,7 @@ import Tag from '@/components/ui/Tag'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
 import Loading from '@/components/shared/Loading'
+import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import { apiGetPages, apiCreatePage, apiUpdatePage, apiDeletePage, type Page } from '@/services/CmsService'
 
 const { Tr, Th, Td, THead, TBody } = Table
@@ -24,6 +25,7 @@ const Cms = () => {
     const [title, setTitle] = useState('')
     const [slug, setSlug] = useState('')
     const [saving, setSaving] = useState(false)
+    const [deleteTarget, setDeleteTarget] = useState<Page | null>(null)
 
     const create = async () => {
         if (!title.trim() || !slug.trim()) return
@@ -53,8 +55,13 @@ const Cms = () => {
     }
 
     const remove = async (p: Page) => {
-        if (!window.confirm(`¿Eliminar la página "${p.title}"? Esta acción no se puede deshacer.`)) return
-        await apiDeletePage(p.id)
+        setDeleteTarget(p)
+    }
+
+    const confirmDelete = async () => {
+        if (!deleteTarget) return
+        await apiDeletePage(deleteTarget.id)
+        setDeleteTarget(null)
         await mutate()
         toast.push(<Notification type="success">Página eliminada</Notification>, {
             placement: 'top-center',
@@ -283,6 +290,20 @@ const Cms = () => {
                     </Table>
                 </Card>
             </div>
+            <ConfirmDialog
+                isOpen={Boolean(deleteTarget)}
+                type="danger"
+                title="Eliminar página"
+                onClose={() => setDeleteTarget(null)}
+                onRequestClose={() => setDeleteTarget(null)}
+                onCancel={() => setDeleteTarget(null)}
+                onConfirm={confirmDelete}
+            >
+                <p>
+                    ¿Eliminar la página &quot;{deleteTarget?.title}&quot;? Esta
+                    acción no se puede deshacer.
+                </p>
+            </ConfirmDialog>
         </Loading>
     )
 }

@@ -14,6 +14,7 @@ const { Tr, Th, Td, THead, TBody } = Table
 import { apiGetTaxConfig } from '@/services/TaxService'
 import { useParams, useNavigate } from 'react-router'
 import useSWR from 'swr'
+import { gs } from '@/utils/format'
 
 type Line = {
     id: string
@@ -39,8 +40,6 @@ type OrderFull = {
     lines: Line[]
     events?: { at: string; type: string; note?: string; amount?: number }[]
 }
-
-const gs = (n: number) => '₲ ' + (n ?? 0).toLocaleString('es-PY').replace(/,/g, '.')
 
 const statusOptions = [
     'pending',

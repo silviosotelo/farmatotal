@@ -25,9 +25,7 @@ import {
     PiSlidersDuotone,
 } from 'react-icons/pi'
 import type { ReactNode } from 'react'
-
-const gs = (n: number) => '₲ ' + (n ?? 0).toLocaleString('es-PY').replace(/,/g, '.')
-const num = (n: number) => (n ?? 0).toLocaleString('es-PY').replace(/,/g, '.')
+import { gs, num } from '@/utils/format'
 
 type OrderRow = {
     id: string

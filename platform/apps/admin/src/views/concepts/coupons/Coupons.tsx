@@ -13,13 +13,12 @@ import {
 } from '@/services/CouponService'
 import useSWR from 'swr'
 import type { ColumnDef } from '@tanstack/react-table'
+import { gs } from '@/utils/format'
 
 const typeOptions = [
     { value: 'percent', label: '% Porcentaje' },
     { value: 'fixed', label: '₲ Monto fijo' },
 ]
-
-const gs = (n: number) => '₲ ' + (n ?? 0).toLocaleString('es-PY').replace(/,/g, '.')
 
 const Coupons = () => {
     const { data, isLoading, mutate } = useSWR(
