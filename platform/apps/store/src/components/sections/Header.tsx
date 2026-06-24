@@ -558,7 +558,7 @@ export default function Header({
 
   return (
     <>
-      <header className="w-full z-40">
+      <header className="relative w-full z-[900]">
         {/* Row 1 — TopBar */}
         {showTopBar && <TopBar topNav={topNav} />}
 
@@ -585,7 +585,7 @@ export default function Header({
       {/* Sticky clone — slides in from top when scrolled > 200px */}
       <div
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 brand-gradient shadow-md transition-transform duration-300",
+          "fixed top-0 left-0 right-0 z-[900] brand-gradient shadow-md transition-transform duration-300",
           scrolled ? "translate-y-0" : "-translate-y-full"
         )}
         style={{ height: "87px" }}

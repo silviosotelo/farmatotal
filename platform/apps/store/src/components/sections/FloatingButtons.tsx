@@ -46,7 +46,7 @@ export default function FloatingButtons() {
   return (
     <>
       {(cfg.scan || cfg.voice) && (
-        <div className="fixed right-0 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2">
+        <div className="fixed right-0 top-1/2 -translate-y-1/2 z-[1000] flex flex-col gap-2">
           {cfg.scan && (
             <Button
               type="button"

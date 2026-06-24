@@ -212,7 +212,7 @@ export function BranchesBlock({ className }: { className?: string } = {}) {
         </div>
 
         {/* Mapa — isolation:isolate evita que los z-index de Leaflet (~800) escapen al header */}
-        <div className="h-[400px] overflow-hidden rounded-[12px] border border-[#ededf1] lg:h-[600px] [isolation:isolate]">
+        <div className="relative z-[0] h-[400px] overflow-hidden rounded-[12px] border border-[#ededf1] lg:h-[600px]">
           <BranchesMap
             branches={filtered}
             nearestId={nearestId}
