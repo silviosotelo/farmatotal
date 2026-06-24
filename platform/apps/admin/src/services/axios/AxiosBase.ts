@@ -25,10 +25,7 @@ AxiosBase.interceptors.request.use(
 
 AxiosBase.interceptors.response.use(
     (response) => response,
-    (error: AxiosError) => {
-        AxiosResponseIntrceptorErrorCallback(error)
-        return Promise.reject(error)
-    },
+    (error: AxiosError) => AxiosResponseIntrceptorErrorCallback(error),
 )
 
 export default AxiosBase

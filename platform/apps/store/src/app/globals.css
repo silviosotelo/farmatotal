@@ -81,51 +81,43 @@
 :root {
   --radius: 0.625rem;
 
-  /* ---- Farmatotal brand ---- */
-  --brand-orange: #f16522;
-  /* darker orange for small text/links on light bg (WCAG AA ~4.7:1) */
-  --brand-orange-ink: #c2410c;
-  --brand-yellow: #ffca05;
-  --brand-blue: #1ca0e3;
-  --brand-text: #202435;
-  /* darkened for AA contrast on small text */
-  --brand-muted: #6b6b72;
+  /* ---- Brand tokens: sin valores por defecto. Los inyecta el admin via DB. ---- */
   --price-muted: #6f6f7e;
   --search-bg: #f3f4f7;
-  --brand-gradient: linear-gradient(100deg, #f16522 0%, #ffca05 100%);
 
-  /* shadcn tokens mapped to brand where relevant */
+  /* shadcn tokens — neutros. --primary, --ring, etc. se sobreescriben via <style>
+     inyectado en el layout cuando hay store_config en la DB. */
   --background: #ffffff;
   --foreground: #202435;
   --card: #ffffff;
   --card-foreground: #202435;
   --popover: #ffffff;
   --popover-foreground: #202435;
-  --primary: #f16522;
+  --primary: oklch(0.205 0 0);
   --primary-foreground: #ffffff;
   --secondary: #f3f4f7;
   --secondary-foreground: #202435;
   --muted: #f3f4f7;
   --muted-foreground: #7a7a7a;
-  --accent: #fff4e6;
-  --accent-foreground: #f16522;
+  --accent: #f4f4f5;
+  --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: #ededf1;
   --input: #ededf1;
-  --ring: #f16522;
+  --ring: oklch(0.205 0 0);
   --sidebar: #ffffff;
   --sidebar-foreground: #202435;
-  --sidebar-primary: #f16522;
+  --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f3f4f7;
   --sidebar-accent-foreground: #202435;
   --sidebar-border: #ededf1;
-  --sidebar-ring: #f16522;
+  --sidebar-ring: oklch(0.205 0 0);
 
-  /* ---- Tokens Ecme (@ft/ui) — primary-* en tonos de marca, estados semánticos ---- */
-  --primary-deep: #c2410c;
-  --primary-mild: #f59055;
-  --primary-subtle: #f165221a;
+  /* ---- Tokens Ecme (@ft/ui) — primary-* neutros, estados semánticos ---- */
+  --primary-deep: oklch(0.145 0 0);
+  --primary-mild: oklch(0.55 0 0);
+  --primary-subtle: oklch(0.97 0 0);
   --error: #ff6a55;
   --error-subtle: #ff6a551a;
   --success: #10b981;
@@ -134,7 +126,7 @@
   --info-subtle: #2a85ff1a;
   --warning: #f59e0b;
   --warning-subtle: #ffd40045;
-  --neutral: #1f2937;
+  --neutral: #ffffff;
 }
 
 @layer base {
@@ -148,6 +140,9 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading), var(--font-sans), sans-serif;
   }
+  button:not([disabled]) {
+    cursor: pointer;
+  }
 }
 
 @layer utilities {
@@ -157,16 +152,16 @@
   .font-price {
     font-family: var(--font-price), var(--font-sans), sans-serif;
   }
-  /* visible keyboard focus (a11y) — orange ring with offset */
+  /* visible keyboard focus (a11y) */
   .focus-ring {
-    @apply outline-none focus-visible:ring-2 focus-visible:ring-[#f16522]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
   }
   /* depth tokens */
   .card-shadow {
     box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
   }
   .card-shadow-hover {
-    box-shadow: 0 14px 34px rgba(241, 101, 34, 0.14), 0 6px 14px rgba(16, 24, 40, 0.08);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.1), 0 6px 14px rgba(16, 24, 40, 0.08);
   }
   /* hide scrollbars on carousels */
   .no-scrollbar::-webkit-scrollbar {
@@ -181,6 +176,10 @@
 /* xs breakpoint that Ecme components use */
 @theme {
   --breakpoint-xs: 576px;
+}
+
+.select-control {
+  background-color: var(--color-gray-100);
 }
 
 /* container width matching Bacola (~1200px) */

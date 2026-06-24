@@ -141,12 +141,12 @@ export function BranchesBlock({ className }: { className?: string } = {}) {
             </div>
             <Button
               type="button"
-              variant="default"
-              shape="round"
+              variant="plain"
               block
               loading={geo.status === "locating"}
               disabled={geo.status === "locating"}
-              className="border-brand-orange text-brand-orange-ink hover:bg-brand-orange hover:text-white h-11"
+              style={{ borderRadius: '9999px', padding: '10px 16px', height: 'auto', fontSize: '14px', fontWeight: 500 }}
+              className="border border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-white w-full"
               onClick={locate}
             >
               {geo.status === "locating" ? "Obteniendo tu ubicación…" : "Usar mi ubicación"}
@@ -173,6 +173,7 @@ export function BranchesBlock({ className }: { className?: string } = {}) {
                       variant="plain"
                       block
                       onClick={() => pick(s)}
+                      style={{ height: "auto" }}
                       className={
                         "flex w-full items-start gap-3 p-4 text-left transition hover:bg-search-bg rounded-none " +
                         (isSel ? "bg-search-bg" : "")
@@ -210,8 +211,8 @@ export function BranchesBlock({ className }: { className?: string } = {}) {
           </ul>
         </div>
 
-        {/* Mapa */}
-        <div className="h-[400px] overflow-hidden rounded-[12px] border border-[#ededf1] lg:h-[600px]">
+        {/* Mapa — isolation:isolate evita que los z-index de Leaflet (~800) escapen al header */}
+        <div className="h-[400px] overflow-hidden rounded-[12px] border border-[#ededf1] lg:h-[600px] [isolation:isolate]">
           <BranchesMap
             branches={filtered}
             nearestId={nearestId}

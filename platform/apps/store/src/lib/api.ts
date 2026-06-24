@@ -324,12 +324,11 @@ export type StoreConfig = {
 };
 
 const STORE_DEFAULTS: StoreConfig = {
-  brandName: "Mi Tienda",
-  tagline: "tu farmacia online",
-  description:
-    "Tu tienda online.",
-  logoUrl: "/brand/logo-farmatotal.svg",
-  faviconUrl: "/brand/isotipo.svg",
+  brandName: "",
+  tagline: "",
+  description: "",
+  logoUrl: "",
+  faviconUrl: "",
   currency: "PYG",
   locale: "es-PY",
   colors: {},
@@ -377,20 +376,22 @@ export async function getTenantFlags(): Promise<FeatureFlags> {
   }
 }
 
-/** Genera el CSS de override de tokens de marca (sólo para los colores provistos). */
+/** Genera el CSS de override de tokens de marca.
+ * Cada color de la DB sobrescribe tanto los --brand-* como los tokens shadcn
+ * correspondientes, de modo que no existan valores hardcodeados en globals.css. */
 export function brandColorVars(colors: BrandColors): string {
-  const map: Record<keyof BrandColors, string> = {
-    orange: "--brand-orange",
-    orangeInk: "--brand-orange-ink",
-    yellow: "--brand-yellow",
-    blue: "--brand-blue",
-    text: "--brand-text",
-    muted: "--brand-muted",
-    gradient: "--brand-gradient",
+  const map: Record<keyof BrandColors, string[]> = {
+    orange: ["--brand-orange", "--primary", "--ring", "--sidebar-primary", "--sidebar-ring", "--accent-foreground"],
+    orangeInk: ["--brand-orange-ink", "--primary-deep"],
+    yellow: ["--brand-yellow"],
+    blue: ["--brand-blue"],
+    text: ["--brand-text", "--foreground", "--card-foreground", "--popover-foreground", "--sidebar-foreground"],
+    muted: ["--brand-muted"],
+    gradient: ["--brand-gradient"],
   };
   const lines = (Object.keys(map) as (keyof BrandColors)[])
     .filter((k) => colors[k])
-    .map((k) => `${map[k]}: ${colors[k]};`);
+    .flatMap((k) => map[k].map((v) => `${v}: ${colors[k]};`));
   return lines.length ? `:root{${lines.join("")}}` : "";
 }
 
