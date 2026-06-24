@@ -192,7 +192,7 @@ const _Search = ({ className }: { className?: string }) => {
                                 onChange={handleSearch}
                             />
                         </div>
-                        <Button size="xs" onClick={handleSearchClose}>
+                        <Button size="md" onClick={handleSearchClose}>
                             Esc
                         </Button>
                     </div>

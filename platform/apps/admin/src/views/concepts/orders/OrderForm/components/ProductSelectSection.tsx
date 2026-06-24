@@ -166,7 +166,7 @@ const ProductSelectSection = () => {
                                             <Button
                                                 type="button"
                                                 icon={<TbMinus />}
-                                                size="xs"
+                                                size="md"
                                                 onClick={() =>
                                                     handleProductDecremental(
                                                         product,
@@ -179,7 +179,7 @@ const ProductSelectSection = () => {
                                             <Button
                                                 type="button"
                                                 icon={<TbPlus />}
-                                                size="xs"
+                                                size="md"
                                                 onClick={() =>
                                                     handleProductIncremental(
                                                         product,

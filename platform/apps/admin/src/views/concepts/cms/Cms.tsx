@@ -245,7 +245,7 @@ const Cms = () => {
                                     </Td>
                                     <Td className="text-right whitespace-nowrap">
                                         <Button
-                                            size="xs"
+                                            size="md"
                                             variant="solid"
                                             className="mr-2"
                                             onClick={() =>
@@ -257,7 +257,7 @@ const Cms = () => {
                                             Editar (visual)
                                         </Button>
                                         <Button
-                                            size="xs"
+                                            size="md"
                                             className="mr-2"
                                             onClick={() => togglePublish(p)}
                                         >
@@ -266,7 +266,7 @@ const Cms = () => {
                                                 : 'Publicar'}
                                         </Button>
                                         <Button
-                                            size="xs"
+                                            size="md"
                                             variant="plain"
                                             className="text-red-500"
                                             onClick={() => remove(p)}

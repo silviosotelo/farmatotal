@@ -124,16 +124,16 @@ const Reviews = () => {
                     return (
                         <div className="flex justify-end gap-2">
                             {r.status !== 'approved' && (
-                                <Button size="xs" variant="solid" loading={busy === r.id} onClick={() => moderate(r.id, 'approved')}>
+                                <Button size="md" variant="solid" loading={busy === r.id} onClick={() => moderate(r.id, 'approved')}>
                                     Aprobar
                                 </Button>
                             )}
                             {r.status !== 'rejected' && (
-                                <Button size="xs" loading={busy === r.id} onClick={() => moderate(r.id, 'rejected')}>
+                                <Button size="md" loading={busy === r.id} onClick={() => moderate(r.id, 'rejected')}>
                                     Rechazar
                                 </Button>
                             )}
-                            <Button size="xs" variant="plain" loading={busy === r.id} onClick={() => remove(r.id)}>
+                            <Button size="md" variant="plain" loading={busy === r.id} onClick={() => remove(r.id)}>
                                 Borrar
                             </Button>
                         </div>

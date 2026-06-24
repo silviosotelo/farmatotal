@@ -123,7 +123,7 @@ const ProfileSection = ({ data = {} }: ProfileSectionProps) => {
                         <span>Social</span>
                         <div className="flex mt-4 gap-2">
                             <Button
-                                size="sm"
+                                size="md"
                                 icon={
                                     <FaFacebookF className="text-[#2259f2]" />
                                 }
@@ -134,7 +134,7 @@ const ProfileSection = ({ data = {} }: ProfileSectionProps) => {
                                 }
                             />
                             <Button
-                                size="sm"
+                                size="md"
                                 icon={
                                     <FaXTwitter className="text-black dark:text-white" />
                                 }
@@ -145,7 +145,7 @@ const ProfileSection = ({ data = {} }: ProfileSectionProps) => {
                                 }
                             />
                             <Button
-                                size="sm"
+                                size="md"
                                 icon={
                                     <FaLinkedinIn className="text-[#155fb8]" />
                                 }
@@ -156,7 +156,7 @@ const ProfileSection = ({ data = {} }: ProfileSectionProps) => {
                                 }
                             />
                             <Button
-                                size="sm"
+                                size="md"
                                 icon={
                                     <FaPinterestP className="text-[#df0018]" />
                                 }

@@ -217,7 +217,7 @@ const Slides = () => {
                                     </Td>
                                     <Td className="text-right">
                                         <Button
-                                            size="xs"
+                                            size="md"
                                             customColorClass={() =>
                                                 'text-error border-error'
                                             }

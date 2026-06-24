@@ -68,7 +68,7 @@ const Reports = () => {
                     {PRESETS.map((p) => (
                         <Button
                             key={p.key}
-                            size="sm"
+                            size="md"
                             variant={days === p.days ? 'solid' : 'default'}
                             onClick={() => setDays(p.days)}
                         >

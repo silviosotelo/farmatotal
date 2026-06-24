@@ -85,7 +85,7 @@ const SpecsSection = ({ control }: FormSectionBaseProps) => {
                         <Button
                             type="button"
                             shape="circle"
-                            size="sm"
+                            size="md"
                             icon={<HiOutlineTrash />}
                             aria-label="Quitar fila"
                             onClick={() => remove(index)}
@@ -96,7 +96,7 @@ const SpecsSection = ({ control }: FormSectionBaseProps) => {
 
             <Button
                 type="button"
-                size="sm"
+                size="md"
                 className="mt-4"
                 icon={<HiOutlinePlus />}
                 onClick={() => append({ label: '', value: '' })}

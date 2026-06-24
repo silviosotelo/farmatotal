@@ -100,7 +100,7 @@ function HeaderFooterConfig() {
                 <Card>
                     <div className="flex items-center justify-between mb-4">
                         <h5>Menú superior (header)</h5>
-                        <Button size="sm" onClick={addNav}>
+                        <Button size="md" onClick={addNav}>
                             + Link
                         </Button>
                     </div>
@@ -117,7 +117,7 @@ function HeaderFooterConfig() {
                                     value={it.href}
                                     onChange={(e) => setNav(i, 'href', e.target.value)}
                                 />
-                                <Button size="sm" variant="plain" onClick={() => removeNav(i)}>
+                                <Button size="md" variant="plain" onClick={() => removeNav(i)}>
                                     Eliminar
                                 </Button>
                             </div>
@@ -132,7 +132,7 @@ function HeaderFooterConfig() {
                 <Card>
                     <div className="flex items-center justify-between mb-4">
                         <h5>Columnas del footer</h5>
-                        <Button size="sm" onClick={addColumn}>
+                        <Button size="md" onClick={addColumn}>
                             + Columna
                         </Button>
                     </div>
@@ -145,7 +145,7 @@ function HeaderFooterConfig() {
                                         value={col.title}
                                         onChange={(e) => setColTitle(i, e.target.value)}
                                     />
-                                    <Button size="sm" variant="plain" onClick={() => removeColumn(i)}>
+                                    <Button size="md" variant="plain" onClick={() => removeColumn(i)}>
                                         Quitar
                                     </Button>
                                 </div>
@@ -162,12 +162,12 @@ function HeaderFooterConfig() {
                                                 value={l.href}
                                                 onChange={(e) => setLink(i, j, 'href', e.target.value)}
                                             />
-                                            <Button size="sm" variant="plain" onClick={() => removeLink(i, j)}>
+                                            <Button size="md" variant="plain" onClick={() => removeLink(i, j)}>
                                                 ×
                                             </Button>
                                         </div>
                                     ))}
-                                    <Button size="sm" onClick={() => addLink(i)}>
+                                    <Button size="md" onClick={() => addLink(i)}>
                                         + Link
                                     </Button>
                                 </div>

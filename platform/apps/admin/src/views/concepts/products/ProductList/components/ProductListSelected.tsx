@@ -70,7 +70,7 @@ const ProductListSelected = () => {
 
                             <div className="flex items-center">
                                 <Button
-                                    size="sm"
+                                    size="md"
                                     className="ltr:mr-3 rtl:ml-3"
                                     type="button"
                                     customColorClass={() =>

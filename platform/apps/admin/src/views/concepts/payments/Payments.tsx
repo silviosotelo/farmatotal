@@ -45,7 +45,7 @@ const GatewayCard = ({ m }: { m: PaymentMethod }) => (
                 </Tag>
             </div>
             <Link to={`/concepts/plugins/${m.key}`}>
-                <Button size="sm" icon={<TbSettings />}>Configurar</Button>
+                <Button size="md" icon={<TbSettings />}>Configurar</Button>
             </Link>
         </div>
     </Card>

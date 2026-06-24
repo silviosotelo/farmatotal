@@ -22,7 +22,7 @@ const DirectionSwitcher = ({
     }
 
     return (
-        <InputGroup size="sm">
+        <InputGroup size="md">
             {dirList.map((dir) => (
                 <Button
                     key={dir.value}

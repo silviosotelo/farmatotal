@@ -84,7 +84,7 @@ const Attributes = () => {
                                     )}
                                 </div>
                                 <div className="md:col-span-1 pt-6 text-right">
-                                    <Button size="sm" variant="plain" icon={<HiOutlineTrash />} onClick={() => remove(i)} />
+                                    <Button size="md" variant="plain" icon={<HiOutlineTrash />} onClick={() => remove(i)} />
                                 </div>
                             </div>
                         ))}
@@ -96,7 +96,7 @@ const Attributes = () => {
                             />
                         )}
                         <div>
-                            <Button size="sm" icon={<HiOutlinePlus />} onClick={add}>
+                            <Button size="md" icon={<HiOutlinePlus />} onClick={add}>
                                 Agregar atributo
                             </Button>
                         </div>

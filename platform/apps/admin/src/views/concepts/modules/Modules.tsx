@@ -73,7 +73,7 @@ const ModuleCard = ({
             {m.adminPath && (
                 <div className="mt-4">
                     <Link to={m.adminPath}>
-                        <Button size="xs" block>{m.settingsKey ? 'Configurar' : 'Abrir'}</Button>
+                        <Button size="md" block>{m.settingsKey ? 'Configurar' : 'Abrir'}</Button>
                     </Link>
                 </div>
             )}

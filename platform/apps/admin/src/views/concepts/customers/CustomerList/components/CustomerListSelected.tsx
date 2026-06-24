@@ -91,7 +91,7 @@ const CustomerListSelected = () => {
 
                             <div className="flex items-center">
                                 <Button
-                                    size="sm"
+                                    size="md"
                                     className="ltr:mr-3 rtl:ml-3"
                                     type="button"
                                     customColorClass={() =>
@@ -102,7 +102,7 @@ const CustomerListSelected = () => {
                                     Delete
                                 </Button>
                                 <Button
-                                    size="sm"
+                                    size="md"
                                     variant="solid"
                                     onClick={() =>
                                         setSendMessageDialogOpen(true)
@@ -155,13 +155,13 @@ const CustomerListSelected = () => {
                 </div>
                 <div className="ltr:justify-end flex items-center gap-2">
                     <Button
-                        size="sm"
+                        size="md"
                         onClick={() => setSendMessageDialogOpen(false)}
                     >
                         Cancel
                     </Button>
                     <Button
-                        size="sm"
+                        size="md"
                         variant="solid"
                         loading={sendMessageLoading}
                         onClick={handleSend}

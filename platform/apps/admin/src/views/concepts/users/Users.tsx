@@ -159,7 +159,7 @@ const Users = () => {
                                     </Td>
                                     <Td className="w-40">
                                         <Select
-                                            size="sm"
+                                            size="md"
                                             options={ROLES}
                                             value={ROLES.find((r) => r.value === u.role)}
                                             onChange={(opt) => opt && changeRole(u, opt.value)}
@@ -177,7 +177,7 @@ const Users = () => {
                                         {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString('es-PY') : '—'}
                                     </Td>
                                     <Td className="text-right">
-                                        <Button size="xs" variant="plain" icon={<HiOutlineTrash />} onClick={() => remove(u)} />
+                                        <Button size="md" variant="plain" icon={<HiOutlineTrash />} onClick={() => remove(u)} />
                                     </Td>
                                 </Tr>
                             ))}

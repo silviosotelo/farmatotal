@@ -67,12 +67,12 @@ const MappingEditor = ({ entity }: { entity: string }) => {
                             onChange={(o) => patch(i, { transform: o?.value || null })}
                         />
                     </div>
-                    <div className="col-span-1 text-right"><Button size="xs" variant="plain" icon={<HiOutlineTrash />} onClick={() => remove(i)} /></div>
+                    <div className="col-span-1 text-right"><Button size="md" variant="plain" icon={<HiOutlineTrash />} onClick={() => remove(i)} /></div>
                 </div>
             ))}
             <div className="flex gap-2">
-                <Button size="sm" icon={<HiOutlinePlus />} onClick={add}>Agregar</Button>
-                <Button size="sm" variant="solid" loading={saving} onClick={save}>Guardar mapeo</Button>
+                <Button size="md" icon={<HiOutlinePlus />} onClick={add}>Agregar</Button>
+                <Button size="md" variant="solid" loading={saving} onClick={save}>Guardar mapeo</Button>
             </div>
         </div>
     )
@@ -114,8 +114,8 @@ const ErpSync = () => {
                 <div className="mb-3 flex items-center justify-between">
                     <h5>Importar ahora</h5>
                     <div className="flex gap-2">
-                        <Button size="sm" loading={importing} onClick={() => runImport('categories')}>Categorías</Button>
-                        <Button size="sm" variant="solid" loading={importing} onClick={() => runImport('products')}>Productos</Button>
+                        <Button size="md" loading={importing} onClick={() => runImport('categories')}>Categorías</Button>
+                        <Button size="md" variant="solid" loading={importing} onClick={() => runImport('products')}>Productos</Button>
                     </div>
                 </div>
                 <p className="text-sm text-gray-500">Usa el adapter configurado para traer datos del ERP (idempotente).</p>

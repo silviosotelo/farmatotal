@@ -102,8 +102,8 @@ const Inventory = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button size="sm" onClick={() => window.open(inventoryExportUrl(), '_blank')}>Exportar CSV</Button>
-                    <Button size="sm" variant="solid" loading={importing} onClick={() => fileRef.current?.click()}>
+                    <Button size="md" onClick={() => window.open(inventoryExportUrl(), '_blank')}>Exportar CSV</Button>
+                    <Button size="md" variant="solid" loading={importing} onClick={() => fileRef.current?.click()}>
                         Importar CSV
                     </Button>
                     <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={onImport} />

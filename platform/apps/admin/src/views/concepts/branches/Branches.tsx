@@ -245,11 +245,11 @@ const Branches = () => {
                                 )}
                             </div>
                             <div className="mt-4 flex gap-2">
-                                <Button size="xs" onClick={() => openEdit(b)}>
+                                <Button size="md" onClick={() => openEdit(b)}>
                                     Editar
                                 </Button>
                                 <Button
-                                    size="xs"
+                                    size="md"
                                     variant="plain"
                                     loading={busyId === b.id}
                                     onClick={() => toggleActive(b)}

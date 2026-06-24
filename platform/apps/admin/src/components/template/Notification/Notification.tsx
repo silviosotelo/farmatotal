@@ -123,7 +123,7 @@ const _Notification = ({ className }: { className?: string }) => {
                     <Button
                         variant="plain"
                         shape="circle"
-                        size="sm"
+                        size="md"
                         icon={<HiOutlineMailOpen className="text-xl" />}
                         title="Mark all as read"
                         onClick={onMarkAllAsRead}

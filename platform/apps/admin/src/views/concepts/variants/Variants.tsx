@@ -104,13 +104,13 @@ const VariantRow = ({
                 </Td>
             ))}
             <Td className="py-2 pr-2">
-                <Input size="sm" value={sku} onChange={(e) => setSku(e.target.value)} />
+                <Input size="md" value={sku} onChange={(e) => setSku(e.target.value)} />
             </Td>
             <Td className="py-2 pr-2 w-28">
-                <Input size="sm" type="number" value={priceWeb} onChange={(e) => setPriceWeb(e.target.value)} placeholder="hereda" />
+                <Input size="md" type="number" value={priceWeb} onChange={(e) => setPriceWeb(e.target.value)} placeholder="hereda" />
             </Td>
             <Td className="py-2 pr-2 w-20">
-                <Input size="sm" type="number" value={stock} onChange={(e) => setStock(e.target.value)} />
+                <Input size="md" type="number" value={stock} onChange={(e) => setStock(e.target.value)} />
             </Td>
             <Td className="py-2">
                 <Tag className={v.active ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-500'}>
@@ -119,13 +119,13 @@ const VariantRow = ({
             </Td>
             <Td className="py-2">
                 <div className="flex justify-end gap-2">
-                    <Button size="xs" variant="solid" loading={busy} onClick={save}>
+                    <Button size="md" variant="solid" loading={busy} onClick={save}>
                         Guardar
                     </Button>
-                    <Button size="xs" loading={busy} onClick={toggle}>
+                    <Button size="md" loading={busy} onClick={toggle}>
                         {v.active ? 'Desactivar' : 'Activar'}
                     </Button>
-                    <Button size="xs" variant="plain" loading={busy} onClick={remove}>
+                    <Button size="md" variant="plain" loading={busy} onClick={remove}>
                         <HiOutlineTrash />
                     </Button>
                 </div>
@@ -300,7 +300,7 @@ const Variants = () => {
                             <h6 className="mb-0">
                                 2. Atributos de: <span className="text-indigo-600">{picked.title}</span>
                             </h6>
-                            <Button size="xs" variant="plain" onClick={() => setPicked(null)}>
+                            <Button size="md" variant="plain" onClick={() => setPicked(null)}>
                                 Cambiar producto
                             </Button>
                         </div>
@@ -327,12 +327,12 @@ const Variants = () => {
                                         </FormItem>
                                     </div>
                                     <div className="md:col-span-1">
-                                        <Button size="sm" variant="plain" icon={<HiOutlineTrash />} onClick={() => removeAttr(i)} />
+                                        <Button size="md" variant="plain" icon={<HiOutlineTrash />} onClick={() => removeAttr(i)} />
                                     </div>
                                 </div>
                             ))}
                             <div className="flex flex-wrap items-center gap-2">
-                                <Button size="sm" icon={<HiOutlinePlus />} onClick={addAttr}>
+                                <Button size="md" icon={<HiOutlinePlus />} onClick={addAttr}>
                                     Agregar atributo
                                 </Button>
                                 {(globalAttrs?.attributes ?? []).length > 0 && (
@@ -341,7 +341,7 @@ const Variants = () => {
                                         {globalAttrs!.attributes.map((g) => (
                                             <Button
                                                 key={g.id}
-                                                size="xs"
+                                                size="md"
                                                 onClick={() => addGlobal(g.name, g.values)}
                                             >
                                                 + {g.name}
@@ -376,18 +376,18 @@ const Variants = () => {
                                 <div className="flex flex-wrap items-end gap-2">
                                     <div>
                                         <FormItem label="Precio a todas">
-                                            <Input size="sm" type="number" value={bulkPrice} onChange={(e) => setBulkPrice(e.target.value)} className="w-28" />
+                                            <Input size="md" type="number" value={bulkPrice} onChange={(e) => setBulkPrice(e.target.value)} className="w-28" />
                                         </FormItem>
                                     </div>
-                                    <Button size="sm" loading={bulkBusy} onClick={() => applyBulk('priceWeb', Number(bulkPrice) || 0)}>
+                                    <Button size="md" loading={bulkBusy} onClick={() => applyBulk('priceWeb', Number(bulkPrice) || 0)}>
                                         Aplicar
                                     </Button>
                                     <div className="ml-2">
                                         <FormItem label="Stock a todas">
-                                            <Input size="sm" type="number" value={bulkStock} onChange={(e) => setBulkStock(e.target.value)} className="w-24" />
+                                            <Input size="md" type="number" value={bulkStock} onChange={(e) => setBulkStock(e.target.value)} className="w-24" />
                                         </FormItem>
                                     </div>
-                                    <Button size="sm" loading={bulkBusy} onClick={() => applyBulk('stockCached', Number(bulkStock) || 0)}>
+                                    <Button size="md" loading={bulkBusy} onClick={() => applyBulk('stockCached', Number(bulkStock) || 0)}>
                                         Aplicar
                                     </Button>
                                 </div>

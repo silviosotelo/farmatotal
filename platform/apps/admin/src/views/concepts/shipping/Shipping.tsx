@@ -95,7 +95,7 @@ const Shipping = () => {
                         <div className="rounded-lg border border-gray-200">
                             <div className="flex items-center justify-between px-3 py-2 border-b">
                                 <span className="text-sm font-medium">Métodos de envío</span>
-                                <Button size="xs" onClick={() => addMethod(z.id)}>+ Método</Button>
+                                <Button size="md" onClick={() => addMethod(z.id)}>+ Método</Button>
                             </div>
                             {z.methods.length === 0 ? (
                                 <p className="px-3 py-3 text-sm text-gray-400">Sin métodos en esta zona.</p>
@@ -105,32 +105,32 @@ const Shipping = () => {
                                         <div key={m.id} className="grid grid-cols-2 md:grid-cols-6 gap-2 items-end px-3 py-3">
                                             <div className="col-span-2 md:col-span-1">
                                                 <FormItem label="Nombre">
-                                                    <Input size="sm" value={m.name} onChange={(e) => patchMethod(z.id, m.id, { name: e.target.value })} />
+                                                    <Input size="md" value={m.name} onChange={(e) => patchMethod(z.id, m.id, { name: e.target.value })} />
                                                 </FormItem>
                                             </div>
                                             <div>
                                                 <FormItem label="Tipo">
-                                                    <Select size="sm" options={typeOptions} value={typeOptions.find((o) => o.value === m.type)} onChange={(o) => patchMethod(z.id, m.id, { type: (o?.value as ShippingMethod['type']) ?? 'flat' })} />
+                                                    <Select size="md" options={typeOptions} value={typeOptions.find((o) => o.value === m.type)} onChange={(o) => patchMethod(z.id, m.id, { type: (o?.value as ShippingMethod['type']) ?? 'flat' })} />
                                                 </FormItem>
                                             </div>
                                             <div>
                                                 <FormItem label="Costo (₲)">
-                                                    <Input size="sm" type="number" value={m.cost} onChange={(e) => patchMethod(z.id, m.id, { cost: Number(e.target.value) })} />
+                                                    <Input size="md" type="number" value={m.cost} onChange={(e) => patchMethod(z.id, m.id, { cost: Number(e.target.value) })} />
                                                 </FormItem>
                                             </div>
                                             <div>
                                                 <FormItem label="Gratis desde (₲)">
-                                                    <Input size="sm" type="number" value={m.freeFrom} onChange={(e) => patchMethod(z.id, m.id, { freeFrom: Number(e.target.value) })} />
+                                                    <Input size="md" type="number" value={m.freeFrom} onChange={(e) => patchMethod(z.id, m.id, { freeFrom: Number(e.target.value) })} />
                                                 </FormItem>
                                             </div>
                                             <div>
                                                 <FormItem label="$/kg">
-                                                    <Input size="sm" type="number" value={m.perKg} onChange={(e) => patchMethod(z.id, m.id, { perKg: Number(e.target.value) })} />
+                                                    <Input size="md" type="number" value={m.perKg} onChange={(e) => patchMethod(z.id, m.id, { perKg: Number(e.target.value) })} />
                                                 </FormItem>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <Switcher checked={m.active} onChange={(c) => patchMethod(z.id, m.id, { active: c })} />
-                                                <Button size="xs" variant="plain" onClick={() => removeMethod(z.id, m.id)}>✕</Button>
+                                                <Button size="md" variant="plain" onClick={() => removeMethod(z.id, m.id)}>✕</Button>
                                             </div>
                                         </div>
                                     ))}
@@ -139,7 +139,7 @@ const Shipping = () => {
                         </div>
 
                         <div className="mt-3 text-right">
-                            <Button size="xs" variant="plain" onClick={() => removeZone(z.id)}>Eliminar zona</Button>
+                            <Button size="md" variant="plain" onClick={() => removeZone(z.id)}>Eliminar zona</Button>
                         </div>
                     </Card>
                 ))}

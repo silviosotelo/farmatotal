@@ -79,7 +79,7 @@ const ChatInput = (props: ChatInputProps) => {
                     onKeyDown={handleKeyDown}
                 />
                 <Button
-                    size="xs"
+                    size="md"
                     shape="circle"
                     variant="solid"
                     icon={<TbArrowRight />}

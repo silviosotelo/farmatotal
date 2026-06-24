@@ -105,7 +105,7 @@ const TemplatesTab = () => {
                                     <Td>{t.name}</Td>
                                     <Td className="text-gray-500">{t.subject}</Td>
                                     <Td><Tag className={t.active ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-500'}>{t.active ? 'Activa' : 'Inactiva'}</Tag></Td>
-                                    <Td className="text-right"><Button size="xs" variant="plain" onClick={() => remove(t.id)}>Borrar</Button></Td>
+                                    <Td className="text-right"><Button size="md" variant="plain" onClick={() => remove(t.id)}>Borrar</Button></Td>
                                 </Tr>
                             ))}
                         </TBody>
@@ -136,7 +136,7 @@ const QueueTab = () => {
         <Card>
             <div className="flex items-center justify-between mb-3">
                 <h6 className="mb-0">Cola de envío</h6>
-                <Button size="sm" variant="solid" loading={busy} onClick={process}>Procesar ahora</Button>
+                <Button size="md" variant="solid" loading={busy} onClick={process}>Procesar ahora</Button>
             </div>
             {isLoading ? <p className="text-gray-400">Cargando…</p> : items.length === 0 ? (
                 <p className="py-6 text-center text-gray-400">Cola vacía.</p>
@@ -154,7 +154,7 @@ const QueueTab = () => {
                                 <Td className="text-gray-500">{q.subject}</Td>
                                 <Td><Tag className={statusTint[q.status]}>{q.status}</Tag></Td>
                                 <Td>{q.attempts}</Td>
-                                <Td className="text-right">{q.status === 'failed' && <Button size="xs" onClick={() => retry(q.id)}>Reintentar</Button>}</Td>
+                                <Td className="text-right">{q.status === 'failed' && <Button size="md" onClick={() => retry(q.id)}>Reintentar</Button>}</Td>
                             </Tr>
                         ))}
                     </TBody>

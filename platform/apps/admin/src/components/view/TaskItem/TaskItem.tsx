@@ -101,7 +101,7 @@ const TaskItem = (props: TaskItemProps) => {
                         '-'
                     ) : (
                         <div className="flex items-center gap-2">
-                            <Avatar src={assignee?.img} size="sm" alt="" />
+                            <Avatar src={assignee?.img} size="md" alt="" />
                             <span className="font-bold heading-text">
                                 {assignee?.name}
                             </span>

@@ -98,7 +98,7 @@ const Tax = () => {
                                     <Switcher checked={r.isDefault} onChange={() => setDefault(i)} />
                                 </div>
                                 <div className="col-span-1 text-right">
-                                    <Button size="xs" variant="plain" icon={<HiOutlineTrash />} onClick={() => removeRate(i)} />
+                                    <Button size="md" variant="plain" icon={<HiOutlineTrash />} onClick={() => removeRate(i)} />
                                 </div>
                             </div>
                         ))}
@@ -106,7 +106,7 @@ const Tax = () => {
                             <EmptyState compact title="Sin tasas de impuesto" description="Agregá una tasa (ej. IVA 10%) para aplicarla a tus ventas." />
                         )}
                         <div>
-                            <Button size="sm" icon={<HiOutlinePlus />} onClick={addRate}>
+                            <Button size="md" icon={<HiOutlinePlus />} onClick={addRate}>
                                 Agregar tasa
                             </Button>
                         </div>

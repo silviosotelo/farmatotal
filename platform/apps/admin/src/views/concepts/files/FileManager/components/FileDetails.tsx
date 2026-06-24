@@ -103,7 +103,7 @@ const FileDetails = ({ onShare }: FileDetailsProps) => {
                                 type="button"
                                 shape="circle"
                                 icon={<TbPlus />}
-                                size="xs"
+                                size="md"
                                 onClick={() => onShare(file.id)}
                             />
                         </div>

@@ -52,7 +52,7 @@ const FileManagerInviteDialog = () => {
                         <Button
                             type="button"
                             variant="solid"
-                            size="sm"
+                            size="md"
                             customColorClass={({ unclickable }) =>
                                 classNames(
                                     'bg-gray-900 dark:bg-gray-100 dark:hover:bg-gray-200',
@@ -72,13 +72,13 @@ const FileManagerInviteDialog = () => {
             <div className="mt-6 flex justify-between items-center">
                 <Button
                     variant="plain"
-                    size="sm"
+                    size="md"
                     icon={<TbLink />}
                     onClick={handleCopy}
                 >
                     Copy link
                 </Button>
-                <Button variant="solid" size="sm" onClick={handleDialogClose}>
+                <Button variant="solid" size="md" onClick={handleDialogClose}>
                     Done
                 </Button>
             </div>

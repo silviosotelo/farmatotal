@@ -34,12 +34,12 @@ const FileManagerRenameDialog = () => {
                 />
             </div>
             <div className="mt-6 flex justify-end items-center gap-2">
-                <Button size="sm" onClick={handleDialogClose}>
+                <Button size="md" onClick={handleDialogClose}>
                     Close
                 </Button>
                 <Button
                     variant="solid"
-                    size="sm"
+                    size="md"
                     disabled={newName.length === 0}
                     onClick={handleSubmit}
                 >

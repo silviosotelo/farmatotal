@@ -276,7 +276,7 @@ const BillingSection = ({ data }: BillingSectionProps) => {
                         </div>
                         <div className="flex justify-end">
                             <Button
-                                size="sm"
+                                size="md"
                                 onClick={() =>
                                     handleEdit(
                                         card.cardHolderName,

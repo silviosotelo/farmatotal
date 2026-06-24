@@ -114,7 +114,7 @@ const Categories = () => {
                                     <Td className="py-1.5">{c.name}</Td>
                                     <Td className="text-gray-500">{c.slug}</Td>
                                     <Td><Tag className={c.active ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-500'}>{c.active ? 'Activa' : 'Inactiva'}</Tag></Td>
-                                    <Td className="text-right"><Button size="xs" onClick={() => openEdit(c)}>Editar</Button></Td>
+                                    <Td className="text-right"><Button size="md" onClick={() => openEdit(c)}>Editar</Button></Td>
                                 </Tr>
                             ))}
                         </TBody>

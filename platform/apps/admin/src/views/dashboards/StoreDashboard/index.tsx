@@ -160,7 +160,7 @@ const StoreDashboard = () => {
                         <div className="flex items-center justify-between mb-4">
                             <h5>Últimos pedidos</h5>
                             <Link to="/concepts/orders/order-list">
-                                <Button size="xs">Ver todos</Button>
+                                <Button size="md">Ver todos</Button>
                             </Link>
                         </div>
                         {orders.length > 0 ? (

@@ -58,7 +58,7 @@ const TemplatesTab = () => {
                                     <Td className="py-2 font-semibold">{t.name}</Td>
                                     <Td>{t.category}</Td>
                                     <Td className="text-gray-500 max-w-md truncate">{t.content}</Td>
-                                    <Td className="text-right"><Button size="xs" variant="plain" onClick={async () => { await apiWaDeleteTemplate(t.id); await mutate() }}>Borrar</Button></Td>
+                                    <Td className="text-right"><Button size="md" variant="plain" onClick={async () => { await apiWaDeleteTemplate(t.id); await mutate() }}>Borrar</Button></Td>
                                 </Tr>
                             ))}
                         </TBody>
@@ -98,7 +98,7 @@ const WorkflowsTab = () => {
                                     <Td className="py-2 font-semibold">{w.name}</Td>
                                     <Td><Tag className="bg-sky-100 text-sky-600">{w.trigger}</Tag></Td>
                                     <Td>{w.templateName}</Td>
-                                    <Td className="text-right"><Button size="xs" variant="plain" onClick={async () => { await apiWaDeleteWorkflow(w.id); await mutate() }}>Borrar</Button></Td>
+                                    <Td className="text-right"><Button size="md" variant="plain" onClick={async () => { await apiWaDeleteWorkflow(w.id); await mutate() }}>Borrar</Button></Td>
                                 </Tr>
                             ))}
                         </TBody>

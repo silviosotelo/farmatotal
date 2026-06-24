@@ -137,9 +137,9 @@ const CheckoutFields = () => {
                                     <Switcher checked={f.required} onChange={(c) => patch(i, { required: c })} />
                                 </div>
                                 <div className="col-span-6 lg:col-span-1 flex items-center justify-end gap-1">
-                                    <Button size="xs" variant="plain" icon={<HiOutlineArrowUp />} disabled={i === 0} onClick={() => move(i, -1)} />
-                                    <Button size="xs" variant="plain" icon={<HiOutlineArrowDown />} disabled={i === fields.length - 1} onClick={() => move(i, 1)} />
-                                    <Button size="xs" variant="plain" icon={<HiOutlineTrash />} onClick={() => remove(i)} />
+                                    <Button size="md" variant="plain" icon={<HiOutlineArrowUp />} disabled={i === 0} onClick={() => move(i, -1)} />
+                                    <Button size="md" variant="plain" icon={<HiOutlineArrowDown />} disabled={i === fields.length - 1} onClick={() => move(i, 1)} />
+                                    <Button size="md" variant="plain" icon={<HiOutlineTrash />} onClick={() => remove(i)} />
                                 </div>
                                 {f.type === 'select' && (
                                     <div className="col-span-12">
@@ -154,8 +154,8 @@ const CheckoutFields = () => {
                         ))}
 
                         <div className="flex gap-2">
-                            <Button size="sm" icon={<HiOutlinePlus />} onClick={add}>Agregar campo</Button>
-                            <Button size="sm" variant="plain" onClick={resetDefaults}>Restaurar por defecto</Button>
+                            <Button size="md" icon={<HiOutlinePlus />} onClick={add}>Agregar campo</Button>
+                            <Button size="md" variant="plain" onClick={resetDefaults}>Restaurar por defecto</Button>
                         </div>
                     </div>
                 </Card>
