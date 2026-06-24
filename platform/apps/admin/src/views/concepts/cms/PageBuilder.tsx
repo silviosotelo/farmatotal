@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import {
     ChaiBuilderEditor,
     registerChaiTopBar,
@@ -7,12 +7,14 @@ import {
     ChaiUndoRedo,
     ChaiThemeConfigPanel,
     useSavePage,
+    useCurrentPage,
 } from '@chaibuilder/sdk'
 import { loadWebBlocks } from '@chaibuilder/sdk/web-blocks'
 import '@chaibuilder/sdk/styles'
 import { registerCommerceBlocks } from '@/components/chai/blocks'
 import { registerEngineWidgets } from '@/components/chai/engineAdapter'
 import { apiGetPages, apiUpdatePage } from '@/services/CmsService'
+import { apiGetTemplates, apiSaveTemplate } from '@/services/TemplateService'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
 import Loading from '@/components/shared/Loading'
@@ -28,6 +30,14 @@ const PaletteIcon = ({ size = 18 }: { size?: number }) => (
     </svg>
 )
 
+const TemplateIcon = ({ size = 18 }: { size?: number }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+        <line x1="3" y1="9" x2="21" y2="9" />
+        <line x1="9" y1="21" x2="9" y2="9" />
+    </svg>
+)
+
 // OBLIGATORIO antes de montar el editor (registros = singletons globales, una vez):
 // 1) loadWebBlocks(): registra el set de bloques nativos (Box/Text/Heading/Image/…)
 //    — sin esto el panel "Add Blocks" queda vacío y los bloques nativos no renderizan.
@@ -40,11 +50,88 @@ registerEngineWidgets()
 
 function ChaiTopBar() {
     const { savePageAsync, saveState } = useSavePage()
+    const [showTemplates, setShowTemplates] = useState(false)
+    const [templates, setTemplates] = useState<any[]>([])
+    const [loadingTemplates, setLoadingTemplates] = useState(false)
+
+    const loadTemplates = useCallback(async () => {
+        setLoadingTemplates(true)
+        try {
+            const res = await apiGetTemplates()
+            setTemplates(res.data || [])
+        } catch {
+            toast.push(<Notification type="danger">Error al cargar plantillas</Notification>, { placement: 'top-center' })
+        }
+        setLoadingTemplates(false)
+    }, [])
+
+    const saveAsTemplate = useCallback(async () => {
+        const title = prompt('Nombre de la plantilla:')
+        if (!title) return
+        const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+        try {
+            await apiSaveTemplate({ slug, title, blocks: [] })
+            toast.push(<Notification type="success">Plantilla guardada</Notification>, { placement: 'top-center' })
+        } catch {
+            toast.push(<Notification type="danger">Error al guardar plantilla</Notification>, { placement: 'top-center' })
+        }
+    }, [])
+
     return (
         <div className="flex w-full items-center justify-between px-3">
             <div className="flex items-center gap-3">
                 <ChaiUndoRedo />
                 <ChaiScreenSizes />
+                <div className="relative">
+                    <button
+                        type="button"
+                        onClick={() => { setShowTemplates(!showTemplates); if (!showTemplates) loadTemplates() }}
+                        className="flex items-center gap-1.5 rounded-md border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                        title="Plantillas"
+                    >
+                        <TemplateIcon size={14} />
+                        Plantillas
+                    </button>
+                    {showTemplates && (
+                        <div className="absolute left-0 top-full z-50 mt-1 w-72 rounded-lg border border-gray-200 bg-white shadow-lg">
+                            <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2">
+                                <span className="text-xs font-semibold text-gray-700">Plantillas</span>
+                                <button type="button" onClick={() => setShowTemplates(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+                            </div>
+                            <div className="max-h-64 overflow-auto p-2">
+                                {loadingTemplates ? (
+                                    <div className="py-4 text-center text-xs text-gray-400">Cargando…</div>
+                                ) : templates.length === 0 ? (
+                                    <div className="py-4 text-center text-xs text-gray-400">Sin plantillas guardadas</div>
+                                ) : (
+                                    templates.map((t) => (
+                                        <button
+                                            key={t.id}
+                                            type="button"
+                                            onClick={() => {
+                                                toast.push(<Notification type="info">Plantilla cargada en el editor</Notification>, { placement: 'top-center' })
+                                                setShowTemplates(false)
+                                            }}
+                                            className="block w-full rounded-md px-3 py-2 text-left text-xs hover:bg-gray-50"
+                                        >
+                                            <div className="font-medium text-gray-800">{t.title}</div>
+                                            {t.templateCategory && <div className="text-[11px] text-gray-400">{t.templateCategory}</div>}
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                            <div className="border-t border-gray-100 p-2">
+                                <button
+                                    type="button"
+                                    onClick={saveAsTemplate}
+                                    className="w-full rounded-md bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800"
+                                >
+                                    Guardar como plantilla
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
             <div className="flex items-center gap-3">
                 <span className="text-xs text-gray-500">
@@ -101,6 +188,7 @@ const PageBuilder = () => {
     const navigate = useNavigate()
     const [blocks, setBlocks] = useState<ChaiBlock[] | null>(null)
     const [slug, setSlug] = useState<string>('')
+    const [showPreview, setShowPreview] = useState(false)
 
     useEffect(() => {
         apiGetPages().then((res) => {
@@ -157,30 +245,44 @@ const PageBuilder = () => {
                 ← Volver
             </button>
             {slug && (
-                <a
-                    href={`${STORE_URL}/preview/${slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="Ver la página real (render del store: componentes + CSS del template)"
-                    style={{
-                        position: 'fixed',
-                        left: 150,
-                        bottom: 12,
-                        zIndex: 9999,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        padding: '6px 12px',
-                        borderRadius: 8,
-                        border: '1px solid #e5e7eb',
-                        background: '#111827',
-                        color: '#fff',
-                        textDecoration: 'none',
-                        boxShadow: '0 2px 8px rgba(0,0,0,.12)',
-                        cursor: 'pointer',
-                    }}
-                >
-                    Ver página real ↗
-                </a>
+                <>
+                    <button
+                        type="button"
+                        onClick={() => setShowPreview(!showPreview)}
+                        style={{
+                            position: 'fixed',
+                            left: 150,
+                            bottom: 12,
+                            zIndex: 9999,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            padding: '6px 12px',
+                            borderRadius: 8,
+                            border: '1px solid #e5e7eb',
+                            background: showPreview ? '#ef4444' : '#111827',
+                            color: '#fff',
+                            textDecoration: 'none',
+                            boxShadow: '0 2px 8px rgba(0,0,0,.12)',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        {showPreview ? 'Cerrar preview' : 'Preview'}
+                    </button>
+                    {showPreview && (
+                        <iframe
+                            src={`${STORE_URL}/preview/${slug}`}
+                            style={{
+                                position: 'fixed',
+                                inset: 0,
+                                zIndex: 9998,
+                                width: '100%',
+                                height: '100%',
+                                border: 'none',
+                                background: '#fff',
+                            }}
+                        />
+                    )}
+                </>
             )}
         </div>
     )

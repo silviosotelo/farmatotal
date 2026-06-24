@@ -1,17 +1,5 @@
 import { getPage } from "@/lib/api";
-import PuckRender from "./PuckRender";
-import type { Data } from "@measured/puck";
-
-function hasBlocks(blocks: unknown): blocks is Data {
-  return (
-    !!blocks &&
-    typeof blocks === "object" &&
-    !Array.isArray(blocks) &&
-    "content" in (blocks as object) &&
-    Array.isArray((blocks as { content: unknown[] }).content) &&
-    (blocks as { content: unknown[] }).content.length > 0
-  );
-}
+import ChaiRender, { type ChaiBlock } from "./ChaiRender";
 
 /**
  * Zona modular editable (estilo widget-area de WordPress). Renderiza los bloques
@@ -27,10 +15,11 @@ export default async function CmsZone({
   className?: string;
 }) {
   const page = await getPage(`zone-${zone}`).catch(() => null);
-  if (!page?.published || !hasBlocks(page.blocks)) return null;
+  if (!page?.published || !Array.isArray(page.blocks) || page.blocks.length === 0)
+    return null;
   return (
     <div className={className ?? "ft-container py-4"}>
-      <PuckRender data={page.blocks as Data} />
+      <ChaiRender blocks={page.blocks as ChaiBlock[]} />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React from "react";
+import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 import { Truck, RotateCcw, ShieldCheck, Headphones } from "lucide-react";
 import {
   HomeDealsBlock,
@@ -35,10 +36,47 @@ import { TailwindRuntime } from "./TailwindRuntime";
 import { ChaiProductGrid, ChaiCategoryShowcase } from "./chaiBlocks";
 import { buildProductQuery } from "./productQuery";
 import { getActiveTheme, themeAccentVars, type ThemeKey } from "@/themes/registry";
-import { listProducts, listCategories, getStoreConfig } from "@/lib/api";
+import { listProducts, listCategories, getStoreConfig, getPage } from "@/lib/api";
 import { renderEngineBlock, getWidget, compileCss, resolveBindings, extractSettings } from "@platform/engine";
 import { AuthGate } from "./AuthGate";
 import { ensureEngineBindings } from "./engineSetup";
+
+const ANIMATION_CLASSES: Record<string, string> = {
+  'fade-in': 'animate-[fadeIn_0.6s_ease-out]',
+  'fade-in-up': 'animate-[fadeInUp_0.6s_ease-out]',
+  'fade-in-down': 'animate-[fadeInDown_0.6s_ease-out]',
+  'fade-in-left': 'animate-[fadeInLeft_0.6s_ease-out]',
+  'fade-in-right': 'animate-[fadeInRight_0.6s_ease-out]',
+  'zoom-in': 'animate-[zoomIn_0.4s_ease-out]',
+  'zoom-in-up': 'animate-[zoomInUp_0.5s_ease-out]',
+  'bounce-in': 'animate-[bounceIn_0.6s]',
+  'rotate-in': 'animate-[rotateIn_0.5s_ease-out]',
+  'flip-in-x': 'animate-[flipInX_0.5s_ease-out]',
+  'flip-in-y': 'animate-[flipInY_0.5s_ease-out]',
+};
+
+const HOVER_CLASSES: Record<string, string> = {
+  'scale-up': 'hover:scale-105 transition-transform duration-300',
+  'scale-down': 'hover:scale-95 transition-transform duration-300',
+  'brightness-up': 'hover:brightness-110 transition-all duration-300',
+  'brightness-down': 'hover:brightness-90 transition-all duration-300',
+  'shadow-lg': 'hover:shadow-xl transition-shadow duration-300',
+  'opacity-hover': 'hover:opacity-80 transition-opacity duration-300',
+};
+
+const MOTION_KEYFRAMES = `
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeInLeft { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes fadeInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+@keyframes zoomInUp { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); } 70% { transform: scale(0.9); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes rotateIn { from { opacity: 0; transform: rotate(-200deg); } to { opacity: 1; transform: rotate(0); } }
+@keyframes flipInX { from { opacity: 0; transform: perspective(400px) rotateX(90deg); } to { opacity: 1; transform: perspective(400px) rotateX(0); } }
+@keyframes flipInY { from { opacity: 0; transform: perspective(400px) rotateY(90deg); } to { opacity: 1; transform: perspective(400px) rotateY(0); } }
+`;
 
 /**
  * Render SSR de páginas creadas con el editor visual (Chai Builder).
@@ -54,6 +92,41 @@ import { ensureEngineBindings } from "./engineSetup";
  * total del catálogo de web-blocks de Chai se puede adoptar a futuro su
  * `AsyncRenderChaiBlocks` oficial (ver docs/research/visual-editor-comparison.md).
  */
+
+// ─── Clipboard Context (Copy/Paste Elements) ───
+type ClipboardCtx = {
+  copiedBlocks: ChaiBlock[];
+  copy: (blocks: ChaiBlock[]) => void;
+  paste: () => ChaiBlock[] | null;
+  hasCopied: boolean;
+};
+
+const ChaiClipboardContext = createContext<ClipboardCtx>({
+  copiedBlocks: [],
+  copy: () => {},
+  paste: () => null,
+  hasCopied: false,
+});
+
+export function useChaiClipboard() {
+  return useContext(ChaiClipboardContext);
+}
+
+export function ChaiClipboardProvider({ children }: { children: ReactNode }) {
+  const [copiedBlocks, setCopiedBlocks] = useState<ChaiBlock[]>([]);
+  const copy = useCallback((blocks: ChaiBlock[]) => {
+    setCopiedBlocks(JSON.parse(JSON.stringify(blocks)));
+  }, []);
+  const paste = useCallback(() => {
+    if (copiedBlocks.length === 0) return null;
+    return JSON.parse(JSON.stringify(copiedBlocks));
+  }, [copiedBlocks]);
+  return (
+    <ChaiClipboardContext.Provider value={{ copiedBlocks, copy, paste, hasCopied: copiedBlocks.length > 0 }}>
+      {children}
+    </ChaiClipboardContext.Provider>
+  );
+}
 
 export type ChaiBlock = {
   _id: string;
@@ -129,6 +202,13 @@ function parseCollectionId(binding: unknown): string {
 
 function childrenOf(all: ChaiBlock[], parentId: string | null): ChaiBlock[] {
   return all.filter((b) => (b._parent || null) === parentId);
+}
+
+async function GlobalWidgetBlock({ widgetSlug }: { widgetSlug: string }) {
+  if (!widgetSlug) return null;
+  const page = await getPage(`global-widget-${widgetSlug}`).catch(() => null);
+  if (!page?.blocks || !Array.isArray(page.blocks)) return null;
+  return <ChaiRender blocks={page.blocks as ChaiBlock[]} />;
 }
 
 function HeroBlock({ b }: { b: ChaiBlock }) {
@@ -328,7 +408,23 @@ function RenderBlock({
     }
   }
   const className = cls(block.styles);
+  const animCls = str(block.animation) ? ANIMATION_CLASSES[str(block.animation)] || "" : "";
+  const hoverCls = str(block.hoverAnimation) ? HOVER_CLASSES[str(block.hoverAnimation)] || "" : "";
+  const motionCls = [className, animCls, hoverCls].filter(Boolean).join(" ");
   const html = str(block.content);
+  const customCss = str(block.customCss);
+
+  const withCustomCss = (node: React.ReactNode): React.ReactNode => {
+    if (!customCss) return node;
+    return (
+      <>
+        <style dangerouslySetInnerHTML={{ __html: `#block-${block._id} { ${customCss} }` }} />
+        {React.isValidElement(node)
+          ? React.cloneElement(node as React.ReactElement<Record<string, unknown>>, { id: `block-${block._id}` } as any)
+          : <div id={`block-${block._id}`}>{node}</div>}
+      </>
+    );
+  };
 
   switch (block._type) {
     // ── Repeater (grilla data-bound con template editable) ──
@@ -339,7 +435,7 @@ function RenderBlock({
       const Tag = (["div", "ul", "ol"].includes(tag) ? tag : "div") as React.ElementType;
       if (items.length === 0) return null;
       return (
-        <Tag className={className || "grid gap-4 md:grid-cols-3 xl:grid-cols-4"}>
+        <Tag className={motionCls || "grid gap-4 md:grid-cols-3 xl:grid-cols-4"}>
           {items.map((it, i) =>
             tmpl.map((t) => (
               <RenderBlock
@@ -359,23 +455,23 @@ function RenderBlock({
     case "RepeaterItem": {
       const tag = str(block.parentTag) === "ul" || str(block.parentTag) === "ol" ? "li" : "div";
       const Tag = tag as React.ElementType;
-      return <Tag className={className}>{renderKids()}</Tag>;
+      return <Tag className={motionCls}>{renderKids()}</Tag>;
     }
     // ── Bloques de comercio (data-bound) ──
     case "Hero":
-      return <HeroBlock b={block} />;
+      return withCustomCss(<HeroBlock b={block} />);
     case "ProductGrid":
-      return (
+      return withCustomCss(
         <ChaiProductGrid
           title={str(block.title, "Destacados")}
           limit={num(block.limit, 8)}
           columns={num(block.columns, 4)}
-          className={className || undefined}
+          className={motionCls || undefined}
           query={buildProductQuery(block)}
-        />
+        />,
       );
     case "HomeDeals":
-      return <HomeDealsBlock limit={num(block.limit, 6)} theme={theme} className={className || undefined} />;
+      return withCustomCss(<HomeDealsBlock limit={num(block.limit, 6)} theme={theme} className={motionCls || undefined} />);
     case "HeroSlider": {
       const slider = (
         <HeroSlider
@@ -386,75 +482,75 @@ function RenderBlock({
           fade={block.fade !== false}
         />
       );
-      return className ? <div className={className}>{slider}</div> : slider;
+      return withCustomCss(motionCls ? <div className={motionCls}>{slider}</div> : slider);
     }
     case "CategoryCircles":
-      return (
+      return withCustomCss(
         <HomeCategoriesBlock
           title={str(block.title) || undefined}
           limit={block.limit ? num(block.limit, 0) : undefined}
-          className={className || undefined}
-        />
+          className={motionCls || undefined}
+        />,
       );
     case "Featured":
-      return (
+      return withCustomCss(
         <HomeFeaturedBlock
           title={str(block.title) || undefined}
           limit={num(block.limit, 8)}
-          className={className || undefined}
-        />
+          className={motionCls || undefined}
+        />,
       );
     case "PromoBanner":
-      return <HomePromoBannerBlock index={num(block.index, 0)} className={className || undefined} />;
+      return withCustomCss(<HomePromoBannerBlock index={num(block.index, 0)} className={motionCls || undefined} />);
     case "Catalog":
-      return (
+      return withCustomCss(
         <CatalogBlock
           perPage={num(block.perPage, 48)}
           title={str(block.title) || undefined}
           columns={num(block.columns, 5)}
-          className={className || undefined}
+          className={motionCls || undefined}
           query={buildProductQuery(block)}
-        />
+        />,
       );
     case "ProductDetail":
-      return (
+      return withCustomCss(
         <ProductDetailBlock
           showRelated={block.showRelated !== false}
           showTabs={block.showTabs !== false}
           relatedTitle={str(block.relatedTitle) || undefined}
-        />
+        />,
       );
     case "Cart":
-      return <CartBlock showCoupon={block.showCoupon !== false} />;
+      return withCustomCss(<CartBlock showCoupon={block.showCoupon !== false} />);
     case "Checkout":
-      return <CheckoutBlock />;
+      return withCustomCss(<CheckoutBlock />);
     case "ContactForm":
-      return (
-        <div className={className || "ft-container py-6"}>
+      return withCustomCss(
+        <div className={motionCls || "ft-container py-6"}>
           <ContactFormFields />
-        </div>
+        </div>,
       );
     case "Search":
-      return (
+      return withCustomCss(
         <SearchBlock
           perPage={num(block.perPage, 48)}
           columns={num(block.columns, 5)}
           placeholder={str(block.placeholder) || undefined}
-          className={className || undefined}
-        />
+          className={motionCls || undefined}
+        />,
       );
     case "Category":
-      return (
+      return withCustomCss(
         <CategoryBlock
           title={str(block.title) || undefined}
           columns={num(block.columns, 4)}
-          className={className || undefined}
-        />
+          className={motionCls || undefined}
+        />,
       );
     case "Branches":
-      return <BranchesBlock className={className || undefined} />;
+      return withCustomCss(<BranchesBlock className={motionCls || undefined} />);
     case "OrderConfirmation":
-      return (
+      return withCustomCss(
         <OrderConfirmationBlock
           orderId={str(block.orderId) || undefined}
           orderNumber={str(block.orderNumber) || undefined}
@@ -462,35 +558,35 @@ function RenderBlock({
           subtitle={str(block.subtitle) || undefined}
           catalogHref={str(block.catalogHref) || undefined}
           accountHref={str(block.accountHref) || undefined}
-        />
+        />,
       );
     case "OrderTracking":
-      return (
+      return withCustomCss(
         <OrderTrackingBlock
           title={str(block.title) || undefined}
           subtitle={str(block.subtitle) || undefined}
           requireEmail={!!block.requireEmail}
           showItems={block.showItems !== false}
-        />
+        />,
       );
     case "Account":
-      return (
+      return withCustomCss(
         <AccountBlock
           title={str(block.title) || undefined}
           showProfile={block.showProfile !== false}
           showOrders={block.showOrders !== false}
-        />
+        />,
       );
     case "Wishlist":
-      return (
+      return withCustomCss(
         <WishlistBlock
           title={str(block.title) || undefined}
           columns={num(block.columns, 4)}
-          className={className || undefined}
-        />
+          className={motionCls || undefined}
+        />,
       );
     case "Payment":
-      return (
+      return withCustomCss(
         <PaymentBlock
           orderId={str(block.orderId) || undefined}
           amount={typeof block.amount === "number" ? block.amount : undefined}
@@ -498,67 +594,67 @@ function RenderBlock({
           subtitle={str(block.subtitle) || undefined}
           returnHref={str(block.returnHref) || undefined}
           returnLabel={str(block.returnLabel) || undefined}
-        />
+        />,
       );
     case "PasswordRecovery":
-      return (
+      return withCustomCss(
         <PasswordRecoveryBlock
           title={str(block.title) || undefined}
           description={str(block.description) || undefined}
           submitLabel={str(block.submitLabel) || undefined}
           successMessage={str(block.successMessage) || undefined}
           loginHref={str(block.loginHref) || undefined}
-        />
+        />,
       );
     case "SiteHeader":
-      return <SiteHeaderBlock showTopBar={block.showTopBar !== false} />;
+      return withCustomCss(<SiteHeaderBlock showTopBar={block.showTopBar !== false} />);
     case "SiteFooter":
-      return <SiteFooterBlock />;
+      return withCustomCss(<SiteFooterBlock />);
     // ── Header descompuesto (bloques de chrome construibles) ──
     case "HeaderTopBar":
       return <HeaderTopBarBlock />;
     case "HeaderLogo":
-      return <HeaderLogoBlock logo={str(block.logo) || undefined} brandName={str(block.brandName) || undefined} />;
+      return withCustomCss(<HeaderLogoBlock logo={str(block.logo) || undefined} brandName={str(block.brandName) || undefined} />);
     case "HeaderSearch":
-      return <HeaderSearchBlock />;
+      return withCustomCss(<HeaderSearchBlock />);
     case "HeaderCategories":
-      return <HeaderCategoriesBlock />;
+      return withCustomCss(<HeaderCategoriesBlock />);
     case "HeaderAccount":
-      return <HeaderAccountBlock />;
+      return withCustomCss(<HeaderAccountBlock />);
     case "HeaderCart":
-      return <HeaderCartBlock />;
+      return withCustomCss(<HeaderCartBlock />);
     case "HeaderSucursal":
-      return <HeaderSucursalBlock />;
+      return withCustomCss(<HeaderSucursalBlock />);
     case "Banner":
-      return <BannerBlock b={block} />;
+      return withCustomCss(<BannerBlock b={block} />);
     case "CategoryShowcase":
-      return (
+      return withCustomCss(
         <ChaiCategoryShowcase
           title={str(block.title) || undefined}
           limit={num(block.limit, 8)}
           className={className || undefined}
-        />
+        />,
       );
     case "Brands":
-      return <BrandsBlock b={block} />;
+      return withCustomCss(<BrandsBlock b={block} />);
     case "Benefits":
-      return <BenefitsBlock b={block} />;
+      return withCustomCss(<BenefitsBlock b={block} />);
     case "Titulo": {
       const lvl = str(block.level, "h2");
       const Tag = (["h2", "h3", "h4"].includes(lvl) ? lvl : "h2") as React.ElementType;
       const size = lvl === "h3" ? "text-xl" : lvl === "h4" ? "text-lg" : "text-2xl";
       const align = str(block.align) === "center" ? "text-center" : "";
       const base = className || `${size} mt-2 font-bold text-brand-text`;
-      return <Tag className={`${base} ${align}`.trim()}>{str(block.text, "Título de sección")}</Tag>;
+      return withCustomCss(<Tag className={`${base} ${align}`.trim()}>{str(block.text, "Título de sección")}</Tag>);
     }
     case "Texto": {
       const align = str(block.align) === "center" ? "text-center" : "";
       const base = className || "text-[15px] leading-relaxed text-gray-600";
-      return (
+      return withCustomCss(
         <div
           className={`${base} ${align}`.trim()}
           dangerouslySetInnerHTML={{ __html: str(block.html) }}
-        />
+        />,
       );
     }
 
@@ -569,43 +665,45 @@ function RenderBlock({
     case "Div":
     case "Row":
     case "Column":
-      return <div className={className}>{renderKids()}</div>;
+      return withCustomCss(<div className={motionCls}>{renderKids()}</div>);
     case "Heading": {
       // Chai serializa el nivel como `tag`; aceptamos `level` por compat.
       const level = str(block.tag) || str(block.level, "h2");
       const Tag = (["h1", "h2", "h3", "h4", "h5", "h6"].includes(level) ? level : "h2") as React.ElementType;
-      return <Tag className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+      return withCustomCss(<Tag className={motionCls} dangerouslySetInnerHTML={{ __html: html }} />);
     }
     case "Text":
     case "Paragraph":
-      return <p className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+      return withCustomCss(<p className={motionCls} dangerouslySetInnerHTML={{ __html: html }} />);
     case "Span":
-      return <span className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+      return withCustomCss(<span className={motionCls} dangerouslySetInnerHTML={{ __html: html }} />);
     case "RichText":
-      return <div className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+      return withCustomCss(<div className={motionCls} dangerouslySetInnerHTML={{ __html: html }} />);
     case "Image": {
       const src = str(block.image) || str(block.src);
       if (!src) return null;
       // eslint-disable-next-line @next/next/no-img-element
-      return <img className={className} src={src} alt={str(block.alt)} />;
+      return withCustomCss(<img className={motionCls} src={src} alt={str(block.alt)} />);
     }
     case "Button":
     case "Link":
-      return (
-        <a className={className} href={str(block.link) || str(block.href, "#")}>
+      return withCustomCss(
+        <a className={motionCls} href={str(block.link) || str(block.href, "#")}>
           {html ? <span dangerouslySetInnerHTML={{ __html: html }} /> : renderKids()}
-        </a>
+        </a>,
       );
     case "Divider":
-      return <hr className={className} />;
+      return withCustomCss(<hr className={motionCls} />);
     case "List":
-      return <ul className={className}>{renderKids()}</ul>;
+      return withCustomCss(<ul className={motionCls}>{renderKids()}</ul>);
     case "ListItem":
-      return <li className={className} dangerouslySetInnerHTML={html ? { __html: html } : undefined}>{html ? undefined : renderKids()}</li>;
+      return withCustomCss(<li className={motionCls} dangerouslySetInnerHTML={html ? { __html: html } : undefined}>{html ? undefined : renderKids()}</li>);
+    case "GlobalWidget":
+      return withCustomCss(<GlobalWidgetBlock widgetSlug={str(block.widgetSlug)} />);
 
     default:
       // Desconocido: si tiene hijos, los renderizamos en un wrapper; si no, nada.
-      return kids.length ? <div className={className}>{renderKids()}</div> : null;
+      return withCustomCss(kids.length ? <div className={motionCls}>{renderKids()}</div> : null);
   }
 }
 
@@ -684,6 +782,7 @@ export default async function ChaiRender({ blocks }: { blocks: ChaiBlock[] }) {
   const seen = new Set<string>();
   return (
     <div className="flex flex-col gap-6" style={themeAccentVars(theme) as React.CSSProperties}>
+      <style dangerouslySetInnerHTML={{ __html: MOTION_KEYFRAMES }} />
       <TailwindRuntime />
       {roots.map((b) => (
         <RenderBlock key={b._id} block={b} all={blocks} theme={theme} repeaterData={repeaterData} loopData={loopData} ctx={ctx} seen={seen} />

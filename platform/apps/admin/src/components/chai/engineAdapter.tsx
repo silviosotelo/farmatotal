@@ -274,6 +274,31 @@ function mapProp(def: PropDef): any {
 }
 
 function makeCanvasComponent(schema: WidgetSchema) {
+    const directionMap: Record<string, string> = {
+        row: 'flex-row',
+        col: 'flex-col',
+        'row-reverse': 'flex-row-reverse',
+        'col-reverse': 'flex-col-reverse',
+    }
+    const wrapMap: Record<string, string> = {
+        nowrap: 'flex-nowrap',
+        wrap: 'flex-wrap',
+    }
+    const alignMap: Record<string, string> = {
+        start: 'items-start',
+        center: 'items-center',
+        end: 'items-end',
+        stretch: 'items-stretch',
+    }
+    const justifyMap: Record<string, string> = {
+        start: 'justify-start',
+        center: 'justify-center',
+        end: 'justify-end',
+        between: 'justify-between',
+        around: 'justify-around',
+        evenly: 'justify-evenly',
+    }
+
     return function EngineCanvas(props: any) {
         const ctx = useStoreCtx()
         const elementId = typeof props._id === 'string' ? props._id : 'preview'
@@ -282,10 +307,32 @@ function makeCanvasComponent(schema: WidgetSchema) {
         const resolved = resolveBindings(settings, ctx)
         const css = compileCss(schema, resolved, elementId)
         const children = schema.acceptsChildren ? props.children : undefined
+
+        // Apply layout classes for container widgets.
+        let layoutCls = ''
+        if (schema.type === 'container') {
+            const layout = (props.layout as string) || 'block'
+            if (layout === 'flex') {
+                const dir = directionMap[(props.flexDirection as string) || 'row'] || 'flex-row'
+                const wrap = wrapMap[(props.flexWrap as string) || 'nowrap'] || 'flex-nowrap'
+                const align = alignMap[(props.alignItems as string) || 'stretch'] || 'items-stretch'
+                const justify = justifyMap[(props.justifyContent as string) || 'start'] || 'justify-start'
+                layoutCls = `flex ${dir} ${wrap} ${align} ${justify}`
+            } else if (layout === 'grid') {
+                const cols = (props.gridCols as string) || '3'
+                const gap = (props.gap as string) || '4'
+                layoutCls = `grid grid-cols-${cols} gap-${gap}`
+            }
+        }
+
         return (
             <>
                 <style dangerouslySetInnerHTML={{ __html: css }} />
-                {renderWidget(schema, resolved, elementId, children)}
+                {layoutCls ? (
+                    <div className={layoutCls}>{renderWidget(schema, resolved, elementId, children)}</div>
+                ) : (
+                    renderWidget(schema, resolved, elementId, children)
+                )}
             </>
         )
     }
@@ -299,6 +346,53 @@ export function registerEngineWidget(schema: WidgetSchema): void {
     for (const [key, def] of Object.entries(schema.props)) properties[key] = mapProp(def)
     // Display conditions transversal (visibilidad por device / fechas).
     properties.conditions = { type: 'object', title: 'Visibilidad', default: {}, ui: { 'ui:widget': 'ftConditions' } }
+
+    // CSS Grid/Flexbox layout controls for container widgets.
+    if (schema.type === 'container') {
+        properties.layout = {
+            type: 'string',
+            title: 'Layout',
+            enum: ['block', 'flex', 'grid'],
+            default: 'block',
+        }
+        properties.flexDirection = {
+            type: 'string',
+            title: 'Flex Direction',
+            enum: ['row', 'col', 'row-reverse', 'col-reverse'],
+            default: 'row',
+        }
+        properties.flexWrap = {
+            type: 'string',
+            title: 'Flex Wrap',
+            enum: ['nowrap', 'wrap'],
+            default: 'nowrap',
+        }
+        properties.gridCols = {
+            type: 'string',
+            title: 'Grid Columns',
+            enum: ['1', '2', '3', '4', '6', '12'],
+            default: '3',
+        }
+        properties.gap = {
+            type: 'string',
+            title: 'Gap',
+            enum: ['0', '1', '2', '3', '4', '6', '8', '12'],
+            default: '4',
+        }
+        properties.alignItems = {
+            type: 'string',
+            title: 'Align Items',
+            enum: ['start', 'center', 'end', 'stretch'],
+            default: 'stretch',
+        }
+        properties.justifyContent = {
+            type: 'string',
+            title: 'Justify Content',
+            enum: ['start', 'center', 'end', 'between', 'around', 'evenly'],
+            default: 'start',
+        }
+    }
+
     const config: any = {
         type: schema.type,
         label: schema.label,

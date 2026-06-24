@@ -9,7 +9,7 @@ import { tid } from "../../plugins/tenant";
 const pageInput = z.object({
   slug: z.string().min(1).max(250),
   title: z.string().min(1).max(300),
-  // blocks = objeto Puck { root, content, zones } o array legacy. JSONB acepta cualquiera.
+  // blocks = array de bloques ChaiBuilder. JSONB acepta cualquier estructura.
   blocks: z.unknown().optional(),
   seo: z.object({ title: z.string().optional(), description: z.string().optional() }).optional(),
   published: z.boolean().optional(),
@@ -17,7 +17,47 @@ const pageInput = z.object({
 
 const idParam = z.object({ id: z.string().uuid() });
 
+// ─── Templates ───
+const templateInput = z.object({
+  slug: z.string().min(1).max(250),
+  title: z.string().min(1).max(300),
+  category: z.string().optional(),
+  thumbnail: z.string().optional(),
+  blocks: z.unknown(),
+});
+
 export async function cmsRoutes(app: FastifyInstance) {
+  // ─── Template Library ───
+  app.get("/cms/templates", async (req) => {
+    const tenantId = tid(req);
+    const rows = await db.select().from(pages)
+      .where(and(eq(pages.tenantId, tenantId), eq(pages.isTemplate, true)));
+    return { data: rows };
+  });
+
+  app.post("/cms/templates", { schema: { body: templateInput } }, async (req, reply) => {
+    const tenantId = tid(req);
+    const body = req.body;
+    const [row] = await db.insert(pages).values({
+      tenantId,
+      slug: body.slug,
+      title: body.title,
+      blocks: body.blocks,
+      isTemplate: true,
+      templateCategory: body.category ?? null,
+      templateThumbnail: body.thumbnail ?? null,
+      published: true,
+    }).returning();
+    return reply.status(201).send(row);
+  });
+
+  app.delete("/cms/templates/:id", { schema: { params: idParam } }, async (req, reply) => {
+    const tenantId = tid(req);
+    const { id } = req.params;
+    await db.delete(pages).where(and(eq(pages.id, id), eq(pages.tenantId, tenantId)));
+    return reply.status(204).send();
+  });
+
   // Registro canónico de bloques del page-builder (fuente: @platform/shared-types).
   // El clone (proyecto separado) lo consume para validar su set de bloques.
   app.get("/cms/blocks", async () => {
@@ -68,6 +108,47 @@ export async function cmsRoutes(app: FastifyInstance) {
       .returning();
     if (!row) return reply.notFound();
     return reply.send({ ok: true, id: row.id });
+  });
+
+  // ─── Global Widgets ───
+  const globalWidgetInput = z.object({
+    slug: z.string().min(1).max(250),
+    title: z.string().min(1).max(300),
+    blocks: z.unknown(),
+  });
+
+  app.get("/cms/global-widgets", async (req, reply) => {
+    const rows = await db.select().from(pages)
+      .where(and(eq(pages.tenantId, tid(req)), eq(pages.isGlobalWidget, true)));
+    return reply.send({ data: rows });
+  });
+
+  app.post("/cms/global-widgets", async (req, reply) => {
+    const body = globalWidgetInput.parse(req.body);
+    const [row] = await db.insert(pages).values({
+      tenantId: tid(req),
+      slug: body.slug,
+      title: body.title,
+      blocks: body.blocks,
+      isGlobalWidget: true,
+      published: true,
+    }).returning();
+    return reply.status(201).send(row);
+  });
+
+  app.put("/cms/global-widgets/:id", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const body = globalWidgetInput.partial().parse(req.body);
+    const [row] = await db.update(pages).set(body)
+      .where(and(eq(pages.id, id), eq(pages.tenantId, tid(req))))
+      .returning();
+    return reply.send(row);
+  });
+
+  app.delete("/cms/global-widgets/:id", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    await db.delete(pages).where(and(eq(pages.id, id), eq(pages.tenantId, tid(req))));
+    return reply.status(204).send();
   });
 
   // ---- Settings (por tenant: PK compuesta (tenant_id, key)) ----

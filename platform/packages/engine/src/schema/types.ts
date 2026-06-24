@@ -79,7 +79,10 @@ export interface PropDef {
     control?: Record<string, unknown>
 }
 
-export type Settings = Record<string, unknown>
+export type Settings = Record<string, unknown> & {
+  /** CSS personalizado del usuario para este widget (freeform). */
+  customCss?: string
+}
 
 export interface RenderHelpers {
     elementId: string

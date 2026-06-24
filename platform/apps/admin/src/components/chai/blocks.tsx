@@ -190,6 +190,14 @@ const categoryField = (title = 'Categoría'): any => ({
     ui: { 'ui:widget': 'categoryPicker' },
 })
 
+/** Custom CSS textarea — se agrega a todos los bloques del editor. */
+const customCssProp = {
+    type: 'string',
+    title: 'Custom CSS',
+    'ui:widget': 'textarea',
+    'ui:options': { rows: 4, placeholder: 'selector { property: value; }' },
+}
+
 // ─────────────────────────── Widget: selector de marca (por query) ───────────────────────────
 type ApiBrand = { id: string; slug: string; name: string }
 function useAllBrands(): ApiBrand[] {
@@ -359,6 +367,21 @@ const queryProps = (): Record<string, any> => ({
     offset: { type: 'number', title: 'Saltar (offset)', default: 0 },
     columns: { type: 'number', title: 'Columnas', default: 4 },
 })
+
+const motionProps: Record<string, any> = {
+    animation: {
+        type: 'string',
+        title: 'Entrance Animation',
+        enum: ['', 'fade-in', 'fade-in-up', 'fade-in-down', 'fade-in-left', 'fade-in-right', 'zoom-in', 'zoom-in-up', 'bounce-in', 'rotate-in', 'flip-in-x', 'flip-in-y'],
+        default: '',
+    },
+    hoverAnimation: {
+        type: 'string',
+        title: 'Hover Effect',
+        enum: ['', 'scale-up', 'scale-down', 'brightness-up', 'brightness-down', 'shadow-lg', 'opacity-hover'],
+        default: '',
+    },
+}
 
 /** Traduce las props de query del bloque a los params de la API (admin preview + store comparten la idea). */
 function buildProductParams(b: Record<string, any>): Record<string, string | number | boolean> {
@@ -1280,6 +1303,8 @@ export function registerCommerceBlocks() {
                 ctaHref: { type: 'string', title: 'Enlace del botón', default: '/productos' },
                 image: { type: 'string', title: 'Imagen de fondo (URL)', default: '' },
                 align: { type: 'string', title: 'Alineación', enum: ['left', 'center'], default: 'left' },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title', 'subtitle', 'ctaLabel'],
@@ -1295,6 +1320,8 @@ export function registerCommerceBlocks() {
                 styles: StylesProp('py-6'),
                 title: { type: 'string', title: 'Título', default: 'Destacados' },
                 ...queryProps(),
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title'],
@@ -1311,6 +1338,8 @@ export function registerCommerceBlocks() {
                 title: { type: 'string', title: 'Título', default: 'Ofertas' },
                 limit: { type: 'number', title: 'Cantidad', default: 6 },
                 columns: { type: 'number', title: 'Columnas', default: 6 },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title'],
@@ -1330,6 +1359,8 @@ export function registerCommerceBlocks() {
                 ctaHref: { type: 'string', title: 'Enlace del botón', default: '#' },
                 image: { type: 'string', title: 'Imagen de fondo (URL)', default: '' },
                 align: { type: 'string', title: 'Alineación', enum: ['left', 'center'], default: 'left' },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title', 'subtitle', 'ctaLabel'],
@@ -1345,6 +1376,8 @@ export function registerCommerceBlocks() {
                 styles: StylesProp('py-6'),
                 title: { type: 'string', title: 'Título', default: 'Categorías' },
                 limit: { type: 'number', title: 'Cantidad', default: 8 },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title'],
@@ -1360,6 +1393,8 @@ export function registerCommerceBlocks() {
                 styles: StylesProp('py-6'),
                 title: { type: 'string', title: 'Título', default: 'Marcas' },
                 logos: { type: 'string', title: 'Logos (URLs separadas por coma)', default: '' },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title'],
@@ -1374,6 +1409,8 @@ export function registerCommerceBlocks() {
             properties: {
                 styles: StylesProp('py-6'),
                 title: { type: 'string', title: 'Título', default: '' },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title'],
@@ -1383,7 +1420,7 @@ export function registerCommerceBlocks() {
         type: 'HeroSlider',
         label: 'Slider del home',
         group: 'Comercio',
-        description: 'Carrusel principal con los banners del home (filtrados por día). Se editan en “Slider y banners”.',
+        description: 'Carrusel principal con los banners del home (filtrados por día). Se editan en "Slider y banners".',
         props: registerChaiBlockProps({
             properties: {
                 styles: StylesProp(''),
@@ -1392,6 +1429,8 @@ export function registerCommerceBlocks() {
                 showDots: { type: 'boolean', title: 'Mostrar puntos', default: true },
                 loop: { type: 'boolean', title: 'Loop infinito', default: true },
                 fade: { type: 'boolean', title: 'Transición fade', default: true },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
     } as any)
@@ -1428,6 +1467,8 @@ export function registerCommerceBlocks() {
                 showArrows: { type: 'boolean', title: 'Flechas', default: true },
                 showDots: { type: 'boolean', title: 'Puntos', default: true },
                 transition: { type: 'string', title: 'Transición', enum: ['fade', 'slide'], default: 'fade' },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
     } as any)
@@ -1442,6 +1483,8 @@ export function registerCommerceBlocks() {
                 styles: StylesProp(''),
                 title: { type: 'string', title: 'Título (opcional)', default: '' },
                 limit: { type: 'number', title: 'Máx. categorías (0 = todas)', default: 0 },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title'],
@@ -1458,6 +1501,8 @@ export function registerCommerceBlocks() {
                 title: { type: 'string', title: 'Título', default: 'Selección para vos' },
                 limit: { type: 'number', title: 'Cantidad', default: 8 },
                 columns: { type: 'number', title: 'Columnas', default: 4 },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title'],
@@ -1472,6 +1517,8 @@ export function registerCommerceBlocks() {
             properties: {
                 styles: StylesProp(''),
                 index: { type: 'number', title: 'Índice del banner', default: 0 },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
     } as any)
@@ -1485,6 +1532,8 @@ export function registerCommerceBlocks() {
             properties: {
                 styles: StylesProp(''),
                 showTopBar: { type: 'boolean', title: 'Mostrar barra superior', default: true },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
     } as any)
@@ -1495,7 +1544,7 @@ export function registerCommerceBlocks() {
         group: 'Chrome',
         description: 'Footer del sitio: columnas de enlaces, copyright y zona editable previa. Bloque funcional.',
         props: registerChaiBlockProps({
-            properties: { styles: StylesProp('mt-6 border-t border-gray-100 px-6 py-8 text-sm text-gray-400') },
+            properties: { styles: StylesProp('mt-6 border-t border-gray-100 px-6 py-8 text-sm text-gray-400'), ...motionProps, customCss: customCssProp },
         }) as any,
     } as any)
 
@@ -1505,7 +1554,7 @@ export function registerCommerceBlocks() {
             label,
             group: 'Header',
             description,
-            props: registerChaiBlockProps({ properties: { styles: StylesProp(styleDefault), ...extra } }) as any,
+            props: registerChaiBlockProps({ properties: { styles: StylesProp(styleDefault), ...motionProps, customCss: customCssProp, ...extra } }) as any,
         } as any)
     chrome('HeaderTopBar', 'Header · Barra superior', 'Barra de avisos/links + sucursal más cercana.', HdTopBarPv, {}, 'flex items-center justify-between bg-gray-50 px-4 py-1.5 text-[11px] text-gray-400')
     chrome('HeaderLogo', 'Header · Logo', 'Logo enlazado al inicio.', HdLogoPv, {
@@ -1527,6 +1576,8 @@ export function registerCommerceBlocks() {
             properties: {
                 styles: StylesProp('py-8'),
                 showCoupon: { type: 'boolean', title: 'Mostrar cupón de descuento', default: true },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
     } as any)
@@ -1536,7 +1587,7 @@ export function registerCommerceBlocks() {
         label: 'Checkout',
         group: 'Comercio',
         description: 'Checkout funcional: facturación, entrega, pago y resumen. Crea la orden e inicia el pago (Bancard).',
-        props: registerChaiBlockProps({ properties: { styles: StylesProp('py-8') } }) as any,
+        props: registerChaiBlockProps({ properties: { styles: StylesProp('py-8'), ...motionProps, customCss: customCssProp } }) as any,
     } as any)
 
     registerChaiBlock(ProductDetailPv as any, {
@@ -1550,6 +1601,8 @@ export function registerCommerceBlocks() {
                 showTabs: { type: 'boolean', title: 'Mostrar pestañas (desc./valoraciones)', default: true },
                 showRelated: { type: 'boolean', title: 'Mostrar relacionados', default: true },
                 relatedTitle: { type: 'string', title: 'Título de relacionados', default: 'Productos relacionados' },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['relatedTitle'],
@@ -1567,6 +1620,8 @@ export function registerCommerceBlocks() {
                 perPage: { type: 'number', title: 'Por página', default: 48 },
                 columns: { type: 'number', title: 'Columnas (desktop)', default: 5 },
                 ...filterProps(),
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title'],
@@ -1583,6 +1638,8 @@ export function registerCommerceBlocks() {
                 text: { type: 'string', title: 'Texto', default: 'Título de sección' },
                 level: { type: 'string', title: 'Nivel', enum: ['h2', 'h3', 'h4'], default: 'h2' },
                 align: { type: 'string', title: 'Alineación', enum: ['left', 'center'], default: 'left' },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['text'],
@@ -1603,6 +1660,8 @@ export function registerCommerceBlocks() {
                     ui: { 'ui:widget': 'richtext' },
                 },
                 align: { type: 'string', title: 'Alineación', enum: ['left', 'center'], default: 'left' },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['html'],
@@ -1619,6 +1678,8 @@ export function registerCommerceBlocks() {
                 placeholder: { type: 'string', title: 'Texto del buscador', default: '¿Qué estás buscando?' },
                 perPage: { type: 'number', title: 'Resultados por página', default: 48 },
                 columns: { type: 'number', title: 'Columnas', default: 5 },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['placeholder'],
@@ -1634,6 +1695,8 @@ export function registerCommerceBlocks() {
                 styles: StylesProp('ft-container py-6'),
                 title: { type: 'string', title: 'Título', default: 'Categorías' },
                 columns: { type: 'number', title: 'Columnas', default: 4 },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title'],
@@ -1645,7 +1708,7 @@ export function registerCommerceBlocks() {
         group: 'Comercio',
         description: 'Listado de sucursales con filtro por zona y geolocalización (data-bound a /branches). Gateado por flags.branches.',
         props: registerChaiBlockProps({
-            properties: { styles: StylesProp('ft-container py-6') },
+            properties: { styles: StylesProp('ft-container py-6'), ...motionProps, customCss: customCssProp },
         }) as any,
     } as any)
 
@@ -1663,6 +1726,8 @@ export function registerCommerceBlocks() {
                 accountHref: { type: 'string', title: 'Enlace "mis pedidos"', default: '/mi-cuenta' },
                 orderId: { type: 'string', title: 'Id de orden (opcional, override)', default: '' },
                 orderNumber: { type: 'string', title: 'N° de orden (opcional, override)', default: '' },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title', 'subtitle'],
@@ -1680,6 +1745,8 @@ export function registerCommerceBlocks() {
                 subtitle: { type: 'string', title: 'Subtítulo', default: 'Ingresá el número de pedido y el correo con el que compraste.' },
                 requireEmail: { type: 'boolean', title: 'Exigir correo', default: false },
                 showItems: { type: 'boolean', title: 'Mostrar ítems del pedido', default: true },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title', 'subtitle'],
@@ -1696,6 +1763,8 @@ export function registerCommerceBlocks() {
                 title: { type: 'string', title: 'Título', default: 'Mi cuenta' },
                 showProfile: { type: 'boolean', title: 'Mostrar detalles de la cuenta', default: true },
                 showOrders: { type: 'boolean', title: 'Mostrar historial de pedidos', default: true },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title'],
@@ -1711,6 +1780,8 @@ export function registerCommerceBlocks() {
                 styles: StylesProp('ft-container py-8'),
                 title: { type: 'string', title: 'Título', default: 'Mis Favoritos' },
                 columns: { type: 'number', title: 'Columnas', default: 4 },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title'],
@@ -1729,6 +1800,8 @@ export function registerCommerceBlocks() {
                 returnHref: { type: 'string', title: 'Enlace de retorno', default: '/pedido-recibido' },
                 returnLabel: { type: 'string', title: 'Texto del botón de retorno', default: 'Ver mi pedido' },
                 orderId: { type: 'string', title: 'Id de orden (opcional, override)', default: '' },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title', 'subtitle', 'returnLabel'],
@@ -1747,6 +1820,8 @@ export function registerCommerceBlocks() {
                 submitLabel: { type: 'string', title: 'Texto del botón', default: 'Enviar enlace de recuperación' },
                 successMessage: { type: 'string', title: 'Mensaje de éxito', default: 'Si el email existe, te enviamos las instrucciones para restablecer tu contraseña.' },
                 loginHref: { type: 'string', title: 'Enlace a iniciar sesión', default: '/mi-cuenta/' },
+                ...motionProps,
+                customCss: customCssProp,
             },
         }) as any,
         i18nProps: ['title', 'description', 'submitLabel', 'successMessage'],

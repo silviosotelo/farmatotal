@@ -1,5 +1,5 @@
 /**
- * Registro canónico de bloques del page-builder (Puck).
+ * Registro canónico de bloques del page-builder (ChaiBuilder).
  * Fuente única de verdad compartida entre el admin (editor) y el storefront (render).
  * El admin importa estos tipos en build; el motor lo sirve en runtime vía GET /cms/blocks
  * para que el clone (proyecto separado) valide su set de bloques contra el canónico.
