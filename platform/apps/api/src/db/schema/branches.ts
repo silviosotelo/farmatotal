@@ -42,6 +42,11 @@ export const branches = appSchema.table(
     pickupEnabled: boolean("pickup_enabled").notNull().default(true),
     deliveryEnabled: boolean("delivery_enabled").notNull().default(false),
     active: boolean("active").notNull().default(true),
+    /** Valores de campos personalizados (config en settings mod_branch_fields). */
+    custom: jsonb("custom").$type<Record<string, unknown>>(),
+    /** Trazabilidad de import (ERP/Woo): sistema y id de origen. */
+    sourceId: varchar("source_id", { length: 80 }),
+    sourceSystem: varchar("source_system", { length: 40 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()

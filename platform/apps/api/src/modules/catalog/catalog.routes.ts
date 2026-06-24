@@ -211,6 +211,7 @@ export async function catalogRoutes(app: FastifyInstance) {
               ilike(products.title, `%${q}%`),
               ilike(products.sku, `%${q}%`),
               ilike(products.codInterno, `%${q}%`),
+              ilike(products.barcode, `%${q}%`),
             )
           : undefined,
         manualIds.length ? inArray(products.id, manualIds) : undefined,
@@ -371,6 +372,7 @@ function toCategoryDTO(r: typeof categories.$inferSelect) {
     description: r.description ?? null,
     seo: r.seo ?? null,
     active: r.active,
+    custom: r.custom ?? null,
   };
 }
 function toBrandDTO(r: typeof brands.$inferSelect) {
@@ -388,6 +390,7 @@ function toProductDTO(r: typeof products.$inferSelect) {
     id: r.id,
     sku: r.sku,
     codInterno: r.codInterno ?? null,
+    barcode: r.barcode ?? null,
     slug: r.slug,
     title: r.title,
     description: r.description ?? null,

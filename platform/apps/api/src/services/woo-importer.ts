@@ -123,7 +123,7 @@ async function importCategories(tenantId: string): Promise<{ ok: number; map: Ma
           active: true,
         })
         .onConflictDoUpdate({
-          target: categories.slug,
+          target: [categories.tenantId, categories.slug],
           set: { name: c.name, description: stripHtml(c.description), updatedAt: new Date() },
         })
         .returning({ id: categories.id });
@@ -270,7 +270,7 @@ async function upsertProduct(p: WooProduct, catMap: Map<number, string>, tenantI
     .insert(products)
     .values(values)
     .onConflictDoUpdate({
-      target: [products.sourceSystem, products.sourceId],
+      target: [products.tenantId, products.sourceSystem, products.sourceId],
       set: {
         sku: values.sku,
         slug: values.slug,

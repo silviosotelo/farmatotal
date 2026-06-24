@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Input, Button, Tag, PasswordInput } from "@platform/ui";
+import { Input, Button, PasswordInput } from "@platform/ui";
 import { useAuth } from "@/components/providers/AuthContext";
 import { useToast } from "@/components/providers/ToastContext";
 import { useMoney, useCurrency } from "@/components/providers/CurrencyContext";
@@ -236,6 +236,7 @@ export function AccountBlock({
               loading={authBusy}
               disabled={authBusy}
               block
+              style={{ color: 'white' }}
               className="mt-1 brand-gradient h-11"
             >
               {authMode === "login" ? "Iniciar sesión" : "Crear cuenta"}
@@ -304,6 +305,7 @@ export function AccountBlock({
                   shape="round"
                   loading={saving}
                   disabled={saving}
+                  style={{ color: 'white' }}
                   className="brand-gradient h-[44px] px-8"
                 >
                   {saving ? "Guardando..." : "Guardar cambios"}
@@ -394,9 +396,9 @@ function FragmentRow({
           {new Date(order.createdAt).toLocaleDateString(locale)}
         </td>
         <td className="px-4 py-3">
-          <Tag className={"px-2 py-0.5 rounded-full text-xs font-medium " + (statusTagClass[order.status] ?? "bg-gray-100 text-brand-muted")}>
+          <span className={"px-2 py-0.5 rounded-full text-xs font-medium " + (statusTagClass[order.status] ?? "bg-gray-100 text-brand-muted")}>
             {order.status}
-          </Tag>
+          </span>
         </td>
         <td className="px-4 py-3 text-right font-semibold text-brand-text">
           {fmtOrder(order.total, order.currency)}

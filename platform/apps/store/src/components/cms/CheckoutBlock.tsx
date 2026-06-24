@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Input, Button, Select, Alert, Radio, Spinner } from "@platform/ui";
+import { Input, Button, Select, Alert, Spinner } from "@platform/ui";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "@/components/providers/CartContext";
@@ -307,20 +307,30 @@ export function CheckoutBlock() {
                 <p className="text-sm text-brand-muted">No hay métodos de entrega configurados.</p>
               ) : (
                 <>
-                  <Radio.Group value={ship.selectedId ?? ""} onChange={(val) => ship.setSelectedId(String(val))}>
-                    <div className="flex flex-col gap-3">
-                      {ship.options.map((o) => (
-                        <div
-                          key={o.id}
-                          className={"flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors " + (ship.selectedId === o.id ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}
-                        >
-                          <Radio value={o.id} />
-                          <span className="flex-1 text-sm font-medium text-brand-text">{o.name}</span>
-                          <span className="font-price text-sm text-brand-text whitespace-nowrap">{o.cost > 0 ? money(o.cost) : "Gratis"}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </Radio.Group>
+                  <div className="flex w-full flex-col gap-3">
+                    {ship.options.map((o) => (
+                      <label
+                        key={o.id}
+                        htmlFor={`ship-${o.id}`}
+                        className={"flex w-full items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors " + (ship.selectedId === o.id ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}
+                      >
+                        <input
+                          type="radio"
+                          id={`ship-${o.id}`}
+                          name="shipping-method"
+                          value={o.id}
+                          checked={ship.selectedId === o.id}
+                          onChange={() => ship.setSelectedId(o.id)}
+                          className="sr-only"
+                        />
+                        <span className={"size-4 shrink-0 rounded-full border-2 flex items-center justify-center " + (ship.selectedId === o.id ? "border-brand-orange" : "border-[#c0c0c0]")}>
+                          {ship.selectedId === o.id && <span className="size-2 rounded-full bg-brand-orange" />}
+                        </span>
+                        <span className="flex-1 text-sm font-medium text-brand-text">{o.name}</span>
+                        <span className="font-price text-sm text-brand-text whitespace-nowrap">{o.cost > 0 ? money(o.cost) : "Gratis"}</span>
+                      </label>
+                    ))}
+                  </div>
                   {isPickup ? (
                     <div className="mt-4 text-sm text-brand-text">
                       {selected ? <span>Retirás en <span className="font-semibold">{selected.name}</span>{selected.address ? <span className="text-brand-muted"> — {selected.address}</span> : null}</span> : <span className="text-brand-muted">Elegí tu sucursal para retirar tu pedido.</span>}
@@ -340,7 +350,7 @@ export function CheckoutBlock() {
                           Usar mi ubicación
                         </Button>
                       </div>
-                      <div className="h-[300px] overflow-hidden rounded-lg border border-[#ededf1]">
+                      <div className="h-[300px] overflow-hidden rounded-lg border border-[#ededf1] isolate">
                         <CheckoutMap value={loc} onChange={(lat, lng) => persistLoc({ lat, lng })} />
                       </div>
                       <p className="mt-1 text-xs text-brand-muted">{geoMsg || "Tocá el mapa o arrastrá el pin para marcar tu dirección exacta."}{loc ? ` (${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)})` : ""}</p>
@@ -357,19 +367,29 @@ export function CheckoutBlock() {
               ) : payOptions.length === 0 ? (
                 <p className="text-sm text-brand-muted">No hay medios de pago configurados.</p>
               ) : (
-                <Radio.Group value={paymentKey} onChange={(val) => setPaymentKey(String(val))}>
-                  <div className="flex flex-col gap-3">
-                    {payOptions.map((o) => (
-                      <div
-                        key={o.key}
-                        className={"flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors " + (paymentKey === o.key ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}
-                      >
-                        <Radio value={o.key} />
-                        <span className="text-sm font-medium text-brand-text">{o.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </Radio.Group>
+                <div className="flex w-full flex-col gap-3">
+                  {payOptions.map((o) => (
+                    <label
+                      key={o.key}
+                      htmlFor={`pay-${o.key}`}
+                      className={"flex w-full items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors " + (paymentKey === o.key ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}
+                    >
+                      <input
+                        type="radio"
+                        id={`pay-${o.key}`}
+                        name="payment-method"
+                        value={o.key}
+                        checked={paymentKey === o.key}
+                        onChange={() => setPaymentKey(o.key)}
+                        className="sr-only"
+                      />
+                      <span className={"size-4 shrink-0 rounded-full border-2 flex items-center justify-center " + (paymentKey === o.key ? "border-brand-orange" : "border-[#c0c0c0]")}>
+                        {paymentKey === o.key && <span className="size-2 rounded-full bg-brand-orange" />}
+                      </span>
+                      <span className="text-sm font-medium text-brand-text">{o.name}</span>
+                    </label>
+                  ))}
+                </div>
               )}
             </section>
           </div>
@@ -405,6 +425,7 @@ export function CheckoutBlock() {
                 loading={submitting}
                 disabled={submitting}
                 block
+                style={{ color: 'white' }}
                 className="mt-6 brand-gradient h-11"
               >
                 {submitting ? "Procesando..." : "Realizar pedido"}

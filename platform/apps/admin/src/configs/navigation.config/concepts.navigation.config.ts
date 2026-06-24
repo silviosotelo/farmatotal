@@ -52,10 +52,14 @@ const conceptsNavigationConfig: NavigationTree[] = [
     ]),
     section('shop.catalog', 'Catálogo', [
         item('shop.products', `${CONCEPTS_PREFIX_PATH}/products/product-list`, 'Productos', 'products'),
+        item('shop.product-fields', `${CONCEPTS_PREFIX_PATH}/product-fields`, 'Campos de producto', 'cmAttributes'),
         item('shop.variants', `${CONCEPTS_PREFIX_PATH}/variants`, 'Variantes', 'cmVariants'),
         item('shop.attributes', `${CONCEPTS_PREFIX_PATH}/attributes`, 'Atributos', 'cmAttributes'),
+        item('shop.categories', `${CONCEPTS_PREFIX_PATH}/categories`, 'Categorías', 'cmAttributes'),
+        item('shop.category-fields', `${CONCEPTS_PREFIX_PATH}/category-fields`, 'Campos de categoría', 'cmAttributes'),
         item('shop.inventory', `${CONCEPTS_PREFIX_PATH}/inventory`, 'Inventario', 'cmInventory'),
         item('shop.branches', `${CONCEPTS_PREFIX_PATH}/branches`, 'Sucursales', 'cmBranches'),
+        item('shop.branch-fields', `${CONCEPTS_PREFIX_PATH}/branch-fields`, 'Campos de sucursal', 'cmBranches'),
     ]),
     section('shop.sales', 'Ventas', [
         item('shop.orders', `${CONCEPTS_PREFIX_PATH}/orders/order-list`, 'Pedidos', 'orders'),

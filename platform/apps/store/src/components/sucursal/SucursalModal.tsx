@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Tag } from "@platform/ui";
+import { Button } from "@platform/ui";
 import { type Sucursal } from "@/lib/sucursales";
 import { useSucursal } from "./SucursalContext";
 import { LocationIcon } from "@/components/icons";
@@ -111,16 +111,14 @@ export function SucursalModal() {
       >
         <div className="brand-gradient relative px-6 py-5 text-white">
           {!mandatory && (
-            <Button
+            <button
               type="button"
-              variant="plain"
-              shape="circle"
               onClick={close}
               aria-label="Cerrar"
-              className="absolute right-4 top-4 size-7 bg-white/25 text-white hover:bg-white/40"
+              className="absolute right-4 top-4 flex size-7 items-center justify-center rounded-full bg-white/25 text-white hover:bg-white/40 transition-colors text-xl leading-none"
             >
               ×
-            </Button>
+            </button>
           )}
           <h2 className="font-heading text-lg font-bold leading-snug">
             Bienvenido a nuestra tienda en línea.
@@ -135,12 +133,12 @@ export function SucursalModal() {
         <div className="border-b border-[#ededf1] px-6 py-4">
           <Button
             type="button"
-            variant="default"
-            shape="round"
+            variant="plain"
             onClick={useMyLocation}
             loading={geo.status === "locating"}
             disabled={geo.status === "locating"}
-            className="border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-white"
+            style={{ borderRadius: '9999px', padding: '8px 16px', height: 'auto', fontSize: '14px', fontWeight: 500 }}
+            className="inline-flex items-center gap-2 border border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-white"
           >
             <LocationIcon className="size-4" />
             {geo.status === "locating" ? "Obteniendo tu ubicación..." : "Usar mi ubicación"}
@@ -157,11 +155,10 @@ export function SucursalModal() {
             <Button
               key={z}
               type="button"
-              variant={zona === z ? "solid" : "default"}
-              shape="round"
-              size="md"
+              variant="plain"
               onClick={() => setZona(z)}
-              className={zona === z ? "bg-brand-orange text-white border-brand-orange" : "bg-search-bg text-brand-text border-transparent hover:bg-[#e7e8ee]"}
+              style={{ borderRadius: '9999px', padding: '4px 12px', height: 'auto', fontSize: '14px', fontWeight: 500, lineHeight: '1.5' }}
+              className={zona === z ? "bg-brand-orange text-white border border-brand-orange" : "bg-[#f3f4f7] text-[#202435] border border-[#ededf1] hover:bg-[#e7e8ee]"}
             >
               {z}
             </Button>
@@ -179,8 +176,9 @@ export function SucursalModal() {
                   variant="plain"
                   block
                   onClick={() => select(s)}
+                  style={{ padding: '12px 24px', height: 'auto', borderRadius: 0, width: '100%', textAlign: 'left' }}
                   className={cn(
-                    "flex items-start gap-3 px-6 py-3 text-left rounded-none",
+                    "flex items-start gap-3",
                     isSelected && "bg-[#fff4e6]",
                   )}
                 >
@@ -189,9 +187,9 @@ export function SucursalModal() {
                     <span className="flex items-center gap-2">
                       <span className="font-medium text-brand-text">{s.name}</span>
                       {isNearest && (
-                        <Tag className="rounded bg-brand-orange px-1.5 py-0.5 text-[10px] font-bold text-white">
+                        <span className="rounded bg-brand-orange px-1.5 py-0.5 text-[10px] font-bold text-white">
                           Más cercana
-                        </Tag>
+                        </span>
                       )}
                       {isSelected && <span className="text-brand-orange">✓</span>}
                     </span>

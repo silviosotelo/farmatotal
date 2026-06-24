@@ -48,10 +48,10 @@ export function SucursalesList() {
         <h2 className="font-heading text-xl font-bold text-brand-text">Encontrá tu sucursal</h2>
         <Button
           type="button"
-          variant="default"
-          shape="round"
+          variant="plain"
           onClick={locate}
-          className="border-brand-orange text-brand-orange-ink hover:bg-brand-orange hover:text-white"
+          style={{ borderRadius: '9999px', padding: '8px 16px', height: 'auto', fontSize: '14px', fontWeight: 500 }}
+          className="inline-flex items-center gap-2 border border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-white"
         >
           <LocationIcon className="size-4" /> Usar mi ubicación
         </Button>
@@ -62,11 +62,10 @@ export function SucursalesList() {
           <Button
             key={z}
             type="button"
-            variant={zona === z ? "solid" : "default"}
-            shape="round"
-            size="md"
+            variant="plain"
             onClick={() => setZona(z)}
-            className={zona === z ? "bg-brand-orange text-white border-brand-orange" : "bg-search-bg text-brand-text border-transparent hover:bg-[#e7e8ee]"}
+            style={{ borderRadius: '9999px', padding: '4px 12px', height: 'auto', fontSize: '14px', fontWeight: 500, lineHeight: '1.5' }}
+            className={zona === z ? "bg-brand-orange text-white border border-brand-orange" : "bg-[#f3f4f7] text-[#202435] border border-[#ededf1] hover:bg-[#e7e8ee]"}
           >
             {z}
           </Button>

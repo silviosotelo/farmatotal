@@ -1,0 +1,1629 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WooCommerce Multi Inventory\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-05-18 12:36+0000\n"
+"PO-Revision-Date: 2025-01-20 14:02+0000\n"
+"Last-Translator: WeLaunch\n"
+"Language-Team: Italian\n"
+"Language: it_IT\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.5.2; wp-5.7.2"
+
+#: config/options-init.php:949 config/options-init.php:950
+msgid "%d on Stock"
+msgstr "%d in magazzino"
+
+#: config/options-init.php:1046
+#, php-format
+msgid "%s Delivery Costs"
+msgstr "%s Costi di consegna"
+
+#: config/options-init.php:330
+#, php-format
+msgid "%s has been removed as it is not available in new selected inventory."
+msgstr ""
+"%s è stato rimosso poiché non è disponibile nel nuovo inventario selezionato."
+
+#: config/options-init.php:956
+#, php-format
+msgid "%s in stock"
+msgstr "%s in magazzino"
+
+#: config/options-init.php:974
+#, php-format
+msgid "%s not in stock (only %s in stock at inventory %s)"
+msgstr "%s non disponibile (solo %s disponibile nell'inventario %s)"
+
+#: config/options-init.php:465
+msgid "1 - 3 Days"
+msgstr "1 - 3 giorni"
+
+#: classes/class-woocommerce-multi-inventory-importer.php:178
+#, fuzzy
+#| msgid ""
+#| "1. Export all Prices (see settings > export prices button) 2. Do "
+#| "modifications in excel file. 3. Import modified Excel file."
+msgid ""
+"1. Export all Inventorys (see settings > export inventorys button) 2. Do "
+"modifications in excel file. 3. Import modified Excel file."
+msgstr ""
+"1. Esporta tutti gli inventari (vedi impostazioni > pulsante esporta "
+"inventari) 2. Fai modifiche nel file excel. 3. Importa il file Excel "
+"modificato."
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:79
+#, php-format
+msgid "Add New %s"
+msgstr "Aggiungi nuovo %s"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:142
+msgid "Address"
+msgstr "Indirizzo"
+
+#: config/options-init.php:1186
+msgid "Advanced"
+msgstr "Avanzate"
+
+#: config/options-init.php:1187
+msgid "Advanced Settings"
+msgstr "Impostazioni avanzate"
+
+#: config/options-init.php:667
+msgid "After Add To Cart Form"
+msgstr "Dopo il modulo Aggiungi al carrello"
+
+#: config/options-init.php:672
+msgid "After Main Product"
+msgstr "Dopo il prodotto principale"
+
+#: config/options-init.php:669
+msgid "After Meta Information"
+msgstr "Dopo le metainformazioni"
+
+#: config/options-init.php:671
+msgid "After Single Product"
+msgstr "Dopo il singolo prodotto"
+
+#: config/options-init.php:670
+msgid "After Single Product Summary"
+msgstr "Dopo il riepilogo del singolo prodotto"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:74
+#, php-format
+msgid "All %s"
+msgstr "Tutti %s"
+
+#: config/options-init.php:820
+msgid "All Locations Intro text"
+msgstr "Tutte le posizioni Testo introduttivo"
+
+#: config/options-init.php:224
+msgid "Allow Empty Inventory Products"
+msgstr "Consenti prodotti a inventario vuoto"
+
+#: config/options-init.php:893
+msgid "Always Use Order Flow"
+msgstr "Usa sempre il flusso degli ordini"
+
+#: config/options-init.php:1077
+msgid "Apply radius check on these shipping methods."
+msgstr "Applica il controllo del raggio a questi metodi di spedizione."
+
+#: config/options-init.php:1209
+msgid ""
+"Assign the inventory taxonomy also to variations. This allows you to filter "
+"variations for example when using our single variations plugin."
+msgstr ""
+"Assegna la tassonomia dell'inventario anche alle varianti. Ciò ti consente "
+"di filtrare le varianti, ad esempio quando utilizzi il nostro plugin per "
+"varianti singole."
+
+#: classes/class-woocommerce-multi-inventory-manager.php:160
+msgid "Backend Inventory"
+msgstr "Inventario di backend"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:206
+msgid "Backend Inventory "
+msgstr "Inventario di backend"
+
+#: config/options-init.php:827 config/options-init.php:842
+msgid "Background Color"
+msgstr "Colore di sfondo"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:193
+msgid "Bank"
+msgstr "Banca"
+
+#: classes/class-woocommerce-multi-inventory-importer.php:177
+msgid "Batch Import:"
+msgstr "Importazione batch:"
+
+#: config/options-init.php:666
+msgid "Before Add To Cart Form"
+msgstr "Prima Aggiungi al carrello"
+
+#: config/options-init.php:668
+msgid "Before Meta Information"
+msgstr "Prima delle metainformazioni"
+
+#: config/options-init.php:663
+msgid "Before Single Product"
+msgstr "Prima del singolo prodotto"
+
+#: config/options-init.php:664
+msgid "Before Single Product Summary"
+msgstr "Prima del riepilogo del singolo prodotto"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:189
+msgid "BIC"
+msgstr "BIC"
+
+#: config/options-init.php:882
+msgid "By Country"
+msgstr "Per Paese"
+
+#: config/options-init.php:643 config/options-init.php:884
+msgid "By Name"
+msgstr "Per nome"
+
+#: config/options-init.php:642 config/options-init.php:883
+msgid "By Order"
+msgstr "Per ordine"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:202
+msgid "Can be selected on Product Pages"
+msgstr "Può essere selezionato nelle pagine dei prodotti"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:207
+msgid "Can be used for backend admin orders"
+msgstr "Può essere utilizzato per gli ordini di amministrazione di backend"
+
+#: config/options-init.php:266
+msgid "Cart"
+msgstr "Carrello"
+
+#: config/options-init.php:618
+msgid "Change Inventory"
+msgstr "Cambia inventario"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:150
+msgid "City"
+msgstr "Città"
+
+#: config/options-init.php:425
+msgid "Click & Collect"
+msgstr "Clicca e ritira"
+
+#: config/options-init.php:512
+msgid "Click & Collect Payment Gateways"
+msgstr "Gateway di pagamento Click & Collect"
+
+#: config/options-init.php:492
+msgid "Click & Collect Shipping Methods"
+msgstr "Metodi di spedizione \"Clicca e ritira\""
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:181
+msgid "Company"
+msgstr "Azienda"
+
+#: config/options-init.php:525
+msgid "Configure inventories frontend output on product pages."
+msgstr ""
+"Configura l'output del frontend degli inventari sulle pagine dei prodotti."
+
+#: config/options-init.php:733
+msgid "Configure the select inventory popup"
+msgstr "Configura il popup di selezione dell'inventario"
+
+#: classes/class-woocommerce-multi-inventory-public.php:2826
+msgid "Could not get your position"
+msgstr "Impossibile ottenere la tua posizione"
+
+#: config/options-init.php:628
+msgid "Count (2 in Stock)"
+msgstr "Conte (2 in magazzino)"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:244
+msgid "Countries to Ship To "
+msgstr "Paesi verso cui spedire"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:158
+msgid "Country CODE"
+msgstr "CODICE Paese"
+
+#: config/options-init.php:916
+msgid "Country Inventory Fallback"
+msgstr "Fallback dell'inventario del paese"
+
+#. Description of the plugin
+msgid "Create multiple inventories & warehouses for WooCommerce with ease"
+msgstr "Crea facilmente più inventari e magazzini per WooCommerce"
+
+#: config/options-init.php:881 config/options-init.php:907
+msgid "Custom Inventory"
+msgstr "Inventario personalizzato"
+
+#: config/options-init.php:178
+msgid "Default Inventory"
+msgstr "Inventario predefinito"
+
+#: config/options-init.php:1010 config/options-init.php:1011
+msgid "Delivery"
+msgstr "Consegna"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:176
+#: config/options-init.php:1030
+msgid "Delivery Costs"
+msgstr "Costi di consegna"
+
+#: config/options-init.php:1045
+msgid "Delivery Costs Label"
+msgstr "Etichetta dei costi di consegna"
+
+#: config/options-init.php:1111
+msgid "Delivery Distance Fees"
+msgstr "Costi di consegna a distanza"
+
+#: config/options-init.php:1104
+msgid "Delivery Fee"
+msgstr "Tassa di consegna"
+
+#: config/options-init.php:440
+msgid "Delivery Inventory"
+msgstr "Inventario di consegna"
+
+#: config/options-init.php:457 config/options-init.php:464
+msgid "Delivery Location in Popup Custom Distance Text"
+msgstr "Luogo di consegna nel testo popup della distanza personalizzata"
+
+#: config/options-init.php:502
+msgid "Delivery Payment Gateways"
+msgstr "Gateway di pagamento per la consegna"
+
+#: config/options-init.php:482
+msgid "Delivery Shipping Methods"
+msgstr "Consegna Metodi di spedizione"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:163
+#: config/options-init.php:992
+msgid "Delivery Time"
+msgstr "Tempi di consegna"
+
+#: config/options-init.php:993
+msgid "Delivery Time: "
+msgstr "Tempi di consegna: "
+
+#: config/options-init.php:775
+msgid "Disable Auto Geolocation"
+msgstr "Disattiva la geolocalizzazione automatica"
+
+#: config/options-init.php:407
+msgid "Disable Backend Editing"
+msgstr "Disabilita la modifica del backend"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:257
+msgid "Disable Payment Gateway "
+msgstr "Disabilita gateway di pagamento"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:272
+msgid "Disable Shipping Methods "
+msgstr "Disabilita i metodi di spedizione"
+
+#: config/options-init.php:1201
+msgid "Disable State Replace"
+msgstr "Disabilita sostituzione stato"
+
+#: config/options-init.php:1202
+msgid ""
+"Disables adding inventory URL parameter to all links of your site. Note: "
+"enabling this can cause issues with caching."
+msgstr ""
+"Disabilita l'aggiunta del parametro URL inventario a tutti i link del tuo "
+"sito. Nota: abilitarlo può causare problemi con la memorizzazione nella "
+"cache."
+
+#: config/options-init.php:408
+#, fuzzy
+#| msgid ""
+#| "Disables updating ivnentory stocks when you edit a product. Use inventory "
+#| "Manger or im / exports instead. Good for performance!"
+msgid ""
+"Disables updating inventory stocks when you edit a product. Use inventory "
+"Manger or im / exports instead. Good for performance!"
+msgstr ""
+"Disabilita l'aggiornamento delle scorte di magazzino quando modifichi un "
+"prodotto. Utilizzare invece Inventory Manager o im/export. Buono per le "
+"prestazioni!"
+
+#: config/options-init.php:547
+msgid "Display Type"
+msgstr "Tipo di visualizzazione"
+
+#: config/options-init.php:240
+msgid ""
+"Distance matrix is more precis as it calculates the distance by routes & "
+"streets, but costs more because it has to calculate route from user to EACH "
+"store. You can use geocoding only to calculate the distance by radius only "
+"once and save money. But it is not that precise. <br><b>When enabled:</b> "
+"Make sure each inventory as LAT / LNG data.."
+msgstr ""
+"La matrice delle distanze è più precisa in quanto calcola la distanza per "
+"percorsi e strade, ma costa di più perché deve calcolare il percorso "
+"dall'utente a OGNI negozio. Puoi usare la geocodifica solo per calcolare la "
+"distanza per raggio una sola volta e risparmiare denaro. Ma non è così "
+"precisa. <br><b>Quando abilitata:</b> assicurati che ogni inventario sia "
+"come dati LAT/LNG."
+
+#: config/options-init.php:540
+msgid "Do not show inventories with 0 stock."
+msgstr "Non mostrare le scorte con 0 stock."
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:77
+#, php-format
+msgid "Edit %s"
+msgstr "Modifica %s"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:133
+msgid "Email"
+msgstr "E-mail"
+
+#: config/options-init.php:209
+msgid "Email Inventory Notification"
+msgstr "Notifica di inventario via e-mail"
+
+#: config/options-init.php:1177
+msgid "Email new orders to Inventory users."
+msgstr "Inviare tramite e-mail i nuovi ordini agli utenti dell'inventario."
+
+#: config/options-init.php:1176
+msgid "Email Orders"
+msgstr "Ordini via e-mail"
+
+#: config/options-init.php:156
+msgid "Enable"
+msgstr "Abilitare"
+
+#: config/options-init.php:433
+msgid "Enable Click & Collect"
+msgstr "Abilita Click & Collect"
+
+#: config/options-init.php:1038
+msgid "Enable Delivery Costs"
+msgstr "Abilita costi di consegna"
+
+#: config/options-init.php:740
+msgid "Enable Inventory Popup"
+msgstr "Abilita popup inventario"
+
+#: config/options-init.php:1161
+msgid "Enable Inventory Users"
+msgstr "Abilita utenti inventario"
+
+#: config/options-init.php:1222
+msgid "Enable Logging"
+msgstr "Abilita registrazione"
+
+#: config/options-init.php:699
+msgid "Enable Product Category"
+msgstr "Abilita categoria prodotto"
+
+#: config/options-init.php:532
+msgid "Enable productPage"
+msgstr "Abilita pagina prodotto"
+
+#: config/options-init.php:1062
+msgid "Enable Radius Shipping"
+msgstr "Abilita spedizione raggio"
+
+#: config/options-init.php:1127
+msgid "Enable Radius Shipping Distance"
+msgstr "Abilita distanza di spedizione del raggio"
+
+#: config/options-init.php:1095
+msgid "Enable Radius Shipping Fees"
+msgstr "Abilita le tariffe di spedizione Radius"
+
+#: config/options-init.php:776
+msgid "Enable this to not get the current users position when popup opens."
+msgstr ""
+"Abilita questa opzione per non ottenere la posizione attuale dell'utente "
+"quando si apre il popup."
+
+#: config/options-init.php:1195
+msgid ""
+"Enable when distance calculation OR radius shipping is not working or for "
+"testing"
+msgstr ""
+"Abilita quando il calcolo della distanza o la spedizione del raggio non "
+"funziona o per i test"
+
+#: config/options-init.php:1016 config/options-init.php:1017
+msgid "Enter your address"
+msgstr "Inserisci il tuo indirizzo"
+
+#: config/options-init.php:1085 config/options-init.php:1144
+msgid "Error Message"
+msgstr "Messaggio di errore"
+
+#: config/options-init.php:1086
+msgid "Example: Empty Delivery method"
+msgstr "Esempio: Metodo di consegna vuoto"
+
+#: config/options-init.php:1145
+msgid "Example: Sorry we only ship within X km / miles."
+msgstr "Esempio: Spiacenti, spediamo solo entro X km/miglia."
+
+#: config/options-init.php:258
+msgid "Export Inventories"
+msgstr "Esporta inventari"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:177
+msgid "Extra fees, that gets added when that inventory is in users cart."
+msgstr ""
+"Costi aggiuntivi che vengono aggiunti quando l'inventario viene inserito nel "
+"carrello dell'utente."
+
+#: config/options-init.php:917
+msgid "Fallback Inventory when no matching country inventory found."
+msgstr ""
+"Inventario di riserva quando non è stato trovato alcun inventario del paese "
+"corrispondente."
+
+#: config/options-init.php:908
+msgid "Fallback, if the inventory has no stock, is the name order."
+msgstr "Il fallback, se l'inventario non ha scorte, è l'ordine del nome."
+
+#: config/options-init.php:1119
+msgid "Fees taxable"
+msgstr "Tasse imponibili"
+
+#: classes/class-woocommerce-multi-inventory-importer.php:182
+msgid "File to Import"
+msgstr "File da importare"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:153
+msgid "Frontend Inventory"
+msgstr "Inventario frontend"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:201
+msgid "Frontend Inventory "
+msgstr "Inventario frontend"
+
+#: config/options-init.php:148
+msgid "General"
+msgstr "Generale"
+
+#: config/options-init.php:232
+msgid "Google API Key"
+msgstr "Chiave API di Google"
+
+#: config/options-init.php:1194
+msgid "Google Debug Mode"
+msgstr "Modalità di debug di Google"
+
+#: config/options-init.php:630
+msgid "Hidden"
+msgstr "Nascosto"
+
+#: config/options-init.php:555
+msgid "Hidden (user can not change inventory on product page)"
+msgstr ""
+"Nascosto (l'utente non può modificare l'inventario nella pagina del prodotto)"
+
+#: config/options-init.php:539
+msgid "Hide Empty Inventories"
+msgstr "Nascondi scorte vuote"
+
+#: config/options-init.php:201
+msgid "Hide unavailable Products"
+msgstr "Nascondi prodotti non disponibili"
+
+#: config/options-init.php:652
+msgid "Hook Position"
+msgstr "Posizione del gancio"
+
+#: config/options-init.php:679
+msgid "Hook Priority"
+msgstr "Priorità di aggancio"
+
+#: config/options-init.php:625
+msgid "How the stock quantity should be shown."
+msgstr "Come deve essere visualizzata la quantità di stock."
+
+#: classes/class-woocommerce-multi-inventory-importer.php:178
+msgid "How to use best:"
+msgstr "Come utilizzare al meglio:"
+
+#. Author URI of the plugin
+msgid "https://welaunch.io"
+msgstr "https://welaunch.io"
+
+#. URI of the plugin
+msgid "https://www.welaunch.io/en/product/woocommerce-multi-inventory/"
+msgstr "https://www.welaunch.io/en/product/woocommerce-multi-inventory/"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:185
+msgid "IBAN"
+msgstr "Codice IBAN"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:137
+msgid "ID"
+msgstr "ID"
+
+#: config/options-init.php:248
+msgid ""
+"If you can not work with xlsx (Excel 2007 and higher) files, check this. You "
+"then can work with normal .xls files."
+msgstr ""
+"Se non riesci a lavorare con i file xlsx (Excel 2007 e versioni successive), "
+"controlla questo. È quindi possibile lavorare con normali file .xls."
+
+#: classes/class-woocommerce-multi-inventory-manager.php:138
+msgid "Image"
+msgstr "Immagine"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:137
+msgid "Image "
+msgstr "Immagine"
+
+#: config/options-init.php:259
+msgid "Import Inventories"
+msgstr "Importa inventari"
+
+#: classes/class-woocommerce-multi-inventory-importer.php:188
+msgid "Import Inventorys"
+msgstr "Importa inventari"
+
+#: config/options-init.php:629
+msgid "In / Out of Stock"
+msgstr "In/Esaurito"
+
+#: config/options-init.php:665
+msgid "In Single Product Summary"
+msgstr "Nel riepilogo del singolo prodotto"
+
+#: config/options-init.php:416
+msgid ""
+"In the products overview page in backend, this will show all inventories + "
+"stocks."
+msgstr ""
+"Nella pagina di panoramica dei prodotti nel back-end, questo mostrerà tutte "
+"le scorte + le scorte."
+
+#: classes/class-woocommerce-multi-inventory-admin.php:912
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:68
+msgid "Inventories"
+msgstr "Inventari"
+
+#: classes/class-woocommerce-multi-inventory-admin.php:521
+msgid "Inventories Access"
+msgstr "Accesso agli inventari"
+
+#: config/options-init.php:638
+msgid "Inventories Order"
+msgstr "Ordine scorte"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:67
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:123
+#: config/options-init.php:944
+msgid "Inventory"
+msgstr "Inventario"
+
+#: config/options-init.php:943
+msgid "Inventory / Warehouse Label"
+msgstr "Etichetta di inventario/magazzino"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:293
+msgid "Inventory ID missing."
+msgstr "ID inventario mancante."
+
+#: classes/class-woocommerce-multi-inventory-manager.php:47
+#: classes/class-woocommerce-multi-inventory-manager.php:48
+#: classes/class-woocommerce-multi-inventory-manager.php:104
+msgid "Inventory Manager"
+msgstr "Gestore dell'inventario"
+
+#: classes/class-woocommerce-multi-inventory-admin.php:653
+msgid "Inventory Prices"
+msgstr "Prezzi di inventario"
+
+#: config/options-init.php:217
+msgid "Inventory Required"
+msgstr "Inventario richiesto"
+
+#: config/options-init.php:624
+msgid "Inventory Stock Display"
+msgstr "Visualizzazione delle scorte di inventario"
+
+#: config/options-init.php:1154
+msgid "Inventory Users"
+msgstr "Utenti inventario"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:171
+#, php-format
+msgid "IV: %s"
+msgstr "IV: %s"
+
+#: config/options-init.php:553 config/options-init.php:1102
+msgid "Label"
+msgstr "Etichetta"
+
+#: config/options-init.php:554
+msgid "Label & Popup"
+msgstr "Etichetta e popup"
+
+#: config/options-init.php:617
+msgid "Label - Change Inventory"
+msgstr "Etichetta - Modifica inventario"
+
+#: config/options-init.php:609
+msgid "Label - Text"
+msgstr "Etichetta - Testo"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:167
+msgid "Latitude"
+msgstr "Latitudine"
+
+#: config/options-init.php:747
+msgid "Layout"
+msgstr "Disposizione"
+
+#: config/options-init.php:749
+msgid "Layout 1 (2 Columns)"
+msgstr "Layout 1 (2 colonne)"
+
+#: config/options-init.php:750
+msgid "Layout 2 (1 Column)"
+msgstr "Layout 2 (1 colonna)"
+
+#: config/options-init.php:751
+msgid "Layout 3 (List view / 1 Column)"
+msgstr "Layout 3 (Visualizzazione elenco / 1 colonna)"
+
+#: config/options-init.php:955
+msgid "Left in Stock"
+msgstr "Rimasto in magazzino"
+
+#: config/options-init.php:315
+msgid "Let users change the inventory of all items in cart."
+msgstr ""
+"Consenti agli utenti di modificare l'inventario di tutti gli articoli nel "
+"carrello."
+
+#: config/options-init.php:1168
+msgid "Limit Orders Backend"
+msgstr "Backend degli ordini limite"
+
+#: config/options-init.php:1004 config/options-init.php:1005
+msgid "Local Pickup"
+msgstr "Ritiro locale"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:171
+msgid "Longitude"
+msgstr "Longitudine"
+
+#: config/options-init.php:645
+msgid "Lowest Stock"
+msgstr "Stock più basso"
+
+#: config/options-init.php:887
+msgid "lowest Stock"
+msgstr "Stock più basso"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:141
+msgid "Manage Stock"
+msgstr "Gestire le scorte"
+
+#: config/options-init.php:870
+msgid "Manage what inventory is used for new orders."
+msgstr "Gestisci quale inventario viene utilizzato per i nuovi ordini."
+
+#: config/options-init.php:857
+msgid "Max Results"
+msgstr "Risultati massimi"
+
+#: config/options-init.php:298
+msgid "Mixed Cart info"
+msgstr "Informazioni sul carrello misto"
+
+#: config/options-init.php:306
+msgid "Mixed Cart info text"
+msgstr "Testo informativo carrello misto"
+
+#: config/options-init.php:170
+msgid "Modify Price"
+msgstr "Modifica prezzo"
+
+#: config/options-init.php:375
+msgid "Modify Stock Quantity"
+msgstr "Modifica quantità stock"
+
+#: config/options-init.php:644 config/options-init.php:886
+msgid "Most Stock"
+msgstr "La maggior parte delle scorte"
+
+#: classes/class-woocommerce-multi-inventory-admin.php:1328
+msgid "Multi Inventories"
+msgstr "Multi inventari"
+
+#: config/options-init.php:34 config/options-init.php:140
+msgid "Multi Inventory"
+msgstr "Multi inventario"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:140
+msgid "Name"
+msgstr "Nome"
+
+#: config/options-init.php:1103
+msgid "Name of the fee. For example: Delivery Fee."
+msgstr "Nome della tariffa. Ad esempio: tariffa di consegna."
+
+#: config/options-init.php:885
+msgid "Nearest Location based on Customer address"
+msgstr "Posizione più vicina in base all'indirizzo del cliente"
+
+#: config/options-init.php:142
+msgid "Need support? Please use the comment function on codecanyon."
+msgstr ""
+"Hai bisogno di supporto? Si prega di utilizzare la funzione di commento su "
+"codecanyon."
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:80
+#, php-format
+msgid "New %s Name"
+msgstr "Nuovo nome %s"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:162
+msgid "No Backend Inventory"
+msgstr "Nessun inventario di backend"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:155
+msgid "No Frontend Inventory"
+msgstr "Nessun inventario frontend"
+
+#: classes/class-woocommerce-multi-inventory-admin.php:941
+msgid "No inventories"
+msgstr "Nessun inventario"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:69
+msgid "No inventories created so far ..."
+msgstr "Nessun inventario creato finora..."
+
+#: config/options-init.php:986
+msgid "No Inventory Selected"
+msgstr "Nessun inventario selezionato"
+
+#: config/options-init.php:565
+msgid "No Inventory selected text"
+msgstr "Nessun testo selezionato nell'inventario"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:97
+#, fuzzy
+#| msgid "No Product found"
+msgid "No Products found ..."
+msgstr "Nessun prodotto trovato..."
+
+#: classes/class-woocommerce-multi-inventory-exporter.php:50
+msgid "No products to Export"
+msgstr "Nessun prodotto da esportare"
+
+#: classes/class-woocommerce-multi-inventory-public.php:1149
+msgid "None"
+msgstr "Nessuno"
+
+#: config/options-init.php:660
+msgid "None (Shortcode)"
+msgstr "Nessuno (codice breve)"
+
+#: config/options-init.php:980
+msgid "Not enough Stock"
+msgstr "Scorte insufficienti"
+
+#: config/options-init.php:973 config/options-init.php:975
+msgid "Not in Stock"
+msgstr "Non in magazzino"
+
+#: config/options-init.php:821
+msgid "Not the store you searched for? We have more ..."
+msgstr "Non è il negozio che hai cercato? Abbiamo di più..."
+
+#: config/options-init.php:961 config/options-init.php:962
+msgid "On Stock"
+msgstr "Disponibile"
+
+#: config/options-init.php:1112
+msgid ""
+"Only one fee per row! Enter distance first, then the fee amount divided by |."
+" Example: 1|5 => within 1 to 20 miles, $5 fee will be added. Continue with "
+"20|8 for example. Always start with 1."
+msgstr ""
+"Solo una tariffa per riga! Inserisci prima la distanza, poi l'importo della "
+"tariffa diviso per |. Esempio: 1|5 => entro 1-20 miglia, verrà aggiunta una "
+"tariffa di $5. Continua con 20|8 per esempio. Inizia sempre con 1."
+
+#: config/options-init.php:1169
+msgid "Only show orders in backend where users have access to the inventory."
+msgstr ""
+"Mostra gli ordini solo nel backend in cui gli utenti hanno accesso "
+"all'inventario."
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:236
+msgid "Order"
+msgstr "Ordine"
+
+#: config/options-init.php:869
+msgid "Order Flow"
+msgstr "Flusso degli ordini"
+
+#: config/options-init.php:877
+msgid "Order flow"
+msgstr "Flusso degli ordini"
+
+#: config/options-init.php:967 config/options-init.php:968
+msgid "Out of Stock"
+msgstr "Esaurito"
+
+#: config/options-init.php:572
+msgid "Out of Stock text"
+msgstr "Testo esaurito"
+
+#: config/options-init.php:573
+msgid "Out of stock. Please select another inventory."
+msgstr "Esaurito. Seleziona un altro inventario."
+
+#: config/options-init.php:473
+msgid "Override the delivery address"
+msgstr "Sostituisci l'indirizzo di consegna"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:75
+#, php-format
+msgid "Parent %s"
+msgstr "Genitori %s"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:76
+#, php-format
+msgid "Parent %s:"
+msgstr "Genitori %s:"
+
+#: config/options-init.php:307
+msgid "Please note, that you have multiple inventories in your cart."
+msgstr "Si prega di notare che nel carrello sono presenti più inventari."
+
+#: config/options-init.php:583
+msgid "Please select an inventory"
+msgstr "Seleziona un inventario"
+
+#: config/options-init.php:566
+msgid "Please select an inventory first."
+msgstr "Seleziona prima un inventario."
+
+#: config/options-init.php:732
+msgid "Popup"
+msgstr "Apparire"
+
+#: config/options-init.php:810
+msgid "Popup text"
+msgstr "Testo a comparsa"
+
+#: classes/class-woocommerce-multi-inventory-admin.php:668
+#: classes/class-woocommerce-multi-inventory-admin.php:669
+#: classes/class-woocommerce-multi-inventory-admin.php:724
+#: classes/class-woocommerce-multi-inventory-admin.php:725
+msgid "Price"
+msgstr "Prezzo"
+
+#: config/options-init.php:721
+msgid "Product  Hook Priority"
+msgstr "Priorità del gancio del prodotto"
+
+#: config/options-init.php:690
+msgid "Product Category"
+msgstr "Categoria di prodotto"
+
+#: config/options-init.php:707
+msgid "Product Hook"
+msgstr "Gancio del prodotto"
+
+#: classes/class-woocommerce-multi-inventory-logging.php:72
+#, php-format
+msgid "Product ID %d updated %s with %s"
+msgstr "ID prodotto %d aggiornato %s con %s"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:298
+msgid "Product ID missing."
+msgstr "ID prodotto mancante."
+
+#: config/options-init.php:524
+msgid "Product Page"
+msgstr "Pagina del prodotto"
+
+#: config/options-init.php:225
+msgid ""
+"Products without inventories can be added to cart. This does not affect 0 "
+"inventory products. Only empty strings."
+msgstr ""
+"I prodotti senza scorte possono essere aggiunti al carrello. Ciò non "
+"influisce su 0 prodotti dell'inventario. Solo stringhe vuote."
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:211
+msgid "Purchasing warehouse "
+msgstr "Magazzino acquisti"
+
+#: config/options-init.php:551
+msgid "Radio"
+msgstr "Radio"
+
+#: config/options-init.php:548
+msgid "Radio, Select or Label mode."
+msgstr "Modalità Radio, Seleziona o Etichetta."
+
+#: config/options-init.php:1134
+msgid "Radius (km or miles)"
+msgstr "Raggio (km o miglia)"
+
+#: config/options-init.php:1054
+msgid "Radius Shipping"
+msgstr "Spedizione Raggio"
+
+#: config/options-init.php:383
+msgid "Reduce Manual Orders Stock"
+msgstr "Riduci le scorte di ordini manuali"
+
+#: config/options-init.php:399
+msgid "Reduce Stock on Pending Payments"
+msgstr "Ridurre le scorte sui pagamenti in sospeso"
+
+#: config/options-init.php:894
+msgid ""
+"Regardless if the user has choosen an inventory always use the order flow "
+"set above."
+msgstr ""
+"Indipendentemente dal fatto che l'utente abbia scelto un inventario, "
+"utilizzare sempre il flusso di ordini impostato sopra."
+
+#: config/options-init.php:149
+#, fuzzy
+#| msgid "\">register your License here</a>."
+msgid "register your License here."
+msgstr "\">registra la tua licenza qui</a>."
+
+#: config/options-init.php:290
+msgid "Removed cart items, that were not the same inventory."
+msgstr ""
+"Sono stati rimossi gli articoli del carrello che non appartenevano allo "
+"stesso inventario."
+
+#: config/options-init.php:329
+msgid "Removed Product Text"
+msgstr "Testo del prodotto rimosso"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:228
+msgid "Responsible Shop Manager "
+msgstr "Responsabile del negozio"
+
+#: config/options-init.php:392
+msgid ""
+"Restock orders, that are changed from unpaid to cancelled automatically (not "
+"paid paypal for example)."
+msgstr ""
+"Ordini di riassortimento che vengono modificati automaticamente da non "
+"pagati ad annullati (ad esempio, non pagati tramite PayPal)."
+
+#: config/options-init.php:391
+msgid "Restock Unpaid Orders"
+msgstr "Rifornisci gli ordini non pagati"
+
+#: config/options-init.php:289
+msgid "Restrict Cart Info Text"
+msgstr "Limita testo informazioni carrello"
+
+#: config/options-init.php:281
+msgid "Restrict Cart to One Inventory"
+msgstr "Limita il carrello a un inventario"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:123
+#: config/options-init.php:1022 config/options-init.php:1023
+msgid "Search"
+msgstr "Ricerca"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:73
+#, php-format
+msgid "Search %s"
+msgstr "Cerca %s"
+
+#: config/options-init.php:791
+msgid "Search Autocomplete"
+msgstr "Ricerca Completamento automatico"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:122
+msgid "Search for Product"
+msgstr "Cerca il prodotto"
+
+#: config/options-init.php:552
+msgid "Select"
+msgstr "Selezionare"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:221
+msgid "Select a Shop Manager"
+msgstr "Seleziona un responsabile del negozio"
+
+#: classes/class-woocommerce-multi-inventory-admin.php:537
+msgid ""
+"Select one or multiple inventories where the user should have access to."
+msgstr "Selezionare uno o più inventari a cui l'utente deve avere accesso."
+
+#: config/options-init.php:582
+msgid "Select Placeholder Text"
+msgstr "Seleziona Testo segnaposto"
+
+#: classes/class-woocommerce-multi-inventory-public.php:1143
+msgid "Select Store"
+msgstr "Seleziona Negozio"
+
+#: config/options-init.php:998 config/options-init.php:999
+msgid "Select store"
+msgstr "Seleziona il negozio"
+
+#: config/options-init.php:601
+msgid "Selected inventory stock: "
+msgstr "Stock di inventario selezionato:"
+
+#: config/options-init.php:210
+msgid ""
+"Send new order mails to each inventory. The inventory must have a mail "
+"address set."
+msgstr ""
+"Invia nuove e-mail di ordine a ciascun inventario. L'inventario deve avere "
+"un indirizzo di posta impostato."
+
+#: config/options-init.php:179
+msgid ""
+"Set a default inventory when a customer has not selected one. Leave empty to "
+"force customers to select one"
+msgstr ""
+"Imposta un inventario predefinito quando un cliente non ne ha selezionato "
+"uno. Lascia vuoto per forzare i clienti a selezionarne uno"
+
+#: config/options-init.php:1031
+msgid "Set custom delivery costs per inventory."
+msgstr "Imposta costi di consegna personalizzati per inventario."
+
+#: config/options-init.php:162
+msgid "Set custom prices per inventory"
+msgstr "Imposta prezzi personalizzati per inventario"
+
+#: config/options-init.php:426
+msgid "Set products to deliver and to click and collect."
+msgstr "Imposta i prodotti da consegnare e da cliccare e ritirare."
+
+#: config/options-init.php:936
+msgid "Set texts."
+msgstr "Imposta testi."
+
+#: config/options-init.php:441
+msgid "Set the delivery inventory."
+msgstr "Imposta l'inventario delle consegne."
+
+#: config/options-init.php:1076
+msgid "Shipping Methods"
+msgstr "Metodi di spedizione"
+
+#: config/options-init.php:533
+msgid "Show all available inventories in product frontend."
+msgstr "Mostra tutti gli inventari disponibili nel frontend del prodotto."
+
+#: config/options-init.php:449
+msgid "Show Delivery Location in Popup"
+msgstr "Mostra il luogo di consegna nel popup"
+
+#: config/options-init.php:299
+msgid "Show info text when cart has mixed inventories."
+msgstr "Mostra testo informativo quando il carrello ha inventari misti."
+
+#: config/options-init.php:415
+msgid "Show Inventories in Products Backend"
+msgstr "Mostra le scorte nel back-end dei prodotti"
+
+#: config/options-init.php:194
+msgid "Show Inventory Description in Emails"
+msgstr "Mostra la descrizione dell'inventario nelle e-mail"
+
+#: config/options-init.php:273
+msgid "Show Inventory in Cart & Checkout"
+msgstr "Mostra inventario nel carrello e alla cassa"
+
+#: config/options-init.php:186
+msgid "Show Inventory in Emails"
+msgstr "Mostra inventario nelle e-mail"
+
+#: config/options-init.php:700
+msgid "Show Inventory information in product category pages"
+msgstr ""
+"Mostra le informazioni sull'inventario nelle pagine delle categorie di "
+"prodotto"
+
+#: config/options-init.php:759
+msgid "Show popup automatically"
+msgstr "Mostra popup automaticamente"
+
+#: config/options-init.php:767
+msgid "Show Product Stock"
+msgstr "Mostra scorte di prodotti"
+
+#: config/options-init.php:783
+msgid "Show search / address field"
+msgstr "Mostra campo di ricerca/indirizzo"
+
+#: config/options-init.php:314
+msgid "Show Switch Inventory Button"
+msgstr "Mostra pulsante inventario switch"
+
+#: config/options-init.php:741
+msgid ""
+"Shows a popup for users to select an inventory. Use this shortcode to let "
+"people change the inventory: [woocommerce_multi_inventory_change_inventory]"
+msgstr ""
+"Mostra un popup per consentire agli utenti di selezionare un inventario. Usa "
+"questo shortcode per consentire alle persone di modificare l'inventario: "
+"[woocommerce_multi_inventory_change_inventory]"
+
+#: config/options-init.php:274
+msgid "Shows the selected inventory in cart and checkout pages."
+msgstr ""
+"Mostra l'inventario selezionato nelle pagine del carrello e di pagamento."
+
+#: config/options-init.php:187
+msgid "Shows the selected inventory in Emails."
+msgstr "Mostra l'inventario selezionato nelle e-mail."
+
+#: classes/class-woocommerce-multi-inventory-manager.php:139
+msgid "SKU"
+msgstr "SKU"
+
+#: classes/class-woocommerce-multi-inventory-exporter.php:58
+msgid "Something was wrong with the export generation ..."
+msgstr "Qualcosa non andava con la generazione di esportazione..."
+
+#: config/options-init.php:878
+msgid ""
+"Specify how orders should be assigned to an inventory / store. Note: User "
+"selected inventory is always prio first! When nothing is selected or you "
+"disable the product page inventory selection the below order flow will "
+"happen."
+msgstr ""
+"Specifica come assegnare gli ordini a un inventario/negozio. Nota: "
+"l'inventario selezionato dall'utente è sempre prioritario! Quando non viene "
+"selezionato nulla o si disabilita la selezione dell'inventario della pagina "
+"del prodotto, si verificherà il flusso dell'ordine seguente."
+
+#: config/options-init.php:639
+msgid ""
+"Specify the order of the inventories on the product page. When using "
+"\"order\" you need to maintain the order on inventory level by editing it."
+msgstr ""
+"Specificare l'ordine delle rimanenze nella pagina del prodotto. Quando si "
+"utilizza \"ordine\" è necessario mantenere l'ordine a livello di inventario "
+"modificandolo."
+
+#: config/options-init.php:653
+msgid "Specify the positon of the inventories on product page."
+msgstr "Specificare la posizione degli inventari nella pagina del prodotto."
+
+#: config/options-init.php:900
+msgid "Split Orders"
+msgstr "Ordini divisi"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:154
+msgid "State"
+msgstr "Stato"
+
+#: classes/class-woocommerce-multi-inventory-admin.php:1342
+#: classes/class-woocommerce-multi-inventory-admin.php:1343
+#: classes/class-woocommerce-multi-inventory-admin.php:1445
+#: classes/class-woocommerce-multi-inventory-admin.php:1446
+msgid "Stock"
+msgstr "Azione"
+
+#: config/options-init.php:592
+msgid "Stock Info: "
+msgstr "Informazioni sulle scorte:"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:303
+msgid "Stock missing."
+msgstr "Magazzino mancante."
+
+#: config/options-init.php:368
+msgid "Stock Quantity"
+msgstr "Quantità di magazzino"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:142
+msgid "Stock Status"
+msgstr "Stato delle scorte"
+
+#: config/options-init.php:323
+msgid "Switch Inventory"
+msgstr "Cambia inventario"
+
+#: config/options-init.php:322
+msgid "Switch Inventory Button Text"
+msgstr "Cambia testo del pulsante inventario"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:197
+msgid "Tax ID"
+msgstr "Codice fiscale"
+
+#: config/options-init.php:556
+msgid "Text (only show stocks - no select, uses order flow on purchase)"
+msgstr ""
+"Testo (mostra solo le scorte - nessuna selezione, utilizza il flusso degli "
+"ordini all'acquisto)"
+
+#: config/options-init.php:557
+msgid "Text - only selected inventory / order flow on purchase)"
+msgstr "Testo - solo inventario selezionato / flusso dell'ordine all'acquisto)"
+
+#: config/options-init.php:591 config/options-init.php:600
+msgid "Text before"
+msgstr "Testo prima"
+
+#: config/options-init.php:834 config/options-init.php:849
+msgid "Text Color"
+msgstr "Colore del testo"
+
+#: config/options-init.php:935
+msgid "Texts"
+msgstr "testi"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:159
+msgid "The 2 Digit code, e.g.: US, DE or AU"
+msgstr "Il codice a 2 cifre, ad esempio: US, DE o AU"
+
+#: classes/class-woocommerce-multi-inventory-importer.php:177
+#, fuzzy
+#| msgid ""
+#| "The importer will import inventorys in batches of 100 via AJAX. You can "
+#| "leave, but do not close this tab until the import has been finished!"
+msgid ""
+"The importer will import inventorys in batches of 10 via AJAX. You can leave,"
+" but do not close this tab until the import has been finished!"
+msgstr ""
+"L'importatore importerà gli inventari in lotti di 100 tramite AJAX. Puoi "
+"uscire, ma non chiudere questa scheda fino al termine dell'importazione!"
+
+#: config/options-init.php:611
+msgid ""
+"There are {{stock}} items available in your selected inventory {{inventory}}."
+msgstr ""
+"Ci sono {{stock}} articoli disponibili nell'inventario selezionato "
+"{{inventory}}."
+
+#: config/options-init.php:434
+msgid ""
+"This allows you to set one inventory for delivery and all other inventories "
+"will be set to local pick up stores."
+msgstr ""
+"In questo modo è possibile impostare un inventario per la consegna e tutti "
+"gli altri inventari verranno impostati sui negozi locali per il ritiro."
+
+#: config/options-init.php:1055 config/options-init.php:1063
+msgid "This currently only works when using nearst location order flow!"
+msgstr ""
+"Al momento funziona solo se si utilizza il flusso di ordine della posizione "
+"più vicina!"
+
+#: config/options-init.php:400
+msgid "This is NOT a normal WooCommerce behaviour. Use with caution!"
+msgstr ""
+"Questo NON è un comportamento normale di WooCommerce. Da usare con cautela!"
+
+#: config/options-init.php:1223
+msgid "This will log all product stock updates in a file."
+msgstr ""
+"Questo registrerà tutti gli aggiornamenti delle scorte di prodotti in un "
+"file."
+
+#: config/options-init.php:1216
+msgid ""
+"This will update / reduce the stock on default language and sync it to other "
+"languages."
+msgstr ""
+"Questo aggiornerà/ridurrà lo stock sulla lingua predefinita e lo "
+"sincronizzerà con altre lingue."
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:230
+msgid "To edit these users, pleaes edit the user itself!"
+msgstr "Per modificare questi utenti, modifica l'utente stesso!"
+
+#: config/options-init.php:149
+msgid "To get auto updates please "
+msgstr "Per ottenere aggiornamenti automatici, per favore"
+
+#: config/options-init.php:257
+#, fuzzy
+#| msgid ""
+#| "To import products use the Excel file you get when clicking on Export "
+#| "Prices button below."
+msgid ""
+"To import products use the Excel file you get when clicking on Export "
+"Inventories button below."
+msgstr ""
+"Per importare i prodotti usa il file Excel che ottieni cliccando sul "
+"pulsante Esporta Inventario qui sotto."
+
+#: classes/class-woocommerce-multi-inventory-manager.php:176
+msgid "Total Backend Stock"
+msgstr "Scorte totali di backend"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:175
+msgid "Total Frontend Stock *"
+msgstr "Stock di frontend totale *"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:177
+msgid "Total Stock"
+msgstr "Scorte totali"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:78
+#, php-format
+msgid "Update %s"
+msgstr "Aggiorna %s"
+
+#: config/options-init.php:247
+msgid "Use Excel 2007"
+msgstr "Usa Excel 2007"
+
+#: config/options-init.php:925
+msgid "Use GEO IP "
+msgstr "Usa GEO IP"
+
+#: config/options-init.php:239
+msgid "Use Google Geocoding Instead of Distance Matrix"
+msgstr ""
+"Utilizzare la geocodifica di Google invece della matrice delle distanze"
+
+#: config/options-init.php:799
+msgid "Use Miles (not KM)"
+msgstr "Usa miglia (non km)"
+
+#: config/options-init.php:800
+msgid "Use miles instead of kilometers."
+msgstr "Utilizzare miglia anziché chilometri."
+
+#: config/options-init.php:1069
+msgid "Use Miles instead of KM"
+msgstr "Usa miglia invece di km"
+
+#: config/options-init.php:610
+msgid "Use variables: {{stock}} {{inventory}} and {{delivery_time}}"
+msgstr "Utilizzare le variabili: {{stock}} {{inventory}} e {{delivery_time}}"
+
+#: config/options-init.php:792
+msgid "Uses google places autocomplete to show suggested adresses when typing."
+msgstr ""
+"Utilizza il completamento automatico di Google Places per mostrare gli "
+"indirizzi suggeriti durante la digitazione."
+
+#: config/options-init.php:1208
+msgid "Variations Add terms"
+msgstr "Variazioni Aggiungi termini"
+
+#. Author of the plugin
+msgid "weLaunch"
+msgstr "weLaunch"
+
+#: config/options-init.php:811
+msgid "Welcome to our Online Shop. Please select your nearest Store."
+msgstr "Benvenuto nel nostro negozio online. Seleziona il negozio più vicino."
+
+#: config/options-init.php:926
+msgid ""
+"When a country was not found, use geojs service to get country by IP. "
+"Otherwise a user may not be able to add a product to cart. Note GPDR / "
+"privacy laws!"
+msgstr ""
+"Se non è stato trovato un paese, usa il servizio geojs per ottenere il paese "
+"tramite IP. Altrimenti un utente potrebbe non essere in grado di aggiungere "
+"un prodotto al carrello. Nota le leggi GPDR / sulla privacy!"
+
+#: config/options-init.php:760
+msgid ""
+"When a user has no location inventory checked before, the popup will show "
+"automatically."
+msgstr ""
+"Se un utente non ha ancora verificato l'inventario delle posizioni, il popup "
+"verrà visualizzato automaticamente."
+
+#: config/options-init.php:171
+msgid ""
+"When a user has selected an inventory it will show selected inventory price "
+"in loop & single product pages."
+msgstr ""
+"Quando un utente ha selezionato un inventario, mostrerà il prezzo "
+"dell'inventario selezionato in loop e nelle pagine dei singoli prodotti."
+
+#: config/options-init.php:202
+msgid ""
+"When a user has selected an inventory, hide other items in your shop "
+"categories, that are not available."
+msgstr ""
+"Quando un utente ha selezionato un inventario, nascondi altri articoli nelle "
+"categorie del tuo negozio che non sono disponibili."
+
+#: config/options-init.php:376
+msgid ""
+"When a user has selected an inventory, our plugin returns current stock "
+"quantity for only selectec inventory."
+msgstr ""
+"Quando un utente ha selezionato un inventario, il nostro plug-in restituisce "
+"la quantità di stock corrente solo per l'inventario selectec."
+
+#: config/options-init.php:901
+msgid ""
+"When an order contains multiple different inventories, split the order for "
+"each inventory."
+msgstr ""
+"Se un ordine contiene più inventari diversi, suddividere l'ordine per ogni "
+"inventario."
+
+#: config/options-init.php:384
+msgid "When creating an order in backend, it will reduce stock too."
+msgstr "Quando si crea un ordine nel back-end, si ridurranno anche le scorte."
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:212
+msgid ""
+"When enabled and you order from this warehouse, the stock gets INCREASED and "
+"not DECREASED."
+msgstr ""
+"Se abilitata e si effettua un ordine da questo magazzino, la scorta aumenta "
+"e non diminuisce."
+
+#: config/options-init.php:282
+msgid ""
+"When enabled user can only purchae products within the same inventory. Other "
+"products will be removed from the cart if the selected inventory differs "
+"from existing cart inventories."
+msgstr ""
+"Se abilitato, l'utente può acquistare solo prodotti all'interno dello stesso "
+"inventario. Altri prodotti saranno rimossi dal carrello se l'inventario "
+"selezionato differisce dagli inventari del carrello esistenti."
+
+#: config/options-init.php:1162
+msgid ""
+"When enabled you can edit users and grant them access to inventories. When "
+"they have access to inventory X for example, they will only see orders with "
+"this inventory and get email notifications."
+msgstr ""
+"Se abilitato, puoi modificare gli utenti e concedere loro l'accesso agli "
+"inventari. Quando hanno accesso all'inventario X, ad esempio, vedranno solo "
+"gli ordini con questo inventario e riceveranno notifiche via email."
+
+#: config/options-init.php:218
+msgid ""
+"When enabled, an inventory is always required when a product has at least "
+"one inventory (can have 0 stock too)."
+msgstr ""
+"Se abilitato, un inventario è sempre richiesto quando un prodotto ha almeno "
+"un inventario (può avere anche 0 stock)."
+
+#: config/options-init.php:474
+msgid ""
+"When order is a click & collect one, set the orders shipping / delivery "
+"address to the inventory address."
+msgstr ""
+"Quando l'ordine è un click & collect, imposta l'indirizzo di "
+"spedizione/consegna dell'ordine sull'indirizzo di inventario."
+
+#: config/options-init.php:163
+msgid ""
+"When you edit a product in backend or ex / import you can set custom prices "
+"per choosen inventory."
+msgstr ""
+"Quando modifichi un prodotto in back-end o ex/import, puoi impostare prezzi "
+"personalizzati per l'inventario scelto."
+
+#: config/options-init.php:450
+msgid ""
+"Will show delivery in the inventory popup. It will be shown next to the "
+"nearest physical location."
+msgstr ""
+"Verrà mostrata la consegna nel popup dell'inventario. Sarà mostrata accanto "
+"alla posizione fisica più vicina."
+
+#: classes/class-woocommerce-multi-inventory-admin.php:516
+msgid "WooCommerce Inventories"
+msgstr "Inventari WooCommerce"
+
+#: classes/class-woocommerce-multi-inventory-importer.php:53
+#: classes/class-woocommerce-multi-inventory-importer.php:54
+msgid "WooCommerce Inventory Importer"
+msgstr "Importatore di inventario WooCommerce"
+
+#: config/options-init.php:26 config/options-init.php:28
+msgid "WooCommerce Multi Inventory"
+msgstr "WooCommerce Multi Inventario"
+
+#. Name of the plugin
+msgid "WooCommerce Multi Inventory & Warehouses"
+msgstr "WooCommerce Multi inventario e magazzini"
+
+#: classes/class-woocommerce-multi-inventory-importer.php:65
+msgid "WooCommerce Multi Inventory Importer"
+msgstr "Importatore di inventario multiplo WooCommerce"
+
+#: woocommerce-multi-inventory.php:88
+msgid ""
+"WooCommerce Multi Inventory requires the WooCommerce & weLaunch Framework "
+"plugin. Please install or activate them before: https://www.welaunch."
+"io/updates/welaunch-framework.zip"
+msgstr ""
+"WooCommerce Multi Inventory richiede il plugin WooCommerce e weLaunch "
+"Framework. Si prega di installarli o attivarli prima: https://www.welaunch."
+"io/updates/welaunch-framework.zip"
+
+#: config/options-init.php:768
+msgid ""
+"Works when you pass product_id to the shortcode or a global product page is "
+"used."
+msgstr ""
+"Funziona quando si passa product_id allo shortcode o quando viene utilizzata "
+"una pagina prodotto globale."
+
+#: config/options-init.php:1215
+msgid "WPML Support"
+msgstr "Supporto WPML"
+
+#: classes/class-woocommerce-multi-inventory-exporter.php:39
+msgid "You are not an admin"
+msgstr "Non sei un amministratore"
+
+#: config/options-init.php:1039
+msgid ""
+"You can put delivery costs per inventory in the backend when you edit an "
+"invetory."
+msgstr ""
+"Quando modifichi un inventario, puoi inserire i costi di spedizione per "
+"inventario nel backend."
+
+#: config/options-init.php:493 config/options-init.php:513
+msgid ""
+"You may select click & collect shipping method here only. This will only "
+"show click & collect shipping method AND disable delivery for pickup stores."
+msgstr ""
+"Puoi selezionare il metodo di spedizione click & collect solo qui. Questo "
+"mostrerà solo il metodo di spedizione click & collect E disabiliterà la "
+"consegna per i punti vendita di ritiro."
+
+#: config/options-init.php:483 config/options-init.php:503
+msgid ""
+"You may select delivery shipping method here only. This will only show "
+"delivery shipping method AND disable delivery for pickup stores."
+msgstr ""
+"Puoi selezionare il metodo di spedizione della consegna solo qui. Questo "
+"mostrerà solo il metodo di spedizione della consegna E disabiliterà la "
+"consegna per i punti vendita di ritiro."
+
+#: config/options-init.php:784
+msgid ""
+"You need to enter a valid google api key in general settings to use the "
+"search."
+msgstr ""
+"Per utilizzare la ricerca è necessario immettere una chiave API Google "
+"valida nelle impostazioni generali."
+
+#: classes/class-woocommerce-multi-inventory-exporter.php:56
+msgid "Your Store Export is ready. The Download should start automatically."
+msgstr ""
+"L'esportazione del tuo negozio è pronta. Il download dovrebbe avviarsi "
+"automaticamente."
+
+#: classes/class-woocommerce-multi-inventory-public.php:1144
+msgid "Your Store: "
+msgstr "Il tuo negozio:"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:146
+msgid "ZIP"
+msgstr "CAP"

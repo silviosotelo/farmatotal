@@ -67,7 +67,7 @@ export default function PagoRetornoPage() {
   return (
     <main className="flex-1">
       <div className="mx-auto w-full max-w-2xl px-4 py-10">
-        <Suspense fallback={<p className="py-16 text-center text-sm text-gray-500">Cargando…</p>}>
+        <Suspense>
           <RetornoContent />
         </Suspense>
       </div>

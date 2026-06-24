@@ -245,6 +245,7 @@ export function CatalogBlock({
                   shape="circle"
                   onClick={() => setPage(n)}
                   aria-current={n === page ? "page" : undefined}
+                  style={n === page ? { color: 'white' } : undefined}
                 >
                   {n}
                 </Button>

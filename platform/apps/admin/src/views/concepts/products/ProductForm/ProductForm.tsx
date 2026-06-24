@@ -7,6 +7,7 @@ import PricingSection from './components/PricingSection'
 import ImageSection from './components/ImageSection'
 import AttributeSection from './components/AttributeSection'
 import ProductDetailsSection from './components/ProductDetailsSection'
+import CustomFieldsSection from '@/views/concepts/entity-fields/CustomFieldsSection'
 import SpecsSection from './components/SpecsSection'
 import { useForm } from 'react-hook-form'
 import type { Resolver } from 'react-hook-form'
@@ -47,6 +48,8 @@ const validationSchema = z.object({
     category: z.string().optional(),
     // Campos adicionales del catálogo (opcionales)
     codInterno: z.string().optional(),
+    barcode: z.string().optional(),
+    custom: z.record(z.string(), z.unknown()).optional(),
     priceNormal: z.union([z.string(), z.number()]).optional(),
     status: z.enum(['draft', 'published', 'archived']).optional(),
     controlled: z.boolean().optional(),
@@ -105,6 +108,8 @@ const ProductForm = (props: ProductFormProps) => {
                         <GeneralSection control={control} errors={errors} />
                         <PricingSection control={control} errors={errors} />
                         <ProductDetailsSection control={control} errors={errors} />
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        <CustomFieldsSection settingsKey="mod_product_fields" control={control as any} />
                         <SpecsSection control={control} errors={errors} />
                     </div>
                     <div className="lg:min-w-[440px] 2xl:w-[500px] gap-4 flex flex-col">

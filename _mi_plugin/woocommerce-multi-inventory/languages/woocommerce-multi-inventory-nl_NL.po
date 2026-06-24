@@ -1,0 +1,1624 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WooCommerce Multi Inventory\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-05-18 12:36+0000\n"
+"PO-Revision-Date: 2025-01-20 14:01+0000\n"
+"Last-Translator: WeLaunch\n"
+"Language-Team: Dutch\n"
+"Language: nl_NL\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.5.2; wp-5.7.2"
+
+#: config/options-init.php:949 config/options-init.php:950
+msgid "%d on Stock"
+msgstr "%d op voorraad"
+
+#: config/options-init.php:1046
+#, php-format
+msgid "%s Delivery Costs"
+msgstr "%s Bezorgkosten"
+
+#: config/options-init.php:330
+#, php-format
+msgid "%s has been removed as it is not available in new selected inventory."
+msgstr ""
+"%s is verwijderd omdat het niet beschikbaar is in de nieuwe geselecteerde "
+"inventaris."
+
+#: config/options-init.php:956
+#, php-format
+msgid "%s in stock"
+msgstr "%s op voorraad"
+
+#: config/options-init.php:974
+#, php-format
+msgid "%s not in stock (only %s in stock at inventory %s)"
+msgstr "%s niet op voorraad (alleen %s op voorraad bij inventaris %s)"
+
+#: config/options-init.php:465
+msgid "1 - 3 Days"
+msgstr "1 - 3 dagen"
+
+#: classes/class-woocommerce-multi-inventory-importer.php:178
+#, fuzzy
+#| msgid ""
+#| "1. Export all Prices (see settings > export prices button) 2. Do "
+#| "modifications in excel file. 3. Import modified Excel file."
+msgid ""
+"1. Export all Inventorys (see settings > export inventorys button) 2. Do "
+"modifications in excel file. 3. Import modified Excel file."
+msgstr ""
+"1. Exporteer alle inventarissen (zie instellingen > knop inventarissen "
+"exporteren) 2. Breng wijzigingen aan in Excel-bestand. 3. Importeer "
+"gewijzigd Excel-bestand."
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:79
+#, php-format
+msgid "Add New %s"
+msgstr "Nieuwe %s toevoegen"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:142
+msgid "Address"
+msgstr "Adres"
+
+#: config/options-init.php:1186
+msgid "Advanced"
+msgstr "Geavanceerd"
+
+#: config/options-init.php:1187
+msgid "Advanced Settings"
+msgstr "Geavanceerde instellingen"
+
+#: config/options-init.php:667
+msgid "After Add To Cart Form"
+msgstr "Na toevoegen aan winkelwagenformulier"
+
+#: config/options-init.php:672
+msgid "After Main Product"
+msgstr "Na hoofdproduct:"
+
+#: config/options-init.php:669
+msgid "After Meta Information"
+msgstr "Na meta-informatie"
+
+#: config/options-init.php:671
+msgid "After Single Product"
+msgstr "Na één product"
+
+#: config/options-init.php:670
+msgid "After Single Product Summary"
+msgstr "Na één productoverzicht"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:74
+#, php-format
+msgid "All %s"
+msgstr "Alle %s"
+
+#: config/options-init.php:820
+msgid "All Locations Intro text"
+msgstr "Alle locaties Introtekst"
+
+#: config/options-init.php:224
+msgid "Allow Empty Inventory Products"
+msgstr "Lege voorraadproducten toestaan"
+
+#: config/options-init.php:893
+msgid "Always Use Order Flow"
+msgstr "Gebruik altijd orderstroom"
+
+#: config/options-init.php:1077
+msgid "Apply radius check on these shipping methods."
+msgstr "Pas een straalcontrole toe op deze verzendmethoden."
+
+#: config/options-init.php:1209
+msgid ""
+"Assign the inventory taxonomy also to variations. This allows you to filter "
+"variations for example when using our single variations plugin."
+msgstr ""
+"Wijs de inventaristaxonomie ook toe aan variaties. Hiermee kunt u variaties "
+"filteren, bijvoorbeeld wanneer u onze plug-in voor enkele variaties gebruikt."
+
+#: classes/class-woocommerce-multi-inventory-manager.php:160
+msgid "Backend Inventory"
+msgstr "Backend-inventaris"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:206
+msgid "Backend Inventory "
+msgstr "Backend-inventaris"
+
+#: config/options-init.php:827 config/options-init.php:842
+msgid "Background Color"
+msgstr "Achtergrondkleur"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:193
+msgid "Bank"
+msgstr "Bank"
+
+#: classes/class-woocommerce-multi-inventory-importer.php:177
+msgid "Batch Import:"
+msgstr "Batch-import:"
+
+#: config/options-init.php:666
+msgid "Before Add To Cart Form"
+msgstr "Voor het toevoegen aan winkelwagenformulier"
+
+#: config/options-init.php:668
+msgid "Before Meta Information"
+msgstr "Voor meta-informatie"
+
+#: config/options-init.php:663
+msgid "Before Single Product"
+msgstr "Voor enkel product"
+
+#: config/options-init.php:664
+msgid "Before Single Product Summary"
+msgstr "Vóór één productoverzicht"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:189
+msgid "BIC"
+msgstr "BIC"
+
+#: config/options-init.php:882
+msgid "By Country"
+msgstr "Op volgorde per land"
+
+#: config/options-init.php:643 config/options-init.php:884
+msgid "By Name"
+msgstr "Bij naam"
+
+#: config/options-init.php:642 config/options-init.php:883
+msgid "By Order"
+msgstr "Op bestelling"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:202
+msgid "Can be selected on Product Pages"
+msgstr "Kan worden geselecteerd op productpagina's"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:207
+msgid "Can be used for backend admin orders"
+msgstr "Kan worden gebruikt voor backend admin-bestellingen"
+
+#: config/options-init.php:266
+msgid "Cart"
+msgstr "Winkelwagen"
+
+#: config/options-init.php:618
+msgid "Change Inventory"
+msgstr "Wijzig inventaris"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:150
+msgid "City"
+msgstr "Stad"
+
+#: config/options-init.php:425
+msgid "Click & Collect"
+msgstr "Klik & Verzamel"
+
+#: config/options-init.php:512
+msgid "Click & Collect Payment Gateways"
+msgstr "Click & Collect-betaalgateways"
+
+#: config/options-init.php:492
+msgid "Click & Collect Shipping Methods"
+msgstr "Click & Collect verzendmethoden"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:181
+msgid "Company"
+msgstr "Bedrijf"
+
+#: config/options-init.php:525
+msgid "Configure inventories frontend output on product pages."
+msgstr "Configureer frontend-uitvoer van voorraden op productpagina's."
+
+#: config/options-init.php:733
+msgid "Configure the select inventory popup"
+msgstr "Configureer de pop-up voor geselecteerde inventaris"
+
+#: classes/class-woocommerce-multi-inventory-public.php:2826
+msgid "Could not get your position"
+msgstr "Kon je positie niet krijgen"
+
+#: config/options-init.php:628
+msgid "Count (2 in Stock)"
+msgstr "Aantal (2 op voorraad)"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:244
+msgid "Countries to Ship To "
+msgstr "Landen waarnaar wordt verzonden:"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:158
+msgid "Country CODE"
+msgstr "Landcode"
+
+#: config/options-init.php:916
+msgid "Country Inventory Fallback"
+msgstr "Terugval landinventaris"
+
+#. Description of the plugin
+msgid "Create multiple inventories & warehouses for WooCommerce with ease"
+msgstr "Creëer met gemak meerdere voorraden en magazijnen voor WooCommerce"
+
+#: config/options-init.php:881 config/options-init.php:907
+msgid "Custom Inventory"
+msgstr "Aangepaste inventaris"
+
+#: config/options-init.php:178
+msgid "Default Inventory"
+msgstr "Standaard inventaris"
+
+#: config/options-init.php:1010 config/options-init.php:1011
+msgid "Delivery"
+msgstr "Levering"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:176
+#: config/options-init.php:1030
+msgid "Delivery Costs"
+msgstr "Bezorgkosten"
+
+#: config/options-init.php:1045
+msgid "Delivery Costs Label"
+msgstr "Bezorgkosten label"
+
+#: config/options-init.php:1111
+msgid "Delivery Distance Fees"
+msgstr "Bezorgkosten afstand"
+
+#: config/options-init.php:1104
+msgid "Delivery Fee"
+msgstr "Bezorgkosten"
+
+#: config/options-init.php:440
+msgid "Delivery Inventory"
+msgstr "Leveringsinventaris"
+
+#: config/options-init.php:457 config/options-init.php:464
+msgid "Delivery Location in Popup Custom Distance Text"
+msgstr "Afleverlocatie in pop-up Aangepaste afstandstekst"
+
+#: config/options-init.php:502
+msgid "Delivery Payment Gateways"
+msgstr "Bezorgingsbetalingsgateways"
+
+#: config/options-init.php:482
+msgid "Delivery Shipping Methods"
+msgstr "Levering Verzendmethoden"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:163
+#: config/options-init.php:992
+msgid "Delivery Time"
+msgstr "Levertijd"
+
+#: config/options-init.php:993
+msgid "Delivery Time: "
+msgstr "Levertijd:"
+
+#: config/options-init.php:775
+msgid "Disable Auto Geolocation"
+msgstr "Automatische geolocatie uitschakelen"
+
+#: config/options-init.php:407
+msgid "Disable Backend Editing"
+msgstr "Bewerken van backend uitschakelen"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:257
+msgid "Disable Payment Gateway "
+msgstr "Betalingsgateway uitschakelen"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:272
+msgid "Disable Shipping Methods "
+msgstr "Verzendmethoden uitschakelen"
+
+#: config/options-init.php:1201
+msgid "Disable State Replace"
+msgstr "Status vervangen uitschakelen"
+
+#: config/options-init.php:1202
+msgid ""
+"Disables adding inventory URL parameter to all links of your site. Note: "
+"enabling this can cause issues with caching."
+msgstr ""
+"Schakelt het toevoegen van inventaris-URL-parameters aan alle links van uw "
+"site uit. Let op: inschakelen hiervan kan problemen met caching veroorzaken."
+
+#: config/options-init.php:408
+#, fuzzy
+#| msgid ""
+#| "Disables updating ivnentory stocks when you edit a product. Use inventory "
+#| "Manger or im / exports instead. Good for performance!"
+msgid ""
+"Disables updating inventory stocks when you edit a product. Use inventory "
+"Manger or im / exports instead. Good for performance!"
+msgstr ""
+"Schakelt het bijwerken van voorraadvoorraden uit wanneer u een product "
+"bewerkt. Gebruik in plaats daarvan inventory Manager of im / exports. Goed "
+"voor de prestaties!"
+
+#: config/options-init.php:547
+msgid "Display Type"
+msgstr "Weergavetype"
+
+#: config/options-init.php:240
+msgid ""
+"Distance matrix is more precis as it calculates the distance by routes & "
+"streets, but costs more because it has to calculate route from user to EACH "
+"store. You can use geocoding only to calculate the distance by radius only "
+"once and save money. But it is not that precise. <br><b>When enabled:</b> "
+"Make sure each inventory as LAT / LNG data.."
+msgstr ""
+"Distance matrix is nauwkeuriger omdat het de afstand berekent op basis van "
+"routes en straten, maar kost meer omdat het de route van gebruiker naar ELKE "
+"winkel moet berekenen. U kunt geocodering alleen gebruiken om de afstand per "
+"straal slechts één keer te berekenen en geld te besparen. Maar het is niet "
+"zo nauwkeurig. <br><b>Wanneer ingeschakeld:</b> Zorg ervoor dat elke "
+"inventaris als LAT / LNG-gegevens."
+
+#: config/options-init.php:540
+msgid "Do not show inventories with 0 stock."
+msgstr "Toon geen voorraden met 0 voorraad."
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:77
+#, php-format
+msgid "Edit %s"
+msgstr "Bewerk %s"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:133
+msgid "Email"
+msgstr "E-mail"
+
+#: config/options-init.php:209
+msgid "Email Inventory Notification"
+msgstr "E-mail voorraadmelding"
+
+#: config/options-init.php:1177
+msgid "Email new orders to Inventory users."
+msgstr "Stuur nieuwe bestellingen per e-mail naar Inventory-gebruikers."
+
+#: config/options-init.php:1176
+msgid "Email Orders"
+msgstr "E-mail bestellingen"
+
+#: config/options-init.php:156
+msgid "Enable"
+msgstr "Inschakelen"
+
+#: config/options-init.php:433
+msgid "Enable Click & Collect"
+msgstr "Click & Collect inschakelen"
+
+#: config/options-init.php:1038
+msgid "Enable Delivery Costs"
+msgstr "Bezorgkosten inschakelen"
+
+#: config/options-init.php:740
+msgid "Enable Inventory Popup"
+msgstr "Voorraadpop-up inschakelen"
+
+#: config/options-init.php:1161
+msgid "Enable Inventory Users"
+msgstr "Inventarisgebruikers inschakelen"
+
+#: config/options-init.php:1222
+msgid "Enable Logging"
+msgstr "Logboekregistratie inschakelen"
+
+#: config/options-init.php:699
+msgid "Enable Product Category"
+msgstr "Productcategorie inschakelen"
+
+#: config/options-init.php:532
+msgid "Enable productPage"
+msgstr "Productpagina inschakelen"
+
+#: config/options-init.php:1062
+msgid "Enable Radius Shipping"
+msgstr "Radius verzending inschakelen"
+
+#: config/options-init.php:1127
+msgid "Enable Radius Shipping Distance"
+msgstr "Radius verzendafstand inschakelen"
+
+#: config/options-init.php:1095
+msgid "Enable Radius Shipping Fees"
+msgstr "Radius-verzendkosten inschakelen"
+
+#: config/options-init.php:776
+msgid "Enable this to not get the current users position when popup opens."
+msgstr ""
+"Schakel dit in om de positie van de huidige gebruiker niet op te halen "
+"wanneer de pop-up wordt geopend."
+
+#: config/options-init.php:1195
+msgid ""
+"Enable when distance calculation OR radius shipping is not working or for "
+"testing"
+msgstr ""
+"Inschakelen wanneer afstandsberekening OF straalverzending niet werkt of "
+"voor testen"
+
+#: config/options-init.php:1016 config/options-init.php:1017
+msgid "Enter your address"
+msgstr "Vul uw adres in"
+
+#: config/options-init.php:1085 config/options-init.php:1144
+msgid "Error Message"
+msgstr "Foutmelding"
+
+#: config/options-init.php:1086
+msgid "Example: Empty Delivery method"
+msgstr "Voorbeeld: Lege bezorgmethode"
+
+#: config/options-init.php:1145
+msgid "Example: Sorry we only ship within X km / miles."
+msgstr "Voorbeeld: Helaas verzenden wij alleen binnen X km / mijl."
+
+#: config/options-init.php:258
+msgid "Export Inventories"
+msgstr "Voorraden exporteren"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:177
+msgid "Extra fees, that gets added when that inventory is in users cart."
+msgstr ""
+"Extra kosten die worden toegevoegd wanneer de inventaris zich in het "
+"winkelwagentje van de gebruiker bevindt."
+
+#: config/options-init.php:917
+msgid "Fallback Inventory when no matching country inventory found."
+msgstr ""
+"Reservevoorraad wanneer er geen overeenkomende landvoorraad is gevonden."
+
+#: config/options-init.php:908
+msgid "Fallback, if the inventory has no stock, is the name order."
+msgstr "Fallback, als de inventaris geen voorraad heeft, is de naamvolgorde."
+
+#: config/options-init.php:1119
+msgid "Fees taxable"
+msgstr "Belastbare kosten"
+
+#: classes/class-woocommerce-multi-inventory-importer.php:182
+msgid "File to Import"
+msgstr "Bestand om te importeren"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:153
+msgid "Frontend Inventory"
+msgstr "Frontend-inventaris"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:201
+msgid "Frontend Inventory "
+msgstr "Frontend-inventaris"
+
+#: config/options-init.php:148
+msgid "General"
+msgstr "Algemeen"
+
+#: config/options-init.php:232
+msgid "Google API Key"
+msgstr "Google API-sleutel"
+
+#: config/options-init.php:1194
+msgid "Google Debug Mode"
+msgstr "Google-foutopsporingsmodus"
+
+#: config/options-init.php:630
+msgid "Hidden"
+msgstr "Verborgen"
+
+#: config/options-init.php:555
+msgid "Hidden (user can not change inventory on product page)"
+msgstr ""
+"Verborgen (gebruiker kan de voorraad op de productpagina niet wijzigen)"
+
+#: config/options-init.php:539
+msgid "Hide Empty Inventories"
+msgstr "Lege voorraden verbergen"
+
+#: config/options-init.php:201
+msgid "Hide unavailable Products"
+msgstr "Verberg niet-beschikbare producten"
+
+#: config/options-init.php:652
+msgid "Hook Position"
+msgstr "Haak Positie:"
+
+#: config/options-init.php:679
+msgid "Hook Priority"
+msgstr "Haakprioriteit"
+
+#: config/options-init.php:625
+msgid "How the stock quantity should be shown."
+msgstr "Hoe de voorraadhoeveelheid moet worden weergegeven."
+
+#: classes/class-woocommerce-multi-inventory-importer.php:178
+msgid "How to use best:"
+msgstr "Hoe het beste te gebruiken:"
+
+#. Author URI of the plugin
+msgid "https://welaunch.io"
+msgstr "https://welaunch.io"
+
+#. URI of the plugin
+msgid "https://www.welaunch.io/en/product/woocommerce-multi-inventory/"
+msgstr "https://www.welaunch.io/en/product/woocommerce-multi-inventaris/"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:185
+msgid "IBAN"
+msgstr "IBAN"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:137
+msgid "ID"
+msgstr "ID kaart"
+
+#: config/options-init.php:248
+msgid ""
+"If you can not work with xlsx (Excel 2007 and higher) files, check this. You "
+"then can work with normal .xls files."
+msgstr ""
+"Als je niet met xlsx (Excel 2007 en hoger) bestanden kunt werken, vink dit "
+"dan aan. U kunt dan werken met normale .xls-bestanden."
+
+#: classes/class-woocommerce-multi-inventory-manager.php:138
+msgid "Image"
+msgstr "Afbeelding"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:137
+msgid "Image "
+msgstr "Afbeelding"
+
+#: config/options-init.php:259
+msgid "Import Inventories"
+msgstr "Voorraden importeren"
+
+#: classes/class-woocommerce-multi-inventory-importer.php:188
+msgid "Import Inventorys"
+msgstr "Voorraden importeren"
+
+#: config/options-init.php:629
+msgid "In / Out of Stock"
+msgstr "In/Uit voorraad"
+
+#: config/options-init.php:665
+msgid "In Single Product Summary"
+msgstr "In één productoverzicht"
+
+#: config/options-init.php:416
+msgid ""
+"In the products overview page in backend, this will show all inventories + "
+"stocks."
+msgstr ""
+"Op de productoverzichtspagina in backend worden alle voorraden + voorraden "
+"weergegeven."
+
+#: classes/class-woocommerce-multi-inventory-admin.php:912
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:68
+msgid "Inventories"
+msgstr "voorraden"
+
+#: classes/class-woocommerce-multi-inventory-admin.php:521
+msgid "Inventories Access"
+msgstr "Toegang tot inventarissen"
+
+#: config/options-init.php:638
+msgid "Inventories Order"
+msgstr "Voorraadbestelling"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:67
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:123
+#: config/options-init.php:944
+msgid "Inventory"
+msgstr "Voorraad"
+
+#: config/options-init.php:943
+msgid "Inventory / Warehouse Label"
+msgstr "Voorraad/magazijnlabel"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:293
+msgid "Inventory ID missing."
+msgstr "Voorraad-ID ontbreekt."
+
+#: classes/class-woocommerce-multi-inventory-manager.php:47
+#: classes/class-woocommerce-multi-inventory-manager.php:48
+#: classes/class-woocommerce-multi-inventory-manager.php:104
+msgid "Inventory Manager"
+msgstr "Inventaris manager"
+
+#: classes/class-woocommerce-multi-inventory-admin.php:653
+msgid "Inventory Prices"
+msgstr "Voorraadprijzen"
+
+#: config/options-init.php:217
+msgid "Inventory Required"
+msgstr "Voorraad vereist"
+
+#: config/options-init.php:624
+msgid "Inventory Stock Display"
+msgstr "Voorraadvoorraadweergave"
+
+#: config/options-init.php:1154
+msgid "Inventory Users"
+msgstr "Inventaris Gebruikers"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:171
+#, php-format
+msgid "IV: %s"
+msgstr "IV: %s"
+
+#: config/options-init.php:553 config/options-init.php:1102
+msgid "Label"
+msgstr "Label"
+
+#: config/options-init.php:554
+msgid "Label & Popup"
+msgstr "Label en pop-up"
+
+#: config/options-init.php:617
+msgid "Label - Change Inventory"
+msgstr "Label - Voorraad wijzigen"
+
+#: config/options-init.php:609
+msgid "Label - Text"
+msgstr "Label - Tekst"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:167
+msgid "Latitude"
+msgstr "Breedtegraad"
+
+#: config/options-init.php:747
+msgid "Layout"
+msgstr "Indeling"
+
+#: config/options-init.php:749
+msgid "Layout 1 (2 Columns)"
+msgstr "Lay-out 1 (2 kolommen)"
+
+#: config/options-init.php:750
+msgid "Layout 2 (1 Column)"
+msgstr "Lay-out 2 (1 kolom)"
+
+#: config/options-init.php:751
+msgid "Layout 3 (List view / 1 Column)"
+msgstr "Lay-out 3 (Lijstweergave / 1 kolom)"
+
+#: config/options-init.php:955
+msgid "Left in Stock"
+msgstr "Nog op voorraad"
+
+#: config/options-init.php:315
+msgid "Let users change the inventory of all items in cart."
+msgstr ""
+"Geef gebruikers de mogelijkheid om de voorraad van alle artikelen in de "
+"winkelwagen te wijzigen."
+
+#: config/options-init.php:1168
+msgid "Limit Orders Backend"
+msgstr "Limietorders Backend"
+
+#: config/options-init.php:1004 config/options-init.php:1005
+msgid "Local Pickup"
+msgstr "Lokale afhaling"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:171
+msgid "Longitude"
+msgstr "Lengtegraad"
+
+#: config/options-init.php:645
+msgid "Lowest Stock"
+msgstr "Laagste voorraad"
+
+#: config/options-init.php:887
+msgid "lowest Stock"
+msgstr "laagste voorraad"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:141
+msgid "Manage Stock"
+msgstr "Beheer Voorraad"
+
+#: config/options-init.php:870
+msgid "Manage what inventory is used for new orders."
+msgstr "Beheer welke voorraad wordt gebruikt voor nieuwe bestellingen."
+
+#: config/options-init.php:857
+msgid "Max Results"
+msgstr "Maximale resultaten"
+
+#: config/options-init.php:298
+msgid "Mixed Cart info"
+msgstr "Gemengde winkelwagen info"
+
+#: config/options-init.php:306
+msgid "Mixed Cart info text"
+msgstr "Gemengde winkelwagen infotekst"
+
+#: config/options-init.php:170
+msgid "Modify Price"
+msgstr "Wijzig prijs"
+
+#: config/options-init.php:375
+msgid "Modify Stock Quantity"
+msgstr "Voorraadhoeveelheid wijzigen"
+
+#: config/options-init.php:644 config/options-init.php:886
+msgid "Most Stock"
+msgstr "Meeste voorraad"
+
+#: classes/class-woocommerce-multi-inventory-admin.php:1328
+msgid "Multi Inventories"
+msgstr "Meerdere voorraden"
+
+#: config/options-init.php:34 config/options-init.php:140
+msgid "Multi Inventory"
+msgstr "Meerdere inventaris"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:140
+msgid "Name"
+msgstr "Naam"
+
+#: config/options-init.php:1103
+msgid "Name of the fee. For example: Delivery Fee."
+msgstr "Naam van de vergoeding. Bijvoorbeeld: Bezorgkosten."
+
+#: config/options-init.php:885
+msgid "Nearest Location based on Customer address"
+msgstr "Dichtstbijzijnde locatie op basis van klantadres"
+
+#: config/options-init.php:142
+msgid "Need support? Please use the comment function on codecanyon."
+msgstr "Ondersteuning nodig? Gebruik de commentaarfunctie op codecanyon."
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:80
+#, php-format
+msgid "New %s Name"
+msgstr "Nieuwe %s naam"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:162
+msgid "No Backend Inventory"
+msgstr "Geen backend-inventaris"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:155
+msgid "No Frontend Inventory"
+msgstr "Geen frontend-inventaris"
+
+#: classes/class-woocommerce-multi-inventory-admin.php:941
+msgid "No inventories"
+msgstr "Geen voorraden"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:69
+msgid "No inventories created so far ..."
+msgstr "Tot nu toe geen voorraden aangemaakt..."
+
+#: config/options-init.php:986
+msgid "No Inventory Selected"
+msgstr "Geen inventaris geselecteerd"
+
+#: config/options-init.php:565
+msgid "No Inventory selected text"
+msgstr "Geen inventaris geselecteerde tekst"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:97
+#, fuzzy
+#| msgid "No Product found"
+msgid "No Products found ..."
+msgstr "Geen producten gevonden..."
+
+#: classes/class-woocommerce-multi-inventory-exporter.php:50
+msgid "No products to Export"
+msgstr "Geen producten om te exporteren"
+
+#: classes/class-woocommerce-multi-inventory-public.php:1149
+msgid "None"
+msgstr "Geen"
+
+#: config/options-init.php:660
+msgid "None (Shortcode)"
+msgstr "Geen (korte code)"
+
+#: config/options-init.php:980
+msgid "Not enough Stock"
+msgstr "Niet genoeg voorraad"
+
+#: config/options-init.php:973 config/options-init.php:975
+msgid "Not in Stock"
+msgstr "Niet op voorraad"
+
+#: config/options-init.php:821
+msgid "Not the store you searched for? We have more ..."
+msgstr "Niet de winkel waar je naar zocht? Wij hebben meer..."
+
+#: config/options-init.php:961 config/options-init.php:962
+msgid "On Stock"
+msgstr "Op voorraad"
+
+#: config/options-init.php:1112
+msgid ""
+"Only one fee per row! Enter distance first, then the fee amount divided by |."
+" Example: 1|5 => within 1 to 20 miles, $5 fee will be added. Continue with "
+"20|8 for example. Always start with 1."
+msgstr ""
+"Slechts één vergoeding per rij! Voer eerst de afstand in, en vervolgens het "
+"vergoedingsbedrag gedeeld door |. Voorbeeld: 1|5 => binnen 1 tot 20 mijl, "
+"wordt $5 vergoeding toegevoegd. Ga door met bijvoorbeeld 20|8. Begin altijd "
+"met 1."
+
+#: config/options-init.php:1169
+msgid "Only show orders in backend where users have access to the inventory."
+msgstr ""
+"Toon alleen bestellingen in de backend waarbij gebruikers toegang hebben tot "
+"de voorraad."
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:236
+msgid "Order"
+msgstr "Bestellen"
+
+#: config/options-init.php:869
+msgid "Order Flow"
+msgstr "Orderstroom"
+
+#: config/options-init.php:877
+msgid "Order flow"
+msgstr "Orderstroom"
+
+#: config/options-init.php:967 config/options-init.php:968
+msgid "Out of Stock"
+msgstr "Geen voorraad meer"
+
+#: config/options-init.php:572
+msgid "Out of Stock text"
+msgstr "Niet op voorraad tekst"
+
+#: config/options-init.php:573
+msgid "Out of stock. Please select another inventory."
+msgstr "Geen voorraad meer. Selecteer een andere inventaris."
+
+#: config/options-init.php:473
+msgid "Override the delivery address"
+msgstr "Het afleveradres overschrijven"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:75
+#, php-format
+msgid "Parent %s"
+msgstr "Ouders %s"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:76
+#, php-format
+msgid "Parent %s:"
+msgstr "Ouders %s:"
+
+#: config/options-init.php:307
+msgid "Please note, that you have multiple inventories in your cart."
+msgstr "Houd er rekening mee dat u meerdere artikelen in uw winkelwagen hebt."
+
+#: config/options-init.php:583
+msgid "Please select an inventory"
+msgstr "Selecteer een inventaris"
+
+#: config/options-init.php:566
+msgid "Please select an inventory first."
+msgstr "Selecteer eerst een inventaris."
+
+#: config/options-init.php:732
+msgid "Popup"
+msgstr "Pop-up"
+
+#: config/options-init.php:810
+msgid "Popup text"
+msgstr "Pop-uptekst"
+
+#: classes/class-woocommerce-multi-inventory-admin.php:668
+#: classes/class-woocommerce-multi-inventory-admin.php:669
+#: classes/class-woocommerce-multi-inventory-admin.php:724
+#: classes/class-woocommerce-multi-inventory-admin.php:725
+msgid "Price"
+msgstr "Prijs"
+
+#: config/options-init.php:721
+msgid "Product  Hook Priority"
+msgstr "Product Hook-prioriteit"
+
+#: config/options-init.php:690
+msgid "Product Category"
+msgstr "Productcategorie"
+
+#: config/options-init.php:707
+msgid "Product Hook"
+msgstr "Producthaak"
+
+#: classes/class-woocommerce-multi-inventory-logging.php:72
+#, php-format
+msgid "Product ID %d updated %s with %s"
+msgstr "Product-ID %d %s bijgewerkt met %s"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:298
+msgid "Product ID missing."
+msgstr "Product-ID ontbreekt."
+
+#: config/options-init.php:524
+msgid "Product Page"
+msgstr "Productpagina"
+
+#: config/options-init.php:225
+msgid ""
+"Products without inventories can be added to cart. This does not affect 0 "
+"inventory products. Only empty strings."
+msgstr ""
+"Producten zonder voorraden kunnen aan het winkelwagentje worden toegevoegd. "
+"Dit heeft geen invloed op 0 voorraadproducten. Alleen lege strings."
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:211
+msgid "Purchasing warehouse "
+msgstr "Inkoopmagazijn"
+
+#: config/options-init.php:551
+msgid "Radio"
+msgstr "Radio"
+
+#: config/options-init.php:548
+msgid "Radio, Select or Label mode."
+msgstr "Radio-, Select- of Label-modus."
+
+#: config/options-init.php:1134
+msgid "Radius (km or miles)"
+msgstr "Straal (km of mijl)"
+
+#: config/options-init.php:1054
+msgid "Radius Shipping"
+msgstr "Straal verzending"
+
+#: config/options-init.php:383
+msgid "Reduce Manual Orders Stock"
+msgstr "Verminder de voorraad handmatige bestellingen"
+
+#: config/options-init.php:399
+msgid "Reduce Stock on Pending Payments"
+msgstr "Verminder de voorraad van openstaande betalingen"
+
+#: config/options-init.php:894
+msgid ""
+"Regardless if the user has choosen an inventory always use the order flow "
+"set above."
+msgstr ""
+"Ongeacht of de gebruiker een inventaris heeft gekozen, moet altijd de "
+"hierboven ingestelde orderstroom worden gebruikt."
+
+#: config/options-init.php:149
+#, fuzzy
+#| msgid "\">register your License here</a>."
+msgid "register your License here."
+msgstr "\">registreer hier uw licentie</a>."
+
+#: config/options-init.php:290
+msgid "Removed cart items, that were not the same inventory."
+msgstr ""
+"Artikelen uit winkelwagen verwijderd die niet tot dezelfde inventaris "
+"behoorden."
+
+#: config/options-init.php:329
+msgid "Removed Product Text"
+msgstr "Producttekst verwijderd"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:228
+msgid "Responsible Shop Manager "
+msgstr "Verantwoordelijke winkelmanager"
+
+#: config/options-init.php:392
+msgid ""
+"Restock orders, that are changed from unpaid to cancelled automatically (not "
+"paid paypal for example)."
+msgstr ""
+"Bestellingen die niet betaald zijn, worden automatisch geannuleerd "
+"(bijvoorbeeld via PayPal)."
+
+#: config/options-init.php:391
+msgid "Restock Unpaid Orders"
+msgstr "Onbetaalde bestellingen opnieuw op voorraad nemen"
+
+#: config/options-init.php:289
+msgid "Restrict Cart Info Text"
+msgstr "Beperk winkelwageninfotekst"
+
+#: config/options-init.php:281
+msgid "Restrict Cart to One Inventory"
+msgstr "Beperk winkelwagen tot één inventaris"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:123
+#: config/options-init.php:1022 config/options-init.php:1023
+msgid "Search"
+msgstr "Zoekopdracht"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:73
+#, php-format
+msgid "Search %s"
+msgstr "Zoek %s"
+
+#: config/options-init.php:791
+msgid "Search Autocomplete"
+msgstr "Zoeken Autocomplete"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:122
+msgid "Search for Product"
+msgstr "Zoeken naar product"
+
+#: config/options-init.php:552
+msgid "Select"
+msgstr "Selecteer"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:221
+msgid "Select a Shop Manager"
+msgstr "Selecteer een winkelmanager"
+
+#: classes/class-woocommerce-multi-inventory-admin.php:537
+msgid ""
+"Select one or multiple inventories where the user should have access to."
+msgstr ""
+"Selecteer een of meerdere inventarissen waartoe de gebruiker toegang moet "
+"hebben."
+
+#: config/options-init.php:582
+msgid "Select Placeholder Text"
+msgstr "Selecteer tijdelijke aanduiding-tekst"
+
+#: classes/class-woocommerce-multi-inventory-public.php:1143
+msgid "Select Store"
+msgstr "Selecteer winkel"
+
+#: config/options-init.php:998 config/options-init.php:999
+msgid "Select store"
+msgstr "Selecteer winkel"
+
+#: config/options-init.php:601
+msgid "Selected inventory stock: "
+msgstr "Geselecteerde voorraad:"
+
+#: config/options-init.php:210
+msgid ""
+"Send new order mails to each inventory. The inventory must have a mail "
+"address set."
+msgstr ""
+"Stuur nieuwe ordermails naar elke inventaris. De inventaris moet een e-"
+"mailadres hebben."
+
+#: config/options-init.php:179
+msgid ""
+"Set a default inventory when a customer has not selected one. Leave empty to "
+"force customers to select one"
+msgstr ""
+"Stel een standaardinventaris in wanneer een klant er geen heeft geselecteerd."
+" Laat leeg om klanten te dwingen er een te selecteren"
+
+#: config/options-init.php:1031
+msgid "Set custom delivery costs per inventory."
+msgstr "Stel aangepaste bezorgkosten per voorraad in."
+
+#: config/options-init.php:162
+msgid "Set custom prices per inventory"
+msgstr "Stel aangepaste prijzen per voorraad in"
+
+#: config/options-init.php:426
+msgid "Set products to deliver and to click and collect."
+msgstr "Stel in dat producten bezorgd moeten worden en dat u ze moet afhalen."
+
+#: config/options-init.php:936
+msgid "Set texts."
+msgstr "Stel teksten in."
+
+#: config/options-init.php:441
+msgid "Set the delivery inventory."
+msgstr "Stel de leveringsinventaris in."
+
+#: config/options-init.php:1076
+msgid "Shipping Methods"
+msgstr "Verzendmethoden"
+
+#: config/options-init.php:533
+msgid "Show all available inventories in product frontend."
+msgstr "Toon alle beschikbare voorraden in product frontend."
+
+#: config/options-init.php:449
+msgid "Show Delivery Location in Popup"
+msgstr "Toon bezorglocatie in pop-up"
+
+#: config/options-init.php:299
+msgid "Show info text when cart has mixed inventories."
+msgstr "Toon infotekst wanneer de winkelwagen gemengde inventarissen heeft."
+
+#: config/options-init.php:415
+msgid "Show Inventories in Products Backend"
+msgstr "Toon voorraden in de backend van producten"
+
+#: config/options-init.php:194
+msgid "Show Inventory Description in Emails"
+msgstr "Toon inventarisbeschrijving in e-mails"
+
+#: config/options-init.php:273
+msgid "Show Inventory in Cart & Checkout"
+msgstr "Toon voorraad in winkelwagen en afrekenen"
+
+#: config/options-init.php:186
+msgid "Show Inventory in Emails"
+msgstr "Toon voorraad in e-mails"
+
+#: config/options-init.php:700
+msgid "Show Inventory information in product category pages"
+msgstr "Toon voorraadinformatie op productcategoriepagina's"
+
+#: config/options-init.php:759
+msgid "Show popup automatically"
+msgstr "Pop-up automatisch weergeven"
+
+#: config/options-init.php:767
+msgid "Show Product Stock"
+msgstr "Toon productvoorraad"
+
+#: config/options-init.php:783
+msgid "Show search / address field"
+msgstr "Zoek-/adresveld weergeven"
+
+#: config/options-init.php:314
+msgid "Show Switch Inventory Button"
+msgstr "Knop 'Inventaris van schakelaar weergeven'"
+
+#: config/options-init.php:741
+msgid ""
+"Shows a popup for users to select an inventory. Use this shortcode to let "
+"people change the inventory: [woocommerce_multi_inventory_change_inventory]"
+msgstr ""
+"Toont een pop-up waarin gebruikers een inventaris kunnen selecteren. Gebruik "
+"deze shortcode om mensen de inventaris te laten wijzigen: "
+"[woocommerce_multi_inventory_change_inventory]"
+
+#: config/options-init.php:274
+msgid "Shows the selected inventory in cart and checkout pages."
+msgstr ""
+"Geeft de geselecteerde voorraad weer in het winkelwagentje en op de "
+"afrekenpagina."
+
+#: config/options-init.php:187
+msgid "Shows the selected inventory in Emails."
+msgstr "Toont de geselecteerde voorraad in e-mails."
+
+#: classes/class-woocommerce-multi-inventory-manager.php:139
+msgid "SKU"
+msgstr "Artikelnummer"
+
+#: classes/class-woocommerce-multi-inventory-exporter.php:58
+msgid "Something was wrong with the export generation ..."
+msgstr "Er was iets mis met de exportgeneratie..."
+
+#: config/options-init.php:878
+msgid ""
+"Specify how orders should be assigned to an inventory / store. Note: User "
+"selected inventory is always prio first! When nothing is selected or you "
+"disable the product page inventory selection the below order flow will "
+"happen."
+msgstr ""
+"Specificeer hoe bestellingen moeten worden toegewezen aan een voorraad / "
+"winkel. Opmerking: door de gebruiker geselecteerde inventaris is altijd de "
+"eerste prioriteit! Als er niets is geselecteerd of als u de "
+"inventarisselectie van de productpagina uitschakelt, vindt de onderstaande "
+"orderstroom plaats."
+
+#: config/options-init.php:639
+msgid ""
+"Specify the order of the inventories on the product page. When using "
+"\"order\" you need to maintain the order on inventory level by editing it."
+msgstr ""
+"Geef de volgorde van de voorraden aan op de productpagina. Bij gebruik van "
+"\"bestellen\" dient u de bestelling op voorraadniveau te handhaven door deze "
+"te bewerken."
+
+#: config/options-init.php:653
+msgid "Specify the positon of the inventories on product page."
+msgstr "Specificeer de positie van de voorraden op de productpagina."
+
+#: config/options-init.php:900
+msgid "Split Orders"
+msgstr "Gesplitste bestellingen"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:154
+msgid "State"
+msgstr "Staat"
+
+#: classes/class-woocommerce-multi-inventory-admin.php:1342
+#: classes/class-woocommerce-multi-inventory-admin.php:1343
+#: classes/class-woocommerce-multi-inventory-admin.php:1445
+#: classes/class-woocommerce-multi-inventory-admin.php:1446
+msgid "Stock"
+msgstr "Voorraad"
+
+#: config/options-init.php:592
+msgid "Stock Info: "
+msgstr "Voorraadinformatie:"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:303
+msgid "Stock missing."
+msgstr "Voorraad ontbreekt."
+
+#: config/options-init.php:368
+msgid "Stock Quantity"
+msgstr "Voorraad Hoeveelheid"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:142
+msgid "Stock Status"
+msgstr "Voorraadstatus"
+
+#: config/options-init.php:323
+msgid "Switch Inventory"
+msgstr "Schakel inventaris"
+
+#: config/options-init.php:322
+msgid "Switch Inventory Button Text"
+msgstr "Tekst van de knop Inventaris wisselen"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:197
+msgid "Tax ID"
+msgstr "Belasting-ID"
+
+#: config/options-init.php:556
+msgid "Text (only show stocks - no select, uses order flow on purchase)"
+msgstr ""
+"Tekst (alleen voorraden weergeven - niet selecteren, gebruikt orderstroom "
+"bij aankoop)"
+
+#: config/options-init.php:557
+msgid "Text - only selected inventory / order flow on purchase)"
+msgstr "Tekst - alleen geselecteerde voorraad / orderstroom bij aankoop)"
+
+#: config/options-init.php:591 config/options-init.php:600
+msgid "Text before"
+msgstr "Sms voor"
+
+#: config/options-init.php:834 config/options-init.php:849
+msgid "Text Color"
+msgstr "Tekstkleur"
+
+#: config/options-init.php:935
+msgid "Texts"
+msgstr "teksten"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:159
+msgid "The 2 Digit code, e.g.: US, DE or AU"
+msgstr "De 2-cijferige code, bijvoorbeeld: VS, DE of AU"
+
+#: classes/class-woocommerce-multi-inventory-importer.php:177
+#, fuzzy
+#| msgid ""
+#| "The importer will import inventorys in batches of 100 via AJAX. You can "
+#| "leave, but do not close this tab until the import has been finished!"
+msgid ""
+"The importer will import inventorys in batches of 10 via AJAX. You can leave,"
+" but do not close this tab until the import has been finished!"
+msgstr ""
+"De importeur importeert voorraden in batches van 100 via AJAX. U kunt "
+"vertrekken, maar sluit dit tabblad niet voordat het importeren is voltooid!"
+
+#: config/options-init.php:611
+msgid ""
+"There are {{stock}} items available in your selected inventory {{inventory}}."
+msgstr ""
+"Er zijn {{stock}} items beschikbaar in uw geselecteerde inventaris "
+"{{inventory}}."
+
+#: config/options-init.php:434
+msgid ""
+"This allows you to set one inventory for delivery and all other inventories "
+"will be set to local pick up stores."
+msgstr ""
+"Hiermee kunt u één inventaris instellen voor bezorging, terwijl alle andere "
+"inventarissen worden ingesteld op lokale afhaalpunten."
+
+#: config/options-init.php:1055 config/options-init.php:1063
+msgid "This currently only works when using nearst location order flow!"
+msgstr ""
+"Dit werkt momenteel alleen bij gebruik van de orderstroom van de "
+"dichtstbijzijnde locatie!"
+
+#: config/options-init.php:400
+msgid "This is NOT a normal WooCommerce behaviour. Use with caution!"
+msgstr "Dit is GEEN normaal WooCommerce-gedrag. Wees voorzichtig!"
+
+#: config/options-init.php:1223
+msgid "This will log all product stock updates in a file."
+msgstr ""
+"Hiermee worden alle updates van de productvoorraad in een bestand vastgelegd."
+
+#: config/options-init.php:1216
+msgid ""
+"This will update / reduce the stock on default language and sync it to other "
+"languages."
+msgstr ""
+"Hiermee wordt de voorraad in de standaardtaal bijgewerkt/verkleind en met "
+"andere talen gesynchroniseerd."
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:230
+msgid "To edit these users, pleaes edit the user itself!"
+msgstr "Om deze gebruikers te bewerken, bewerkt u de gebruiker zelf!"
+
+#: config/options-init.php:149
+msgid "To get auto updates please "
+msgstr "Om automatische updates te krijgen alstublieft"
+
+#: config/options-init.php:257
+#, fuzzy
+#| msgid ""
+#| "To import products use the Excel file you get when clicking on Export "
+#| "Prices button below."
+msgid ""
+"To import products use the Excel file you get when clicking on Export "
+"Inventories button below."
+msgstr ""
+"Om producten te importeren, gebruikt u het Excel-bestand dat u krijgt als u "
+"hieronder op de knop Voorraad exporteren klikt."
+
+#: classes/class-woocommerce-multi-inventory-manager.php:176
+msgid "Total Backend Stock"
+msgstr "Totale backend-voorraad"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:175
+msgid "Total Frontend Stock *"
+msgstr "Totale frontendvoorraad *"
+
+#: classes/class-woocommerce-multi-inventory-manager.php:177
+msgid "Total Stock"
+msgstr "Totale voorraad"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:78
+#, php-format
+msgid "Update %s"
+msgstr "%s . bijwerken"
+
+#: config/options-init.php:247
+msgid "Use Excel 2007"
+msgstr "Gebruik Excel 2007"
+
+#: config/options-init.php:925
+msgid "Use GEO IP "
+msgstr "Gebruik GEO IP"
+
+#: config/options-init.php:239
+msgid "Use Google Geocoding Instead of Distance Matrix"
+msgstr "Gebruik Google Geocoding in plaats van Distance Matrix"
+
+#: config/options-init.php:799
+msgid "Use Miles (not KM)"
+msgstr "Gebruik Miles (geen KM)"
+
+#: config/options-init.php:800
+msgid "Use miles instead of kilometers."
+msgstr "Gebruik mijlen in plaats van kilometers."
+
+#: config/options-init.php:1069
+msgid "Use Miles instead of KM"
+msgstr "Gebruik Miles in plaats van KM"
+
+#: config/options-init.php:610
+msgid "Use variables: {{stock}} {{inventory}} and {{delivery_time}}"
+msgstr "Gebruik variabelen: {{stock}} {{inventory}} en {{delivery_time}}"
+
+#: config/options-init.php:792
+msgid "Uses google places autocomplete to show suggested adresses when typing."
+msgstr ""
+"Maakt gebruik van de automatische aanvulling van Google Places om "
+"voorgestelde adressen weer te geven tijdens het typen."
+
+#: config/options-init.php:1208
+msgid "Variations Add terms"
+msgstr "Variaties Termen toevoegen"
+
+#. Author of the plugin
+msgid "weLaunch"
+msgstr "weLaunch"
+
+#: config/options-init.php:811
+msgid "Welcome to our Online Shop. Please select your nearest Store."
+msgstr "Welkom in onze online winkel. Selecteer uw dichtstbijzijnde winkel."
+
+#: config/options-init.php:926
+msgid ""
+"When a country was not found, use geojs service to get country by IP. "
+"Otherwise a user may not be able to add a product to cart. Note GPDR / "
+"privacy laws!"
+msgstr ""
+"Wanneer een land niet gevonden is, gebruik dan de geojs service om het land "
+"op IP te krijgen. Anders kan een gebruiker een product niet aan de "
+"winkelwagen toevoegen. Let op de AVG/privacywetten!"
+
+#: config/options-init.php:760
+msgid ""
+"When a user has no location inventory checked before, the popup will show "
+"automatically."
+msgstr ""
+"Wanneer een gebruiker nog geen locatie-inventaris heeft aangevinkt, wordt de "
+"pop-up automatisch weergegeven."
+
+#: config/options-init.php:171
+msgid ""
+"When a user has selected an inventory it will show selected inventory price "
+"in loop & single product pages."
+msgstr ""
+"Wanneer een gebruiker een voorraad heeft geselecteerd, wordt de "
+"geselecteerde voorraadprijs weergegeven in lus- en enkele productpagina's."
+
+#: config/options-init.php:202
+msgid ""
+"When a user has selected an inventory, hide other items in your shop "
+"categories, that are not available."
+msgstr ""
+"Wanneer een gebruiker een inventaris heeft geselecteerd, verbergt u andere "
+"artikelen in uw winkelcategorieën die niet beschikbaar zijn."
+
+#: config/options-init.php:376
+msgid ""
+"When a user has selected an inventory, our plugin returns current stock "
+"quantity for only selectec inventory."
+msgstr ""
+"Wanneer een gebruiker een inventaris heeft geselecteerd, retourneert onze "
+"plug-in de huidige voorraadhoeveelheid voor alleen geselecteerde inventaris."
+
+#: config/options-init.php:901
+msgid ""
+"When an order contains multiple different inventories, split the order for "
+"each inventory."
+msgstr ""
+"Wanneer een bestelling meerdere verschillende voorraden bevat, splitst u de "
+"bestelling per voorraad."
+
+#: config/options-init.php:384
+msgid "When creating an order in backend, it will reduce stock too."
+msgstr ""
+"Bij het maken van een bestelling in de backend, zal dit ook de voorraad "
+"verminderen."
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:212
+msgid ""
+"When enabled and you order from this warehouse, the stock gets INCREASED and "
+"not DECREASED."
+msgstr ""
+"Wanneer deze optie is ingeschakeld en u bestelt bij dit magazijn, wordt de "
+"voorraad VERGROOT en niet VERMINDERD."
+
+#: config/options-init.php:282
+msgid ""
+"When enabled user can only purchae products within the same inventory. Other "
+"products will be removed from the cart if the selected inventory differs "
+"from existing cart inventories."
+msgstr ""
+"Wanneer ingeschakeld kan de gebruiker alleen producten kopen binnen dezelfde "
+"inventaris. Andere producten worden uit de winkelwagen verwijderd als de "
+"geselecteerde inventaris verschilt van bestaande winkelwageninventarissen."
+
+#: config/options-init.php:1162
+msgid ""
+"When enabled you can edit users and grant them access to inventories. When "
+"they have access to inventory X for example, they will only see orders with "
+"this inventory and get email notifications."
+msgstr ""
+"Wanneer ingeschakeld kunt u gebruikers bewerken en hen toegang verlenen tot "
+"inventarissen. Wanneer ze bijvoorbeeld toegang hebben tot inventaris X, zien "
+"ze alleen orders met deze inventaris en ontvangen ze e-mailmeldingen."
+
+#: config/options-init.php:218
+msgid ""
+"When enabled, an inventory is always required when a product has at least "
+"one inventory (can have 0 stock too)."
+msgstr ""
+"Indien ingeschakeld, is een voorraad altijd vereist wanneer een product ten "
+"minste één voorraad heeft (kan ook 0 voorraad hebben)."
+
+#: config/options-init.php:474
+msgid ""
+"When order is a click & collect one, set the orders shipping / delivery "
+"address to the inventory address."
+msgstr ""
+"Wanneer u een bestelling plaatst via click & collect, stelt u het verzend-"
+"/afleveradres van de bestelling in op het voorraadadres."
+
+#: config/options-init.php:163
+msgid ""
+"When you edit a product in backend or ex / import you can set custom prices "
+"per choosen inventory."
+msgstr ""
+"Wanneer u een product in backend of ex/import bewerkt, kunt u aangepaste "
+"prijzen per gekozen voorraad instellen."
+
+#: config/options-init.php:450
+msgid ""
+"Will show delivery in the inventory popup. It will be shown next to the "
+"nearest physical location."
+msgstr ""
+"Zal levering tonen in de inventaris pop-up. Het zal getoond worden naast de "
+"dichtstbijzijnde fysieke locatie."
+
+#: classes/class-woocommerce-multi-inventory-admin.php:516
+msgid "WooCommerce Inventories"
+msgstr "WooCommerce-inventarissen"
+
+#: classes/class-woocommerce-multi-inventory-importer.php:53
+#: classes/class-woocommerce-multi-inventory-importer.php:54
+msgid "WooCommerce Inventory Importer"
+msgstr "WooCommerce Inventaris Importeur"
+
+#: config/options-init.php:26 config/options-init.php:28
+msgid "WooCommerce Multi Inventory"
+msgstr "WooCommerce Multi-inventaris"
+
+#. Name of the plugin
+msgid "WooCommerce Multi Inventory & Warehouses"
+msgstr "WooCommerce Multi-inventaris en magazijnen"
+
+#: classes/class-woocommerce-multi-inventory-importer.php:65
+msgid "WooCommerce Multi Inventory Importer"
+msgstr "WooCommerce Multi Inventory Importer"
+
+#: woocommerce-multi-inventory.php:88
+msgid ""
+"WooCommerce Multi Inventory requires the WooCommerce & weLaunch Framework "
+"plugin. Please install or activate them before: https://www.welaunch."
+"io/updates/welaunch-framework.zip"
+msgstr ""
+"WooCommerce Multi Inventory vereist de plug-in WooCommerce & weLaunch "
+"Framework. Installeer of activeer ze eerst: https://www.welaunch."
+"io/updates/welaunch-framework.zip"
+
+#: config/options-init.php:768
+msgid ""
+"Works when you pass product_id to the shortcode or a global product page is "
+"used."
+msgstr ""
+"Werkt wanneer u product_id doorgeeft aan de shortcode of wanneer er een "
+"algemene productpagina wordt gebruikt."
+
+#: config/options-init.php:1215
+msgid "WPML Support"
+msgstr "WPML-ondersteuning"
+
+#: classes/class-woocommerce-multi-inventory-exporter.php:39
+msgid "You are not an admin"
+msgstr "Je bent geen beheerder"
+
+#: config/options-init.php:1039
+msgid ""
+"You can put delivery costs per inventory in the backend when you edit an "
+"invetory."
+msgstr ""
+"U kunt de bezorgkosten per inventaris in de backend invoeren wanneer u een "
+"inventaris bewerkt."
+
+#: config/options-init.php:493 config/options-init.php:513
+msgid ""
+"You may select click & collect shipping method here only. This will only "
+"show click & collect shipping method AND disable delivery for pickup stores."
+msgstr ""
+"U kunt hier alleen de verzendmethode click & collect selecteren. Dit toont "
+"alleen de verzendmethode click & collect EN schakelt de levering voor "
+"afhaalwinkels uit."
+
+#: config/options-init.php:483 config/options-init.php:503
+msgid ""
+"You may select delivery shipping method here only. This will only show "
+"delivery shipping method AND disable delivery for pickup stores."
+msgstr ""
+"U kunt hier alleen de verzendmethode voor de levering selecteren. Dit toont "
+"alleen de verzendmethode voor de levering EN schakelt de levering voor "
+"afhaalwinkels uit."
+
+#: config/options-init.php:784
+msgid ""
+"You need to enter a valid google api key in general settings to use the "
+"search."
+msgstr ""
+"U moet een geldige Google API-sleutel invoeren in de algemene instellingen "
+"om de zoekopdracht te kunnen gebruiken."
+
+#: classes/class-woocommerce-multi-inventory-exporter.php:56
+msgid "Your Store Export is ready. The Download should start automatically."
+msgstr "Uw winkelexport is klaar. De download zou automatisch moeten starten."
+
+#: classes/class-woocommerce-multi-inventory-public.php:1144
+msgid "Your Store: "
+msgstr "Jouw winkel:"
+
+#: classes/class-woocommerce-multi-inventory-taxonomy.php:146
+msgid "ZIP"
+msgstr "Postcode"

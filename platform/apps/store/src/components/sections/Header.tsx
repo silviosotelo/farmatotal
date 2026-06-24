@@ -463,15 +463,19 @@ function MainHeaderContent({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setDrawerOpen(true)}
-            className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-md text-white touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+            className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-full text-white touch-manipulation transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
             aria-label="Menú"
           >
             <MenuIcon width={24} height={24} />
           </button>
           {flags.branches && (
-            <button className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-md text-white touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80" aria-label="Ubicación">
+            <Link
+              href="/sucursales"
+              className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-full text-white touch-manipulation transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+              aria-label="Sucursales"
+            >
               <LocationIcon width={20} height={20} />
-            </button>
+            </Link>
           )}
         </div>
 
@@ -565,15 +569,15 @@ export default function Header({
 
         {/* Mobile: yellow strip */}
         {flags.branches && (
-          <div className="lg:hidden bg-brand-yellow text-brand-text text-sm py-2 text-center flex items-center justify-center gap-1">
-            <LocationIcon width={14} height={14} stroke="#202435" />
+          <div className="lg:hidden brand-gradient text-white text-sm py-2 text-center flex items-center justify-center gap-1">
+            <LocationIcon width={14} height={14} stroke="white" />
             <span>Sucursal más cercana:&nbsp;</span>
-            <SucursalTrigger className="font-semibold" />
+            <SucursalTrigger className="font-semibold text-white" />
           </div>
         )}
 
         {/* Mobile: full-width search */}
-        <div className="lg:hidden brand-gradient px-4 pb-3">
+        <div className="lg:hidden brand-gradient px-4 pt-2 pb-4">
           <SearchBar className="w-full" />
         </div>
       </header>

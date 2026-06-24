@@ -56,6 +56,7 @@ export type AttributeFields = {
 /** Campos adicionales del catálogo (atributos comerciales tipo ACF). */
 export type ProductMetaFields = {
     codInterno?: string
+    barcode?: string
     priceNormal?: number | string
     status?: 'draft' | 'published' | 'archived'
     controlled?: boolean

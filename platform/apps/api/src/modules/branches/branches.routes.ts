@@ -17,6 +17,7 @@ const branchInput = z.object({
   pickupEnabled: z.boolean().optional(),
   deliveryEnabled: z.boolean().optional(),
   active: z.boolean().optional(),
+  custom: z.record(z.string(), z.unknown()).nullable().optional(),
 });
 
 const idParam = z.object({ id: z.string().uuid() });

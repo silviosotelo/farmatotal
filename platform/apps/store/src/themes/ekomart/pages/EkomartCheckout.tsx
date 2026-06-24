@@ -17,6 +17,7 @@ import {
   defaultRate,
   computeTax,
 } from "@/lib/checkout";
+import { Button, Input } from "@platform/ui";
 
 type DeliveryMethod = "retiro" | "envio";
 type PaymentMethod =
@@ -253,9 +254,10 @@ export function EkomartCheckout() {
                     <div className="col-md-6">
                       <div className="single-input">
                         <label htmlFor="nombre">Nombre *</label>
-                        <input
+                        <Input
                           id="nombre"
                           type="text"
+                          size="md"
                           value={nombre}
                           onChange={(e) => setNombre(e.target.value)}
                           placeholder="Juan"
@@ -266,9 +268,10 @@ export function EkomartCheckout() {
                     <div className="col-md-6">
                       <div className="single-input">
                         <label htmlFor="apellido">Apellido</label>
-                        <input
+                        <Input
                           id="apellido"
                           type="text"
+                          size="md"
                           value={apellido}
                           onChange={(e) => setApellido(e.target.value)}
                           placeholder="Pérez"
@@ -278,9 +281,10 @@ export function EkomartCheckout() {
                     <div className="col-md-6">
                       <div className="single-input">
                         <label htmlFor="email">Email *</label>
-                        <input
+                        <Input
                           id="email"
                           type="email"
+                          size="md"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="correo@ejemplo.com"
@@ -291,9 +295,10 @@ export function EkomartCheckout() {
                     <div className="col-md-6">
                       <div className="single-input">
                         <label htmlFor="telefono">Teléfono</label>
-                        <input
+                        <Input
                           id="telefono"
                           type="text"
+                          size="md"
                           inputMode="tel"
                           value={telefono}
                           onChange={(e) => setTelefono(e.target.value)}
@@ -304,9 +309,10 @@ export function EkomartCheckout() {
                     <div className="col-md-6">
                       <div className="single-input">
                         <label htmlFor="ciudad">Ciudad</label>
-                        <input
+                        <Input
                           id="ciudad"
                           type="text"
+                          size="md"
                           value={ciudad}
                           onChange={(e) => setCiudad(e.target.value)}
                           placeholder="Asunción"
@@ -316,9 +322,10 @@ export function EkomartCheckout() {
                     <div className="col-md-6">
                       <div className="single-input">
                         <label htmlFor="direccion">Dirección</label>
-                        <input
+                        <Input
                           id="direccion"
                           type="text"
+                          size="md"
                           value={direccion}
                           onChange={(e) => setDireccion(e.target.value)}
                           placeholder="Av. Mariscal López 1234"
@@ -347,8 +354,9 @@ export function EkomartCheckout() {
                             marginBottom: 12,
                           }}
                         >
-                          <input
+                          <Input
                             type="radio"
+                            size="md"
                             id={`delivery-${opt}`}
                             name="delivery"
                             value={opt}
@@ -391,22 +399,24 @@ export function EkomartCheckout() {
                                 </span>
                               )}
                             </span>
-                            <button
+                            <Button
                               type="button"
+                              variant="plain"
                               onClick={open}
                               className="rts-btn btn-primary border-only"
                             >
                               Cambiar
-                            </button>
+                            </Button>
                           </>
                         ) : (
-                          <button
+                          <Button
                             type="button"
+                            variant="plain"
                             onClick={open}
                             className="rts-btn btn-primary border-only"
                           >
                             Seleccionar sucursal
-                          </button>
+                          </Button>
                         )}
                       </div>
                     )}
@@ -424,8 +434,9 @@ export function EkomartCheckout() {
                                 key={o.id}
                                 style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}
                               >
-                                <input
+                                <Input
                                   type="radio"
+                                  size="md"
                                   id={`ship-${o.id}`}
                                   name="shipMethod"
                                   value={o.id}
@@ -467,8 +478,9 @@ export function EkomartCheckout() {
                             marginBottom: 12,
                           }}
                         >
-                          <input
+                          <Input
                             type="radio"
+                            size="md"
                             id={`payment-${opt}`}
                             name="payment"
                             value={opt}
@@ -578,15 +590,16 @@ export function EkomartCheckout() {
                   </div>
 
                   <div className="cottom-cart-right-area mt--20">
-                    <button
+                    <Button
                       type="submit"
+                      variant="plain"
                       form="checkout-form"
                       disabled={submitting}
                       className="rts-btn btn-primary"
                       style={submitting ? { opacity: 0.6 } : undefined}
                     >
                       {submitting ? "Procesando..." : "Realizar pedido"}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>

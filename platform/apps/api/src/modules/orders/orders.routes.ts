@@ -7,6 +7,7 @@ import { isErpPushEnabled, pushOrderToErp } from "../../services/erp.js";
 import { tid } from "../../plugins/tenant";
 import { readTaxConfig, resolveRate, taxPortion } from "../../services/tax.js";
 import { readShippingConfig, resolveShippingCost } from "../../services/shipping.js";
+import { doAction } from "../system/hooks.js";
 
 const lineInput = z.object({
   productId: z.string().uuid().optional(),
@@ -145,10 +146,10 @@ export async function orderRoutes(app: FastifyInstance) {
       )
       .returning();
 
-    // Push al ERP (GATED). No bloquea ni rompe el checkout si falla.
-    if (isErpPushEnabled()) {
-      await safeErpPush(order!.id);
-    }
+    // Hook de ciclo de vida: los módulos activos se enganchan acá (multi_inventory
+    // descuenta stock; erp_sync empuja el pedido al ERP; mailer/whatsapp notifican).
+    // El push al ERP ya NO es una llamada hardcodeada: lo maneja el módulo erp_sync.
+    await doAction("order.created", { tenantId: tid(req), orderId: order!.id, paymentMethod: b.paymentMethod });
 
     return reply.send({ id: order!.id, number, total, status: order!.status });
   });

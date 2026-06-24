@@ -22,6 +22,11 @@ export const categories = appSchema.table(
     seo: jsonb("seo").$type<SeoMeta>(),
     active: boolean("active").notNull().default(true),
     erpSourced: boolean("erp_sourced").notNull().default(false),
+    /** Valores de campos personalizados (config en settings mod_category_fields). */
+    custom: jsonb("custom").$type<Record<string, unknown>>(),
+    /** Trazabilidad de import (ERP/Woo): sistema y id de origen. */
+    sourceId: varchar("source_id", { length: 80 }),
+    sourceSystem: varchar("source_system", { length: 40 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()

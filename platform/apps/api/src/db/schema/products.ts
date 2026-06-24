@@ -38,6 +38,8 @@ export const products = appSchema.table(
     id: uuid("id").primaryKey().defaultRandom(),
     sku: varchar("sku", { length: 80 }).notNull(),
     codInterno: varchar("cod_interno", { length: 80 }),
+    /** Código de barras (EAN/UPC) — distinto del SKU, para escáner/búsqueda. */
+    barcode: varchar("barcode", { length: 40 }),
     slug: varchar("slug", { length: 250 }).notNull(),
     title: varchar("title", { length: 300 }).notNull(),
     /** Descripcion plana (texto). Para rich text usar descriptionRich. */

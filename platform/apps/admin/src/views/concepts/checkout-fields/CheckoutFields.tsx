@@ -111,6 +111,7 @@ const CheckoutFields = () => {
                                         <option value="select">Lista</option>
                                         <option value="city">Ciudad (select)</option>
                                         <option value="department">Departamento (select)</option>
+                                        <option value="location">Ubicación (mapa)</option>
                                     </select>
                                 </div>
                                 <div className="col-span-6 lg:col-span-2">

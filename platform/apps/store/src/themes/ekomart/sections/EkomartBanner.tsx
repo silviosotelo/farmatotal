@@ -5,6 +5,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Autoplay } from "swiper/modules";
 import Link from "next/link";
 import type { Category } from "@/types";
+import { Button } from "@platform/ui";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -98,12 +99,12 @@ export default function EkomartBanner({ categories }: { categories: Category[] }
                   ))}
                 </Swiper>
 
-                <button className="swiper-button-next">
+                <Button type="button" variant="plain" className="swiper-button-next">
                   <i className="fa-regular fa-arrow-right"></i>
-                </button>
-                <button className="swiper-button-prev">
+                </Button>
+                <Button type="button" variant="plain" className="swiper-button-prev">
                   <i className="fa-regular fa-arrow-left"></i>
-                </button>
+                </Button>
               </div>
             </div>
           </div>

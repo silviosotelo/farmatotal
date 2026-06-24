@@ -76,27 +76,25 @@ export function CartBlock({ showCoupon = true }: { showCoupon?: boolean } = {}) 
                   </div>
                   <p className="font-price text-sm text-brand-orange text-right">{money(product.priceWeb)}</p>
                   <div className="flex items-center justify-center gap-1">
-                    <Button
-                      shape="circle"
-                      size="md"
-                      variant="default"
+                    <button
+                      type="button"
                       onClick={() => setQty(product.id, decQty(quantity, product.unitStep ?? 1))}
                       aria-label="Disminuir cantidad"
+                      className="flex size-8 items-center justify-center rounded-full border border-[#ededf1] text-brand-text hover:border-brand-orange hover:text-brand-orange transition-colors text-lg leading-none"
                     >
                       −
-                    </Button>
+                    </button>
                     <span className="min-w-8 px-1 text-center text-sm font-semibold text-brand-text whitespace-nowrap">
                       {formatQty(quantity)} {unitLabel(product)}
                     </span>
-                    <Button
-                      shape="circle"
-                      size="md"
-                      variant="default"
+                    <button
+                      type="button"
                       onClick={() => setQty(product.id, stepQty(quantity, product.unitStep ?? 1, 1))}
                       aria-label="Aumentar cantidad"
+                      className="flex size-8 items-center justify-center rounded-full border border-[#ededf1] text-brand-text hover:border-brand-orange hover:text-brand-orange transition-colors text-lg leading-none"
                     >
                       +
-                    </Button>
+                    </button>
                   </div>
                   <p className="font-price text-sm font-semibold text-brand-text text-right">{money(product.priceWeb * quantity)}</p>
                   <Button
@@ -125,27 +123,25 @@ export function CartBlock({ showCoupon = true }: { showCoupon?: boolean } = {}) 
                     <p className="font-price text-sm text-brand-orange mt-1">{money(product.priceWeb)}</p>
                     <div className="flex items-center gap-3 mt-2">
                       <div className="flex items-center gap-1">
-                        <Button
-                          shape="circle"
-                          size="md"
-                          variant="default"
+                        <button
+                          type="button"
                           onClick={() => setQty(product.id, decQty(quantity, product.unitStep ?? 1))}
                           aria-label="Disminuir cantidad"
+                          className="flex size-8 items-center justify-center rounded-full border border-[#ededf1] text-brand-text hover:border-brand-orange hover:text-brand-orange transition-colors text-lg leading-none"
                         >
                           −
-                        </Button>
+                        </button>
                         <span className="min-w-7 px-1 text-center text-sm font-semibold text-brand-text whitespace-nowrap">
                           {formatQty(quantity)} {unitLabel(product)}
                         </span>
-                        <Button
-                          shape="circle"
-                          size="md"
-                          variant="default"
+                        <button
+                          type="button"
                           onClick={() => setQty(product.id, stepQty(quantity, product.unitStep ?? 1, 1))}
                           aria-label="Aumentar cantidad"
+                          className="flex size-8 items-center justify-center rounded-full border border-[#ededf1] text-brand-text hover:border-brand-orange hover:text-brand-orange transition-colors text-lg leading-none"
                         >
                           +
-                        </Button>
+                        </button>
                       </div>
                       <p className="font-price text-sm font-semibold text-brand-text">{money(product.priceWeb * quantity)}</p>
                       <Button
@@ -189,14 +185,13 @@ export function CartBlock({ showCoupon = true }: { showCoupon?: boolean } = {}) 
                     placeholder="Ingresá tu código"
                     className="flex-1"
                   />
-                  <Button
-                    variant="solid"
-                    shape="round"
-                    className="h-[44px] px-6 text-sm font-semibold whitespace-nowrap"
+                  <button
+                    type="button"
                     onClick={handleApplyCoupon}
+                    className="brand-gradient h-[44px] rounded-[30px] px-6 text-sm font-semibold text-white whitespace-nowrap hover:opacity-90 transition-opacity"
                   >
                     Aplicar cupón
-                  </Button>
+                  </button>
                 </div>
               )}
             </div>

@@ -1,0 +1,419 @@
+.woocommerce-multi-inventory-inventories-stock-out-of-stock {
+  color:  #F44336;
+}
+
+.woocommerce-multi-inventory-inventories-stock-on-stock {
+  color:  #498205;
+}
+
+.woocommerce-multi-inventory-inventories-radio, .woocommerce-multi-inventory-inventories-name, .woocommerce-multi-inventory-inventories-stock {
+  float: left;
+  padding:  5px;
+}
+
+.woocommerce-multi-inventory-inventories-radio {
+  width:  10%;
+}
+
+.woocommerce-multi-inventory-inventories-name {
+  width:  50%;
+}
+
+.woocommerce-multi-inventory-inventories-stock {
+  width:  40%;
+}
+
+.woocommerce-multi-inventory-clear {
+  clear: both;
+  float: none;
+}
+
+.woocommerce-multi-inventory-popup-search-container {
+  display: flex;
+}
+
+.woocommerce-multi-inventory-inventories-variable {
+  display: none;
+}
+
+.woocommerce-multi-inventory-delivery-time {
+  display: block;
+  font-size: 90%;
+  font-weight: normal;
+}
+
+.pac-container {
+  z-index: 999999999999 !important;
+}
+
+.woocommerce-multi-inventory-popup-search-container,
+.woocommerce-multi-inventory-popup-top-container  {
+  margin: 15px 0;
+}
+
+.woocommerce-multi-inventory-popup-locations {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.woocommerce-multi-inventory-manager-table-spinner {
+  pointer-events: none;
+  width: 2.5em;
+  height: 2.5em;
+  border: 0.4em solid transparent;
+  border-color: #eee;
+  border-top-color: #3E67EC;
+  position: absolute;
+  top: 40%;
+  display: none;
+  left:  50%;
+  border-radius: 50%;
+  -webkit-animation: loadingspin 1s linear infinite;
+          animation: loadingspin 1s linear infinite;
+}
+
+@-webkit-keyframes loadingspin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loadingspin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.woocommerce-multi-inventory-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: rgba(0,0,0,0.7);
+    display: block;
+    width: 100%;
+    height: 100%;
+    z-index: 9999999;
+}
+
+.woocommerce-multi-inventory-popup-container {
+     margin: 0 auto;
+     padding:  0;
+    width: 100%;
+    max-width: 600px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    position: fixed;
+    z-index: 99999999;
+    height: auto;
+    overflow: auto;
+    max-height: 90vh;
+}
+
+.woocommerce-multi-inventory-popup-locations-location-address,
+.woocommerce-multi-inventory-popup-locations-location-description,
+.woocommerce-multi-inventory-popup-locations-location-stock {
+  font-size:  13px;
+  line-height: 15px;
+}
+
+.woocommerce-multi-inventory-popup {
+    padding: 20px;
+    background: #fff;
+    height: 100%;
+    overflow: auto;
+    border-radius: 10px;
+}
+
+.woocommerce-multi-inventory-popup-locations-location {
+  padding: 20px;
+  margin-bottom: 10px;
+  width: 50%;
+  float:  left;
+  opacity: 0.85;
+/*  height: 100px;*/
+}
+
+.woocommerce-multi-inventory-popup-locations-location:hover {
+  opacity: 1;
+}
+
+.woocommerce-multi-inventory-popup-locations-nearest-location,
+.woocommerce-multi-inventory-popup-locations-nearest-location .woocommerce-multi-inventory-popup-locations-location,
+.woocommerce-multi-inventory-popup-locations-delivery-location-container .woocommerce-multi-inventory-popup-locations-location
+ {
+  width: 100%;
+}
+
+.woocommerce-multi-inventory-popup-locations-location-image {
+  width: 25%;
+  float:  left;
+
+}
+
+.woocommerce-multi-inventory-popup-locations-location-image img {
+    max-width: 100%;
+    height: auto;
+    padding-right: 10px;
+}
+
+.woocommerce-multi-inventory-popup-locations-location-data {
+  width: 75%;
+  float:  left;
+}
+
+.woocommerce-multi-inventory-popup-locations-location-name {
+    font-weight: bold;
+    max-width: 60%;
+    display: inline-block;
+}
+
+.woocommerce-multi-inventory-popup-locations-location-select {
+    font-size: 75%;
+    display: none;
+    margin-top: 5px;
+}
+
+.woocommerce-multi-inventory-popup-locations-location-distance {
+    font-size: 9px;
+    padding: 5px;
+    border-radius: 20px;
+    float: right;
+    margin-top: 5px;
+}
+
+.woocommerce-multi-inventory-popup-locations-nearest-location-loader {
+    border: 3px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    margin: 0 auto;
+    animation: spin 1s linear infinite;
+    display: none;
+}
+
+.woocommerce-multi-inventory-popup-locations-nearest-location-error {
+  display: none;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.woocommerce-multi-inventory-popup-locations-nearest-location .woocommerce-multi-inventory-popup-locations-location {
+float: none;
+    margin: 0 auto;
+    border: 1px solid red;
+    display: block;
+    margin-bottom: 30px;
+    border-radius: 5px;
+}
+
+.woocommerce-multi-inventory-inventories-container {
+  max-height: 400px;
+  overflow: auto;
+}
+
+.woocommerce-multi-inventory-label-container .woocommerce-multi-inventory-inventories-row {
+  display: none;
+}
+
+.woocommerce-multi-inventory-inventories-container  {
+  margin:  10px 0;
+}
+
+.woocommerce-multi-inventory-label-text, .woocommerce-multi-inventory-label-change,
+.woocommerce-multi-inventory-label-container .woocommerce-multi-inventory-open-poup {
+  font-size: 13px;
+  line-height: 18px;
+  margin-right: 5px;
+}
+
+.woocommerce-multi-inventory-inventories-click-collect-title {
+  margin-bottom: 10px;
+  margin-top: 5px;
+}
+
+.woocommerce-multi-inventory-label-change {
+  margin-left: 5px;
+}
+
+@media (max-width:  768px ) {
+  .woocommerce-multi-inventory-popup-locations-location {
+    width: 100%;
+  }
+}
+.woocommerce-multi-inventory-popup-locations-intro-text {
+  text-align: center;
+}
+
+.woocommerce-multi-inventory-popup-top-container {
+  display: flex;
+  flex-flow: row wrap;
+}
+
+.woocommerce-multi-inventory-popup-locations-nearest-location-container,
+.woocommerce-multi-inventory-popup-locations-delivery-location-container {
+  flex-grow: 1;
+  flex-basis: 0;
+  display: flex;
+}
+
+.woocommerce-multi-inventory-text,
+.woocommerce-multi-inventory-text-single {
+  display: blocK;
+}
+
+.woocommerce-multi-inventory-text,
+.woocommerce-multi-inventory-label-text-before {
+  font-size: 90%;
+}
+
+.woocommerce-multi-inventory-text {
+  margin-right:  5px;
+}
+
+
+.woocommerce-multi-inventory-popup-layout-2 .woocommerce-multi-inventory-popup-locations-location-image {
+  display: none;
+}
+
+.woocommerce-multi-inventory-popup-layout-2 .woocommerce-multi-inventory-popup-locations-location-distance {
+  float: left;
+  margin-right: 5px;
+  margin-top: 0;
+}
+
+.woocommerce-multi-inventory-popup-layout-2 .woocommerce-multi-inventory-popup-locations .woocommerce-multi-inventory-popup-locations-location-data {
+  width: 100%;
+  float: none;
+  position: relative;
+}
+
+.woocommerce-multi-inventory-popup-layout-2 .woocommerce-multi-inventory-popup-locations-location {
+  float: none;
+  width: 100%;
+}
+
+.woocommerce-multi-inventory-popup-layout-2 .woocommerce-multi-inventory-popup-locations-location-name {
+  font-size: 20px;
+  line-height: 26px;
+}
+
+.woocommerce-multi-inventory-popup-layout-2 .woocommerce-multi-inventory-popup-locations-location-select {
+  display: blocK;
+    padding: 10px 25px;
+}
+
+.woocommerce-multi-inventory-popup-layout-2 .woocommerce-multi-inventory-popup-locations-container .woocommerce-multi-inventory-popup-locations-location-select {
+    position: absolute;
+    right: 0;
+    bottom: 30%;
+}
+
+.woocommerce-multi-inventory-popup-layout-2  .woocommerce-multi-inventory-popup-locations .woocommerce-multi-inventory-popup-locations-location-data {
+  border-bottom: 1px solid rgb(207, 203, 202);
+  padding-bottom: 20px;
+}
+
+.woocommerce-multi-inventory-popup-layout-2 .woocommerce-multi-inventory-popup-locations-location {
+  display: block;
+  position: relative;
+  margin-bottom: 0;
+}
+
+.woocommerce-multi-inventory-popup-layout-2 .woocommerce-multi-inventory-popup-locations-intro-text p {
+  margin-top: 20px;
+  margin-bottom: 0;
+}
+
+.woocommerce-multi-inventory-popup-layout-2 .woocommerce-multi-inventory-popup-locations-location-title {
+  margin-bottom: 20px;
+}
+
+
+.woocommerce-multi-inventory-popup-layout-2 .woocommerce-multi-inventory-popup-locations-location {
+  height: auto;
+}
+
+.woocommerce-multi-inventory-popup-layout-2 .woocommerce-multi-inventory-popup-divider {
+  display: none;
+}
+
+.woocommerce-multi-inventory-popup-layout-3 .woocommerce-multi-inventory-popup-locations-location {
+  width: 100%;
+  display: block;
+  float: none;
+  position: relative;
+}
+
+/*.woocommerce-multi-inventory-popup-layout-3 {
+  font-size: 14px;
+}*/
+
+.woocommerce-multi-inventory-popup-layout-3 .woocommerce-multi-inventory-popup-locations-location-image {
+  display: none;
+}
+
+.woocommerce-multi-inventory-popup-layout-3 .woocommerce-multi-inventory-popup-locations .woocommerce-multi-inventory-popup-locations-location-data {
+  display: flex;
+}
+
+.woocommerce-multi-inventory-popup-layout-3 .woocommerce-multi-inventory-popup-locations .woocommerce-multi-inventory-popup-locations-location-title,
+.woocommerce-multi-inventory-popup-layout-3 .woocommerce-multi-inventory-popup-locations .woocommerce-multi-inventory-popup-locations-location-address {
+  width: 50%;
+  padding: 2px 10px 2px 0;
+}
+
+.woocommerce-multi-inventory-popup-layout-3 .woocommerce-multi-inventory-popup-locations-location-distance {
+  float: left;
+  margin-right: 5px;
+}
+
+.woocommerce-multi-inventory-popup-layout-3 .woocommerce-multi-inventory-popup-locations .woocommerce-multi-inventory-popup-locations-location-address,
+.woocommerce-multi-inventory-popup-layout-3 .woocommerce-multi-inventory-popup-locations .woocommerce-multi-inventory-popup-locations-location-description,
+.woocommerce-multi-inventory-popup-layout-3 .woocommerce-multi-inventory-popup-locations .woocommerce-multi-inventory-popup-locations-location-stock {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.woocommerce-multi-inventory-popup-layout-3 .woocommerce-multi-inventory-popup-locations-location {
+  padding: 8px;
+  margin-bottom: 0;
+}
+
+.woocommerce-multi-inventory-popup-layout-3 .woocommerce-multi-inventory-popup-locations .woocommerce-multi-inventory-popup-locations-location-data {
+  width: 100%;
+}
+
+.woocommerce-multi-inventory-popup-layout-3 .woocommerce-multi-inventory-popup-locations .woocommerce-multi-inventory-popup-locations-location-select {
+    padding: 10px 25px;
+}
+
+.woocommerce-multi-inventory-inventories-delivery-container,
+.woocommerce-multi-inventory-inventories-click-collect-container {
+    border: 1px solid #eaeaea;
+    padding: 10px 10px 0;
+    border-radius: 5px;
+    margin: 5px 0;
+}
+
+.woocommerce-multi-inventory-popup-close-container {
+    position: absolute;
+    z-index: 999;
+    top: 5px;
+    right: 8px;
+    background-color: #555;
+    color: #fff;
+    border-radius: 50px;
+    height: 30px;
+    width: 30px;
+    display: block;
+    text-align: center;
+}
+
+.woocommerce-multi-inventory-popup-close-container:hover {
+  color: #fff;
+}

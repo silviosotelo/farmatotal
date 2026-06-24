@@ -62,7 +62,7 @@ export async function singleBuy(opts: {
       amount: amt,
       currency,
       additional_data: "",
-      description: (opts.description ?? "Compra Farmatotal").slice(0, 20),
+      description: (opts.description ?? "Compra online").slice(0, 20),
       return_url: opts.returnUrl,
       cancel_url: opts.cancelUrl,
     },
@@ -89,4 +89,31 @@ export async function rollback(shopProcessId: number) {
     public_key: env.BANCARD_PUBLIC_KEY,
     operation: { token, shop_process_id: shopProcessId },
   });
+}
+
+export type BancardConfirmation = {
+  response?: string; // "S" = aprobada
+  response_code?: string; // "00" = aprobada
+  response_description?: string;
+  amount?: string;
+  currency?: string;
+  authorization_number?: string;
+  ticket_number?: string;
+};
+
+/**
+ * Consulta activa del estado de una transacción (get_single_buy_confirmation).
+ * No depende del webhook server-to-server: el comercio pregunta a vPOS si la
+ * compra fue confirmada. Si aún no hay confirmación, `confirmation` viene null.
+ */
+export async function getConfirmation(shopProcessId: number) {
+  const token = md5(`${env.BANCARD_PRIVATE_KEY}${shopProcessId}get_confirmation`);
+  const res = (await post("/vpos/api/0.3/single_buy/confirmations", {
+    public_key: env.BANCARD_PUBLIC_KEY,
+    operation: { token, shop_process_id: String(shopProcessId) },
+  })) as { status?: string; confirmation?: BancardConfirmation | null; messages?: unknown };
+  const c = res.confirmation ?? null;
+  const approved = !!c && (c.response === "S" || c.response_code === "00");
+  const settled = !!c && c.response_code != null; // hay veredicto (aprobada o rechazada)
+  return { raw: res, confirmation: c, approved, settled };
 }

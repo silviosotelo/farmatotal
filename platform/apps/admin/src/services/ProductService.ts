@@ -13,6 +13,8 @@ type BackendProduct = {
     id: string
     sku: string
     codInterno: string | null
+    barcode: string | null
+    custom: Record<string, unknown> | null
     slug: string
     title: string
     description: string | null
@@ -129,6 +131,8 @@ export async function apiGetProduct<T, U extends Record<string, unknown>>({
         })),
         // Campos adicionales del catálogo
         codInterno: res.codInterno ?? '',
+        barcode: res.barcode ?? '',
+        custom: res.custom ?? {},
         priceNormal: toMajor(res.priceNormal, currency),
         status: res.status,
         controlled: res.controlled,
@@ -163,6 +167,8 @@ type ProductFormValues = {
     price: number | string
     category?: string
     codInterno?: string
+    barcode?: string
+    custom?: Record<string, unknown>
     priceNormal?: number | string
     status?: 'draft' | 'published' | 'archived'
     controlled?: boolean
@@ -200,6 +206,8 @@ function toBackendInput(v: ProductFormValues, currency: string) {
         featured: !!v.featured,
         onPromo: !!v.onPromo,
         codInterno: v.codInterno?.trim() ? v.codInterno.trim() : null,
+        barcode: v.barcode?.trim() ? v.barcode.trim() : null,
+        custom: v.custom && Object.keys(v.custom).length ? v.custom : null,
         promoCode: v.promoCode?.trim() ? v.promoCode.trim() : null,
     }
     if (v.category && UUID_RE.test(v.category)) input.categoryId = v.category

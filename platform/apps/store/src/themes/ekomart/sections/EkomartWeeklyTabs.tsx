@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import type { Product } from "@/types";
 import { EkomartProductCard } from "../EkomartProductCard";
+import { Button } from "@platform/ui";
 
 export interface WeeklyTab {
   label: string;
@@ -33,12 +34,14 @@ export default function EkomartWeeklyTabs({
               <ul className="nav nav-tabs best-selling-grocery" id="myTab" role="tablist">
                 {tabs.map((tab, idx) => (
                   <li className="nav-item" role="presentation" key={tab.label}>
-                    <button
+                    <Button
+                      type="button"
+                      variant="plain"
                       onClick={() => setActive(idx)}
                       className={`nav-link ${active === idx ? "active" : ""}`}
                     >
                       {tab.label}
-                    </button>
+                    </Button>
                   </li>
                 ))}
               </ul>

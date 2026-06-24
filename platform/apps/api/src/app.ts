@@ -31,6 +31,9 @@ import { mediaRoutes } from "./modules/media/media.routes.js";
 import { notificationRoutes } from "./modules/notifications/notifications.routes.js";
 import { moduleRoutes } from "./modules/system/modules.routes.js";
 import { pluginRoutes } from "./modules/plugins/plugins.routes.js";
+import { registerBuiltinHooks } from "./modules/system/builtin-hooks.js";
+import { registerErpAdapters } from "./modules/erp_sync/index.js";
+import { erpSyncRoutes } from "./modules/erp_sync/erp-sync.routes.js";
 import { whatsappRoutes } from "./modules/plugins/whatsapp.routes.js";
 import { mailerRoutes } from "./modules/mailer/mailer.routes.js";
 import { shippingRoutes } from "./modules/shipping/shipping.routes.js";
@@ -43,6 +46,10 @@ import { slidesRoutes } from "./modules/slides/slides.routes.js";
 import { healthRoutes } from "./modules/health/health.routes.js";
 
 export async function buildApp() {
+  // Registra los handlers de hooks de los módulos built-in (estilo WP plugins_loaded).
+  registerBuiltinHooks();
+  // Registra los adapters del sincronizador ERP (Farmatotal, Woo, ...).
+  registerErpAdapters();
   const app = Fastify({
     logger: {
       level: env.NODE_ENV === "production" ? "info" : "debug",
@@ -55,6 +62,12 @@ export async function buildApp() {
 
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+
+  // Acepta POST/PUT/PATCH sin Content-Type (body vacío) — evita 415 en logout y
+  // otros endpoints que no requieren cuerpo (ej. Axios sin data).
+  app.addContentTypeParser("*", { parseAs: "string" }, (_req, body, done) => {
+    done(null, body || null);
+  });
 
   await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(sensible);
@@ -129,6 +142,7 @@ export async function buildApp() {
   await app.register(notificationRoutes);
   await app.register(moduleRoutes);
   await app.register(pluginRoutes);
+  await app.register(erpSyncRoutes);
   await app.register(whatsappRoutes);
   await app.register(mailerRoutes);
   await app.register(shippingRoutes);

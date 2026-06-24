@@ -23,6 +23,7 @@ export type PlatformModule = {
     settingsKey?: string
     adminPath?: string
     features?: string[]
+    dependsOn?: string[]
     enabled: boolean
 }
 

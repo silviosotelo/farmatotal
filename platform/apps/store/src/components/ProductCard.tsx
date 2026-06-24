@@ -114,6 +114,7 @@ export function ProductCard({ product }: { product: Product }) {
           block
           onClick={onAdd}
           disabled={out}
+          style={{ color: 'white' }}
           className="brand-gradient mt-4 h-[38px] px-5 text-xs font-semibold uppercase tracking-wide shadow-[0_4px_12px_rgba(241,101,34,0.25)] transition-all duration-200 hover:shadow-[0_6px_16px_rgba(241,101,34,0.4)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
         >
           {out ? "Sin stock" : "Añadir al carrito"}

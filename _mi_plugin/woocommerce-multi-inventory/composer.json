@@ -1,0 +1,21 @@
+{
+  "name": "welaunch/woocommerce-multi-inventory",
+  "description": "",
+  "authors": [
+      {
+          "name": "Daniel Barenkamp",
+          "email": "support@welaunch.io"
+      }
+  ],
+  "require":{
+    "phpoffice/phpspreadsheet": "2.*",
+    "teampickr/php-google-maps-distance-matrix": "^0.6.0",
+    "monolog/monolog": "^2.3",
+    "psr/log": "^1",
+    "php": ">=7.0",
+    "maennchen/zipstream-php": "^2.1"
+  },
+  "config": {
+      "platform-check": false
+  }
+}

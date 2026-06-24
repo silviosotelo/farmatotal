@@ -64,6 +64,20 @@ const ProductDetailsSection = ({ control }: FormSectionBaseProps) => {
                         )}
                     />
                 </FormItem>
+                <FormItem label="Código de barras (EAN/UPC)" className="w-full">
+                    <Controller
+                        name="barcode"
+                        control={control}
+                        render={({ field }) => (
+                            <Input
+                                placeholder="Distinto del SKU (escáner)"
+                                autoComplete="off"
+                                value={field.value ?? ''}
+                                onChange={field.onChange}
+                            />
+                        )}
+                    />
+                </FormItem>
                 <FormItem label="Estado" className="w-full">
                     <Controller
                         name="status"

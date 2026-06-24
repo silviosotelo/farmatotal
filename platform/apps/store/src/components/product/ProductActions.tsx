@@ -72,13 +72,14 @@ export function ProductActions({
                   type="button"
                   disabled={vOut}
                   onClick={() => { setVariantId(v.id); setQty(step); }}
-                  variant={v.id === variantId ? "solid" : "default"}
+                  variant={v.id === variantId ? "solid" : "plain"}
                   shape="round"
                   size="md"
+                  style={v.id === variantId ? { color: 'white' } : undefined}
                   className={cn(
                     v.id === variantId
-                      ? "brand-gradient text-white"
-                      : "border-[#ededf1] text-brand-muted hover:border-brand-orange/60",
+                      ? "brand-gradient border border-brand-orange"
+                      : "border border-[#ededf1] text-brand-muted hover:border-brand-orange/60 bg-white",
                     vOut && "cursor-not-allowed opacity-50 line-through",
                   )}
                 >
@@ -138,6 +139,7 @@ export function ProductActions({
             variant="solid"
             shape="round"
             onClick={add}
+            style={{ color: 'white' }}
             className="brand-gradient h-[44px] px-8 text-sm font-semibold tracking-wide shadow-[0_4px_12px_rgba(241,101,34,0.25)] hover:shadow-[0_6px_16px_rgba(241,101,34,0.4)] active:scale-[0.98]"
           >
             Añadir al carrito

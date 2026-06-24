@@ -31,22 +31,6 @@ const othersNavigationConfig: NavigationTree[] = [
                 },
                 subMenu: [],
             },
-            {
-                key: 'others.landing',
-                path: `/landing`,
-                title: 'Landing',
-                translateKey: 'nav.others.landing',
-                icon: 'landing',
-                type: NAV_ITEM_TYPE_ITEM,
-                authority: [ADMIN, USER],
-                meta: {
-                    description: {
-                        translateKey: 'nav.others.landingDesc',
-                        label: 'Shared component usage',
-                    },
-                },
-                subMenu: [],
-            },
         ],
     },
 ]

@@ -49,7 +49,10 @@ const ProducEdit = () => {
                 imgList,
                 category,
                 brand,
-            } = data as typeof data & { priceNormal?: number | string }
+                codInterno,
+                barcode,
+                custom,
+            } = data as typeof data & { priceNormal?: number | string; codInterno?: string; barcode?: string; custom?: Record<string, unknown> }
 
             return {
                 name,
@@ -64,6 +67,9 @@ const ProducEdit = () => {
                 category,
                 tags: [{ label: 'trend', value: 'trend' }],
                 brand,
+                codInterno,
+                barcode,
+                custom,
             }
         }
 

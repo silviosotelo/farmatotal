@@ -1,0 +1,23 @@
+<wpml-config>
+	<admin-texts>
+		<key name="woocommerce_multi_inventory_options">
+			<key name="enable" />
+			<key name="popupText" />
+			<key name="popupAllLocationsText" />
+
+			<key name="productPageDisplayHiddenNoInventory" />
+			<key name="productPageDisplayHiddenOutOfStock" />
+			<key name="productPageDisplaySelectPlaceholder" />
+			<key name="productPageDisplayTextTextBefore" />
+			
+			<key name="productPageDisplayLabelText" />
+			<key name="productPageDisplayLabelChange" />
+			<key name="textsInventoryLabel" />
+			<key name="textsLeftInStock" />
+			<key name="textsOutOfStock" />
+			<key name="textsNotInStock" />
+			<key name="textsNotEnoughStock" />
+			<key name="textsNoInventorySelected" />
+		</key> 
+	</admin-texts>
+</wpml-config>

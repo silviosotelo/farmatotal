@@ -14,7 +14,7 @@ const appConfig: AppConfig = {
     unAuthenticatedEntryPath: '/sign-in',
     locale: 'es',
     accessTokenPersistStrategy: 'localStorage',
-    enableMock: true,
+    enableMock: false,
     activeNavTranslation: false,
 }
 

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { integer, jsonb, text, timestamp, uuid, varchar, index } from "drizzle-orm/pg-core";
+import { integer, jsonb, text, timestamp, uuid, varchar, index, unique } from "drizzle-orm/pg-core";
 import { appSchema } from "./_pgSchema";
 
 export const syncJobKind = ["wc.products.full", "wc.products.delta", "erp.products", "erp.stock"] as const;
@@ -41,6 +41,32 @@ export const syncErrors = appSchema.table(
   },
   (t) => ({
     runIdx: index("sync_errors_run_idx").on(t.runId),
+  }),
+);
+
+/**
+ * Mapeo de campos ERP↔plataforma, por tenant y entidad (el sincronizador agnóstico
+ * lo aplica para transformar registros crudos del ERP a la entidad — incluye custom).
+ */
+export const erpFieldMappings = appSchema.table(
+  "erp_field_mappings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id").notNull(),
+    /** product | category | branch */
+    entity: varchar("entity", { length: 30 }).notNull(),
+    /** nombre del campo en el ERP de origen (ej. STK_ARTICULO, name, cod_interno). */
+    sourceName: varchar("source_name", { length: 120 }).notNull(),
+    /** campo destino en la plataforma (columna nativa o custom.<key>). */
+    targetName: varchar("target_name", { length: 120 }).notNull(),
+    /** transform opcional (ej. "number", "upper", "slug"). */
+    transform: varchar("transform", { length: 40 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(sql`now()`),
+  },
+  (t) => ({
+    uk: unique("erp_field_mappings_uk").on(t.tenantId, t.entity, t.sourceName),
+    tenantIdx: index("erp_field_mappings_tenant_idx").on(t.tenantId),
   }),
 );
 

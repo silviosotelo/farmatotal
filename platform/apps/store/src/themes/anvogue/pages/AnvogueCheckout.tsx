@@ -17,6 +17,7 @@ import {
   defaultRate,
   computeTax,
 } from "@/lib/checkout";
+import { Button, Input } from "@platform/ui";
 import { AnvogueBreadcrumb } from "../AnvogueBreadcrumb";
 import { container, buttonMain, buttonMainFull, heading5 } from "../sections/anvogueClasses";
 
@@ -237,9 +238,10 @@ export function AnvogueCheckout() {
                     <label htmlFor="nombre" className={LABEL_CLS}>
                       Nombre <span className="text-[var(--brand-orange)]">*</span>
                     </label>
-                    <input
+                    <Input
                       id="nombre"
                       type="text"
+                      size="md"
                       value={nombre}
                       onChange={(e) => setNombre(e.target.value)}
                       placeholder="Juan"
@@ -251,9 +253,10 @@ export function AnvogueCheckout() {
                     <label htmlFor="apellido" className={LABEL_CLS}>
                       Apellido
                     </label>
-                    <input
+                    <Input
                       id="apellido"
                       type="text"
+                      size="md"
                       value={apellido}
                       onChange={(e) => setApellido(e.target.value)}
                       placeholder="Pérez"
@@ -264,9 +267,10 @@ export function AnvogueCheckout() {
                     <label htmlFor="email" className={LABEL_CLS}>
                       Email <span className="text-[var(--brand-orange)]">*</span>
                     </label>
-                    <input
+                    <Input
                       id="email"
                       type="email"
+                      size="md"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="correo@ejemplo.com"
@@ -278,9 +282,10 @@ export function AnvogueCheckout() {
                     <label htmlFor="telefono" className={LABEL_CLS}>
                       Teléfono
                     </label>
-                    <input
+                    <Input
                       id="telefono"
                       type="text"
+                      size="md"
                       inputMode="tel"
                       value={telefono}
                       onChange={(e) => setTelefono(e.target.value)}
@@ -294,9 +299,10 @@ export function AnvogueCheckout() {
                         <label htmlFor="ciudad" className={LABEL_CLS}>
                           Ciudad
                         </label>
-                        <input
+                        <Input
                           id="ciudad"
                           type="text"
+                          size="md"
                           value={ciudad}
                           onChange={(e) => setCiudad(e.target.value)}
                           placeholder="Asunción"
@@ -307,9 +313,10 @@ export function AnvogueCheckout() {
                         <label htmlFor="direccion" className={LABEL_CLS}>
                           Dirección
                         </label>
-                        <input
+                        <Input
                           id="direccion"
                           type="text"
+                          size="md"
                           value={direccion}
                           onChange={(e) => setDireccion(e.target.value)}
                           placeholder="Av. Mariscal López 1234"
@@ -339,13 +346,14 @@ export function AnvogueCheckout() {
                           : "border-[#E9E9E9] hover:border-[#1F1F1F]")
                       }
                     >
-                      <input
+                      <Input
                         type="radio"
                         name="delivery"
                         value={value}
                         checked={delivery === value}
                         onChange={() => setDelivery(value)}
                         className="size-4 accent-[var(--brand-orange)]"
+                        size="md"
                       />
                       <Icon size={20} className="flex-none text-[#1F1F1F]" strokeWidth={1.5} />
                       <span className="min-w-0">
@@ -369,22 +377,24 @@ export function AnvogueCheckout() {
                             <span className="text-[#696C70]"> — {selected.address}</span>
                           )}
                         </span>
-                        <button
+                        <Button
                           type="button"
+                          variant="plain"
                           onClick={open}
                           className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--brand-orange)] underline-offset-2 transition-opacity hover:opacity-80"
                         >
                           Cambiar
-                        </button>
+                        </Button>
                       </>
                     ) : (
-                      <button
+                      <Button
                         type="button"
+                        variant="plain"
                         onClick={open}
                         className="inline-flex h-10 items-center justify-center rounded-2xl border border-[#1F1F1F] px-5 text-xs font-semibold uppercase tracking-[0.08em] text-[#1F1F1F] transition-colors hover:bg-[#1F1F1F] hover:text-white"
                       >
                         Seleccionar sucursal
-                      </button>
+                      </Button>
                     )}
                   </div>
                 )}
@@ -407,7 +417,7 @@ export function AnvogueCheckout() {
                                 : "border-[#E9E9E9] hover:border-[#1F1F1F]")
                             }
                           >
-                            <input
+                            <Input
                               type="radio"
                               name="shipMethod"
                               value={o.id}
@@ -443,13 +453,14 @@ export function AnvogueCheckout() {
                           : "border-[#E9E9E9] hover:border-[#1F1F1F]")
                       }
                     >
-                      <input
+                      <Input
                         type="radio"
                         name="payment"
                         value={value}
                         checked={payment === value}
                         onChange={() => setPayment(value)}
                         className="size-4 accent-[var(--brand-orange)]"
+                        size="md"
                       />
                       <Icon size={20} className="flex-none text-[#1F1F1F]" strokeWidth={1.5} />
                       <span className="text-sm font-semibold text-[#1F1F1F]">{value}</span>
@@ -521,9 +532,9 @@ export function AnvogueCheckout() {
                   </div>
                 </dl>
 
-                <button type="submit" disabled={submitting} className={`mt-6 ${buttonMainFull}`}>
+                <Button type="submit" variant="plain" disabled={submitting} className={`mt-6 ${buttonMainFull}`}>
                   {submitting ? "Procesando..." : "Realizar pedido"}
-                </button>
+                </Button>
               </div>
             </aside>
           </div>

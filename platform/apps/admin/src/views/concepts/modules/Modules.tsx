@@ -20,40 +20,66 @@ const categoryMeta: Record<ModuleCategory, { label: string; tint: string }> = {
     builder: { label: 'Builder', tint: 'bg-rose-100 text-rose-600' },
 }
 
-const ModuleCard = ({ m, onToggle, busy }: { m: PlatformModule; onToggle: (m: PlatformModule, v: boolean) => void; busy: boolean }) => (
-    <Card className={m.enabled ? '' : 'opacity-60'}>
-        <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                    <h6 className="truncate">{m.name}</h6>
-                    <Tag className={categoryMeta[m.category].tint}>{categoryMeta[m.category].label}</Tag>
-                    {m.registersInto && <Tag className="bg-gray-100 text-gray-500">→ Pagos</Tag>}
-                </div>
-                <p className="mt-1 text-sm text-gray-500">{m.description}</p>
-                {m.features && m.features.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                        {m.features.map((f) => (
-                            <span key={f} className="rounded bg-gray-50 px-2 py-0.5 text-xs text-gray-500 ring-1 ring-gray-100">{f}</span>
-                        ))}
+const ModuleCard = ({
+    m,
+    onToggle,
+    busy,
+    nameByKey,
+    missingDeps,
+}: {
+    m: PlatformModule
+    onToggle: (m: PlatformModule, v: boolean) => void
+    busy: boolean
+    nameByKey: Record<string, string>
+    missingDeps: string[]
+}) => {
+    // No se puede ACTIVAR un plugin si le falta una dependencia activa.
+    const blocked = !m.enabled && missingDeps.length > 0
+    return (
+        <Card className={m.enabled ? '' : 'opacity-60'}>
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <h6 className="truncate">{m.name}</h6>
+                        <Tag className={categoryMeta[m.category].tint}>{categoryMeta[m.category].label}</Tag>
+                        {m.registersInto && <Tag className="bg-gray-100 text-gray-500">→ Pagos</Tag>}
                     </div>
+                    <p className="mt-1 text-sm text-gray-500">{m.description}</p>
+                    {m.features && m.features.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                            {m.features.map((f) => (
+                                <span key={f} className="rounded bg-gray-50 px-2 py-0.5 text-xs text-gray-500 ring-1 ring-gray-100">{f}</span>
+                            ))}
+                        </div>
+                    )}
+                    {m.dependsOn && m.dependsOn.length > 0 && (
+                        <p className="mt-2 text-xs text-gray-400">
+                            Requiere: {m.dependsOn.map((d) => nameByKey[d] ?? d).join(', ')}
+                        </p>
+                    )}
+                    {blocked && (
+                        <p className="mt-1 text-xs text-amber-600">
+                            Activá primero: {missingDeps.map((d) => nameByKey[d] ?? d).join(', ')}
+                        </p>
+                    )}
+                    <p className="mt-2 text-xs text-gray-400">v{m.version}</p>
+                </div>
+                {m.kind === 'native' ? (
+                    <Tag className="bg-gray-100 text-gray-500 shrink-0">Nativo</Tag>
+                ) : (
+                    <Switcher checked={m.enabled} disabled={busy || blocked} onChange={(c) => onToggle(m, c)} />
                 )}
-                <p className="mt-2 text-xs text-gray-400">v{m.version}</p>
             </div>
-            {m.kind === 'native' ? (
-                <Tag className="bg-gray-100 text-gray-500 shrink-0">Nativo</Tag>
-            ) : (
-                <Switcher checked={m.enabled} disabled={busy} onChange={(c) => onToggle(m, c)} />
+            {m.adminPath && (
+                <div className="mt-4">
+                    <Link to={m.adminPath}>
+                        <Button size="xs" block>{m.settingsKey ? 'Configurar' : 'Abrir'}</Button>
+                    </Link>
+                </div>
             )}
-        </div>
-        {m.adminPath && (
-            <div className="mt-4">
-                <Link to={m.adminPath}>
-                    <Button size="xs" block>{m.settingsKey ? 'Configurar' : 'Abrir'}</Button>
-                </Link>
-            </div>
-        )}
-    </Card>
-)
+        </Card>
+    )
+}
 
 const Modules = () => {
     const { data, isLoading, mutate } = useSWR(['/modules'], () => apiGetModules(), { revalidateOnFocus: false })
@@ -71,14 +97,28 @@ const Modules = () => {
         }
     }
 
+    // Mapas para resolver nombres y estado de dependencias.
+    const nameByKey: Record<string, string> = Object.fromEntries(modules.map((m) => [m.key, m.name]))
+    const enabledByKey: Record<string, boolean> = Object.fromEntries(
+        modules.map((m) => [m.key, m.kind === 'native' ? true : m.enabled]),
+    )
+    const missingOf = (m: PlatformModule) => (m.dependsOn ?? []).filter((d) => !enabledByKey[d])
+
     const natives = modules.filter((m) => m.kind === 'native')
     const plugins = modules.filter((m) => m.kind === 'plugin')
 
     const Grid = ({ items }: { items: PlatformModule[] }) => (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {items.map((m) => <ModuleCard key={m.key} m={m} onToggle={toggle} busy={busy === m.key} />)}
+            {items.map((m) => (
+                <ModuleCard key={m.key} m={m} onToggle={toggle} busy={busy === m.key} nameByKey={nameByKey} missingDeps={missingOf(m)} />
+            ))}
         </div>
     )
+
+    // Plugins agrupados por categoría (en el orden de categoryMeta).
+    const pluginCategories = (Object.keys(categoryMeta) as ModuleCategory[])
+        .map((cat) => ({ cat, items: plugins.filter((m) => m.category === cat) }))
+        .filter((g) => g.items.length > 0)
 
     return (
         <Loading loading={isLoading}>
@@ -88,16 +128,19 @@ const Modules = () => {
                     <p className="text-gray-500">
                         Los <strong>nativos</strong> son parte del core. Los <strong>plugins</strong> se
                         activan/desactivan por separado; las pasarelas se enchufan en <strong>Pagos</strong>.
+                        Un plugin con dependencias no se puede activar hasta habilitar lo que requiere.
                     </p>
                 </div>
                 <div>
                     <h5 className="mb-3">Nativos</h5>
                     <Grid items={natives} />
                 </div>
-                <div>
-                    <h5 className="mb-3">Plugins</h5>
-                    <Grid items={plugins} />
-                </div>
+                {pluginCategories.map(({ cat, items }) => (
+                    <div key={cat}>
+                        <h5 className="mb-3">{categoryMeta[cat].label}</h5>
+                        <Grid items={items} />
+                    </div>
+                ))}
             </div>
         </Loading>
     )

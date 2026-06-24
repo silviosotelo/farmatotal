@@ -1,6 +1,6 @@
 import ApiService from './ApiService'
 
-export type CheckoutFieldType = 'text' | 'email' | 'tel' | 'textarea' | 'select' | 'city' | 'department'
+export type CheckoutFieldType = 'text' | 'email' | 'tel' | 'textarea' | 'select' | 'city' | 'department' | 'location'
 /** A qué dato del pedido mapea el campo. '' / undefined = campo personalizado (va a customFields). */
 export type CheckoutFieldRole =
     | 'name' // nombre completo -> customerName
@@ -42,6 +42,7 @@ export const DEFAULT_CHECKOUT_FIELDS: CheckoutField[] = [
     { key: 'department', label: 'Departamento', type: 'department', width: 'half', required: false, enabled: true },
     { key: 'city', label: 'Ciudad', type: 'city', width: 'half', required: false, enabled: true, role: 'city' },
     { key: 'address', label: 'Dirección', type: 'text', width: 'full', required: false, enabled: true, role: 'address' },
+    { key: 'location', label: 'Ubicación exacta de entrega', type: 'location', width: 'full', required: false, enabled: true },
 ]
 export type CheckoutFieldsConfig = { fields: CheckoutField[] }
 

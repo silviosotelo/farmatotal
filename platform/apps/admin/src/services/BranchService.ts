@@ -13,6 +13,7 @@ export type Branch = {
     pickupEnabled: boolean
     deliveryEnabled: boolean
     active: boolean
+    custom?: Record<string, unknown> | null
 }
 
 export async function apiGetBranches() {

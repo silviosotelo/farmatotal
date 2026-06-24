@@ -6,6 +6,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./styles": "./src/styles/index.css",
     "./ui/*": "./src/ui/*",
     "./shared/*": "./src/shared/*",
     "./utils/*": "./src/utils/*",

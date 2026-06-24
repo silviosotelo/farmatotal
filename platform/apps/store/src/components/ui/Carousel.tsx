@@ -85,32 +85,28 @@ export function Carousel({
 
       {showArrows && (
         <>
-          <Button
+          <button
             type="button"
-            variant="default"
-            shape="circle"
             aria-label="Anterior"
             onClick={scrollPrev}
             className={cn(
-              "absolute left-1 top-1/2 z-10 size-9 -translate-y-1/2 bg-white text-brand-text shadow-md transition-all duration-200 hover:bg-brand-orange hover:text-white hover:shadow-lg active:scale-90",
+              "absolute left-1 top-1/2 z-10 size-9 -translate-y-1/2 flex items-center justify-center rounded-full bg-white text-brand-text shadow-md transition-all duration-200 hover:bg-brand-orange hover:text-white hover:shadow-lg active:scale-90",
               arrowClassName,
             )}
           >
             <ChevronLeftIcon className="size-5" />
-          </Button>
-          <Button
+          </button>
+          <button
             type="button"
-            variant="default"
-            shape="circle"
             aria-label="Siguiente"
             onClick={scrollNext}
             className={cn(
-              "absolute right-1 top-1/2 z-10 size-9 -translate-y-1/2 bg-white text-brand-text shadow-md transition-all duration-200 hover:bg-brand-orange hover:text-white hover:shadow-lg active:scale-90",
+              "absolute right-1 top-1/2 z-10 size-9 -translate-y-1/2 flex items-center justify-center rounded-full bg-white text-brand-text shadow-md transition-all duration-200 hover:bg-brand-orange hover:text-white hover:shadow-lg active:scale-90",
               arrowClassName,
             )}
           >
             <ChevronRightIcon className="size-5" />
-          </Button>
+          </button>
         </>
       )}
 

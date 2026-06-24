@@ -15,6 +15,7 @@ export const categoryDTO = z.object({
   description: z.string().nullable(),
   seo: z.object({ title: z.string().optional(), description: z.string().optional() }).nullable(),
   active: z.boolean(),
+  custom: z.record(z.string(), z.unknown()).nullable(),
 });
 export type CategoryDTO = z.infer<typeof categoryDTO>;
 
@@ -28,6 +29,7 @@ export const categoryInput = z.object({
   description: z.string().nullable().optional(),
   seo: z.object({ title: z.string().optional(), description: z.string().optional() }).optional(),
   active: z.boolean().optional(),
+  custom: z.record(z.string(), z.unknown()).nullable().optional(),
 });
 export type CategoryInput = z.infer<typeof categoryInput>;
 
@@ -62,6 +64,7 @@ export const productDTO = z.object({
   id: z.string().uuid(),
   sku: z.string(),
   codInterno: z.string().nullable(),
+  barcode: z.string().nullable(),
   slug: z.string(),
   title: z.string(),
   description: z.string().nullable(),
@@ -94,6 +97,7 @@ export type ProductDTO = z.infer<typeof productDTO>;
 export const productInput = z.object({
   sku: z.string().min(1).max(80),
   codInterno: z.string().max(80).nullable().optional(),
+  barcode: z.string().max(40).nullable().optional(),
   slug: z.string().min(1).max(250),
   title: z.string().min(1).max(300),
   description: z.string().nullable().optional(),

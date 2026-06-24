@@ -68,6 +68,7 @@ export function MiniCart() {
               variant="solid"
               shape="round"
               onClick={closeCart}
+              style={{ color: 'white' }}
               className="brand-gradient px-6 py-2.5 text-sm font-semibold"
             >
               Seguir comprando

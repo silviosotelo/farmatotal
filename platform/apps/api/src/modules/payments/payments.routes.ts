@@ -5,8 +5,10 @@ import { db } from "../../db/client";
 import { orders, payments, settings } from "../../db/schema";
 import { tid } from "../../plugins/tenant";
 import { env } from "../../env.js";
+import { doAction } from "../system/hooks.js";
 import {
   bancardJsUrl,
+  getConfirmation,
   isBancardEnabled,
   singleBuy,
   verifyConfirmationToken,
@@ -14,6 +16,35 @@ import {
 
 function genShopProcessId(): number {
   return Number(process.hrtime.bigint() % 1000000000n);
+}
+
+type PaymentRow = typeof payments.$inferSelect;
+
+/**
+ * Aplica el veredicto de Bancard de forma idempotente: marca el pago y, si fue
+ * aprobado y la orden seguía pendiente, la pasa a "paid" con un evento de auditoría.
+ */
+async function applyVerdict(pay: PaymentRow, approved: boolean, rawPayload?: string) {
+  const newStatus = approved ? "approved" : "rejected";
+  if (pay.status !== newStatus) {
+    await db
+      .update(payments)
+      .set({ status: newStatus, ...(rawPayload ? { rawPayload: rawPayload.slice(0, 4000) } : {}), updatedAt: new Date() })
+      .where(eq(payments.id, pay.id));
+  }
+  if (approved) {
+    const [ord] = await db.select().from(orders).where(eq(orders.id, pay.orderId)).limit(1);
+    if (ord && ord.status === "pending") {
+      const events = [
+        ...(ord.events ?? []),
+        { at: new Date().toISOString(), type: "payment_approved", note: `Bancard ref ${pay.providerRef}`, by: "bancard" },
+      ];
+      await db.update(orders).set({ status: "paid", events, updatedAt: new Date() }).where(eq(orders.id, ord.id));
+      // Hook de ciclo de vida: módulos activos reaccionan (multi_inventory descuenta
+      // stock, marketing/mailer notifican, etc.). Gating por tenant vía hooks.
+      await doAction("order.paid", { tenantId: ord.tenantId, orderId: ord.id });
+    }
+  }
 }
 
 export async function paymentRoutes(app: FastifyInstance) {
@@ -75,19 +106,13 @@ export async function paymentRoutes(app: FastifyInstance) {
     if (!valid) return reply.unauthorized("token inválido");
 
     const approved = op.response === "S" || op.response_code === "00";
-    await db
-      .update(payments)
-      .set({
-        status: approved ? "approved" : "rejected",
-        rawPayload: JSON.stringify(req.body).slice(0, 4000),
-        updatedAt: new Date(),
-      })
-      .where(eq(payments.id, pay.id));
+    await applyVerdict(pay, approved, JSON.stringify(req.body));
 
     return reply.send({ status: "success" });
   });
 
-  // Estado del pago de una orden.
+  // Estado del pago de una orden. Si sigue pendiente, consulta activamente a
+  // Bancard (get_single_buy_confirmation) para no depender solo del webhook.
   app.get(
     "/payments/bancard/status/:orderId",
     { schema: { params: z.object({ orderId: z.string().uuid() }) } },
@@ -98,7 +123,20 @@ export async function paymentRoutes(app: FastifyInstance) {
         .where(eq(payments.orderId, req.params.orderId))
         .orderBy(desc(payments.createdAt))
         .limit(1);
-      return { status: pay?.status ?? "none", provider: pay?.provider ?? "bancard" };
+      if (!pay) return { status: "none", provider: "bancard" };
+
+      if (pay.status === "pending" && pay.provider === "bancard" && isBancardEnabled() && pay.providerRef) {
+        try {
+          const conf = await getConfirmation(Number(pay.providerRef));
+          if (conf.settled) {
+            await applyVerdict(pay, conf.approved, JSON.stringify(conf.raw));
+            return { status: conf.approved ? "approved" : "rejected", provider: "bancard" };
+          }
+        } catch {
+          /* la consulta puede fallar mientras el usuario aún no terminó: se mantiene pending */
+        }
+      }
+      return { status: pay.status, provider: pay.provider };
     },
   );
 

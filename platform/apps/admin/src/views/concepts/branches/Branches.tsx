@@ -12,6 +12,7 @@ import {
     type Branch,
 } from '@/services/BranchService'
 import { useTenantFlags } from '@/services/features'
+import PlainCustomFields from '@/views/concepts/entity-fields/PlainCustomFields'
 import useSWR from 'swr'
 
 type BranchForm = {
@@ -27,6 +28,7 @@ type BranchForm = {
     pickupEnabled: boolean
     deliveryEnabled: boolean
     active: boolean
+    custom: Record<string, unknown>
 }
 
 const emptyForm: BranchForm = {
@@ -41,6 +43,7 @@ const emptyForm: BranchForm = {
     pickupEnabled: true,
     deliveryEnabled: false,
     active: true,
+    custom: {},
 }
 
 const Branches = () => {
@@ -72,6 +75,7 @@ const Branches = () => {
             pickupEnabled: b.pickupEnabled,
             deliveryEnabled: b.deliveryEnabled,
             active: b.active,
+            custom: (b.custom as Record<string, unknown>) ?? {},
         })
 
     const save = async () => {
@@ -90,6 +94,7 @@ const Branches = () => {
                 pickupEnabled: form.pickupEnabled,
                 deliveryEnabled: form.deliveryEnabled,
                 active: form.active,
+                custom: form.custom && Object.keys(form.custom).length ? form.custom : null,
             }
             if (form.id) await apiUpdateBranch(form.id, payload)
             else await apiCreateBranch(payload)
@@ -177,6 +182,7 @@ const Branches = () => {
                                 <label className="text-sm">Longitud</label>
                                 <Input value={form.lng} onChange={(e) => set('lng', e.target.value)} placeholder="-57.63" />
                             </div>
+                            <PlainCustomFields settingsKey="mod_branch_fields" value={form.custom} onChange={(c) => set('custom', c)} />
                         </div>
                         <div className="mt-4 flex flex-wrap gap-6">
                             <Checkbox checked={form.pickupEnabled} onChange={(v) => set('pickupEnabled', v)}>
