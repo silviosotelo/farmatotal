@@ -54,7 +54,7 @@ export default function FloatingButtons() {
               onClick={() => setScanMode("scan")}
               aria-label="Escanear código de barras"
               className="flex items-center gap-1.5 px-3 py-2 rounded-l-full rounded-r-none text-white text-[13px] font-medium shadow-md"
-              style={{ backgroundColor: "var(--brand-blue)" }}
+              style={{ backgroundColor: "var(--brand-yellow)" }}
             >
               <BarcodeIcon className="w-4 h-4 shrink-0" />
               <span>Escanear</span>

@@ -392,6 +392,9 @@ export function brandColorVars(colors: BrandColors): string {
   const lines = (Object.keys(map) as (keyof BrandColors)[])
     .filter((k) => colors[k])
     .flatMap((k) => map[k].map((v) => `${v}: ${colors[k]};`));
+  if (colors.orange) {
+    lines.push(`--brand-border: color-mix(in srgb, ${colors.orange} 10%, white);`);
+  }
   return lines.length ? `:root{${lines.join("")}}` : "";
 }
 

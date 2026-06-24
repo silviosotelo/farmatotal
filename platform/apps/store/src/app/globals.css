@@ -26,6 +26,7 @@
   --color-brand-blue: var(--brand-blue);
   --color-brand-text: var(--brand-text);
   --color-brand-muted: var(--brand-muted);
+  --color-brand-border: var(--brand-border);
   --color-price-muted: var(--price-muted);
   --color-search-bg: var(--search-bg);
 
@@ -103,6 +104,7 @@
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: #ededf1;
+  --brand-border: #ededf1;
   --input: #ededf1;
   --ring: oklch(0.205 0 0);
   --sidebar: #ffffff;

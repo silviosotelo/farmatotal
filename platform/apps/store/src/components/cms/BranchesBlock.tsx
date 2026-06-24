@@ -110,7 +110,7 @@ export function BranchesBlock({ className }: { className?: string } = {}) {
       <div className="mt-6 grid gap-6 lg:grid-cols-[380px_1fr]">
         {/* Filtros + listado */}
         <div className="flex min-w-0 flex-col gap-4">
-          <div className="flex flex-col gap-3 rounded-[12px] border border-[#ededf1] bg-white p-4">
+          <div className="flex flex-col gap-3 rounded-[12px] border border-brand-border bg-white p-4">
             <Input
               type="search"
               value={q}
@@ -158,7 +158,7 @@ export function BranchesBlock({ className }: { className?: string } = {}) {
             ) : null}
           </div>
 
-          <ul className="flex max-h-[520px] flex-col divide-y divide-[#ededf1] overflow-y-auto rounded-[12px] border border-[#ededf1] bg-white">
+          <ul className="flex max-h-[520px] flex-col divide-y divide-brand-border overflow-y-auto rounded-[12px] border border-brand-border bg-white">
             {filtered.length === 0 ? (
               <li className="p-6 text-center text-sm text-brand-muted">No hay sucursales para ese filtro.</li>
             ) : (
@@ -212,7 +212,7 @@ export function BranchesBlock({ className }: { className?: string } = {}) {
         </div>
 
         {/* Mapa — isolation:isolate evita que los z-index de Leaflet (~800) escapen al header */}
-        <div className="relative z-[0] h-[400px] overflow-hidden rounded-[12px] border border-[#ededf1] lg:h-[600px]">
+        <div className="relative z-[0] h-[400px] overflow-hidden rounded-[12px] border border-brand-border lg:h-[600px]">
           <BranchesMap
             branches={filtered}
             nearestId={nearestId}
