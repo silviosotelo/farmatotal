@@ -8,7 +8,7 @@ type InventoryWithDistance = {
   id: string
   name: string
   address?: string
-  city?: string
+  zona?: string
   lat: number
   lng: number
   distance?: number
@@ -66,7 +66,7 @@ export default function InventoryPopup({ isOpen, onClose, config, productId }: P
         id: s.id,
         name: s.name,
         address: s.address,
-        city: s.city,
+        city: s.zona,
         lat: Number(s.lat) || 0,
         lng: Number(s.lng) || 0,
         distance: userLat && userLng ? haversineKm(userLat, userLng, Number(s.lat) || 0, Number(s.lng) || 0) : undefined,
@@ -144,7 +144,7 @@ export default function InventoryPopup({ isOpen, onClose, config, productId }: P
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm">{inv.name}</p>
                 {inv.address && <p className="text-xs text-gray-500 mt-0.5 truncate">{inv.address}</p>}
-                {inv.city && <p className="text-xs text-gray-400">{inv.city}</p>}
+                {inv.zona && <p className="text-xs text-gray-400">{inv.zona}</p>}
               </div>
               {inv.distance !== undefined && (
                 <span className="text-xs font-medium text-gray-400 shrink-0 mt-0.5">
