@@ -1,70 +1,58 @@
-import { useState } from 'react'
-import PluginConfig from '../PluginConfig'
-import Card from '@/components/ui/Card'
-import { cn } from '@/lib/utils'
+import { lazy, Suspense } from 'react'
+import AdaptiveCard from '@/components/shared/AdaptiveCard'
+import PluginMenu from './components/PluginMenu'
+import PluginMobileMenu from './components/PluginMobileMenu'
+import useResponsive from '@/utils/hooks/useResponsive'
+import { usePluginStore } from './store/pluginStore'
 
-const TABS = [
-    { key: 'config', label: 'Configuración del plugin' },
-    { key: 'branches', label: 'Sucursales', href: '/concepts/branches' },
-    { key: 'stock', label: 'Stock por sucursal', href: '/concepts/inventory' },
-]
+const General = lazy(() => import('./views/General'))
+const Carrito = lazy(() => import('./views/Carrito'))
+const StockView = lazy(() => import('./views/StockView'))
+const ClickCollect = lazy(() => import('./views/ClickCollect'))
+const Producto = lazy(() => import('./views/Producto'))
+const PopupView = lazy(() => import('./views/PopupView'))
+const OrderFlow = lazy(() => import('./views/OrderFlow'))
+const Radio = lazy(() => import('./views/Radio'))
+const DeliveryCosts = lazy(() => import('./views/DeliveryCosts'))
+const Texts = lazy(() => import('./views/Texts'))
+const Users = lazy(() => import('./views/Users'))
+const LogView = lazy(() => import('./views/LogView'))
 
 const MultiInventory = () => {
-    const [active, setActive] = useState('config')
+    const { currentView } = usePluginStore()
+    const { smaller, larger } = useResponsive()
 
     return (
-        <div className="flex flex-col gap-4">
-            <div>
-                <h3 className="mb-1">Multi-sucursal / Inventario</h3>
-                <p className="text-gray-500">
-                    Configurá las sucursales, stock por ubicación, costos de envío, click & collect, y más.
-                </p>
-            </div>
-
-            <Card>
-                <div className="flex flex-col lg:flex-row gap-0">
-                    {/* Sidebar tabs */}
-                    <div className="lg:w-56 shrink-0 border-b lg:border-b-0 lg:border-r border-gray-100">
-                        <nav className="flex lg:flex-col overflow-x-auto">
-                            {TABS.map((t) => (
-                                <button
-                                    key={t.key}
-                                    onClick={() => {
-                                        if (t.href) {
-                                            window.location.href = t.href
-                                        } else {
-                                            setActive(t.key)
-                                        }
-                                    }}
-                                    className={`px-5 py-3.5 text-sm font-medium whitespace-nowrap transition border-b-2 lg:border-b-0 lg:border-l-2 text-left ${
-                                        active === t.key
-                                            ? 'border-primary text-primary bg-primary/5'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                                    }`}
-                                >
-                                    {t.label}
-                                </button>
-                            ))}
-                        </nav>
+        <AdaptiveCard className="h-full">
+            <div className="flex flex-auto h-full">
+                {larger.lg && (
+                    <div className="w-[200px] xl:w-[280px]">
+                        <PluginMenu />
                     </div>
-
-                    {/* Content */}
-                    <div className="flex-1 p-6">
-                        {active === 'config' && <PluginConfig pluginKey="multi_inventory" embedded layout="vertical" />}
-                        {active === 'branches' && (
-                            <div>
-                                <p className="text-sm text-gray-500 mb-4">Gestioná las sucursales del plugin.</p>
-                            </div>
-                        )}
-                        {active === 'stock' && (
-                            <div>
-                                <p className="text-sm text-gray-500 mb-4">Gestioná el stock por sucursal.</p>
-                            </div>
-                        )}
-                    </div>
+                )}
+                <div className="xl:ltr:pl-6 xl:rtl:pr-6 flex-1 py-2">
+                    {smaller.lg && (
+                        <div className="mb-6">
+                            <PluginMobileMenu />
+                        </div>
+                    )}
+                    <Suspense fallback={<></>}>
+                        {currentView === 'general' && <General />}
+                        {currentView === 'carrito' && <Carrito />}
+                        {currentView === 'stock' && <StockView />}
+                        {currentView === 'click-collect' && <ClickCollect />}
+                        {currentView === 'producto' && <Producto />}
+                        {currentView === 'popup' && <PopupView />}
+                        {currentView === 'order-flow' && <OrderFlow />}
+                        {currentView === 'radio' && <Radio />}
+                        {currentView === 'delivery-costs' && <DeliveryCosts />}
+                        {currentView === 'texts' && <Texts />}
+                        {currentView === 'users' && <Users />}
+                        {currentView === 'log' && <LogView />}
+                    </Suspense>
                 </div>
-            </Card>
-        </div>
+            </div>
+        </AdaptiveCard>
     )
 }
 
