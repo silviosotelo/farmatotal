@@ -1,7 +1,8 @@
 import ProductCard from "./ProductCard"
+import type { Product } from "@/types"
 
 type Props = {
-  products: Array<{ id: string; name: string; slug: string; priceWeb: number; priceNormal?: number; image?: string; unit?: string; onPromo?: boolean }>
+  products: Product[]
   columns?: 2 | 3 | 4 | 5
   variant?: "grid" | "list" | "compact"
 }
