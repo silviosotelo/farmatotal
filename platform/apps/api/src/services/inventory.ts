@@ -13,6 +13,7 @@ import { db } from "../db/client";
 import { branches, inventory, orderLines, orders, products, stockMovements } from "../db/schema";
 
 const STOCK_EVENT = "stock_decremented";
+const STOCK_RESTORE_EVENT = "stock_restored";
 
 function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number) {
   const R = 6371;
@@ -73,6 +74,69 @@ export async function decrementOrderStock(orderId: string): Promise<{ ok: boolea
   }
   await markDone(order, branchId, detail.join(", "));
   return { ok: true, branchId };
+}
+
+/**
+ * Restaura el stock de las líneas de una orden (cancelación o reembolso).
+ * Idempotente: no restaura si ya se restauró previamente.
+ */
+export async function restoreOrderStockById(orderId: string, reason: 'cancel' | 'refund'): Promise<{ ok: boolean; reason?: string }> {
+  const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+  if (!order) return { ok: false, reason: "order_not_found" };
+  // Idempotencia: si ya se restauró, no repetir.
+  if ((order.events ?? []).some((e) => e.type === STOCK_RESTORE_EVENT && e.note?.includes(reason))) {
+    return { ok: true, reason: "already_restored" };
+  }
+
+  const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId));
+  const withProduct = lines.filter((l) => l.productId);
+  if (withProduct.length === 0) {
+    await markRestore(order, "sin productos con id");
+    return { ok: true, reason: "no_products" };
+  }
+
+  // Determinar la sucursal de origen (misma lógica que decrement)
+  const branchId = order.branchId || await resolveSourceBranch(order, withProduct.map((l) => l.productId as string));
+  if (!branchId) {
+    await markRestore(order, "sin sucursal para restaurar");
+    return { ok: true, reason: "no_branch" };
+  }
+
+  const detail: string[] = [];
+  for (const l of withProduct) {
+    const pid = l.productId as string;
+    const qty = Math.ceil(l.quantity);
+    await db
+      .update(inventory)
+      .set({ stock: sql`${inventory.stock} + ${qty}`, updatedAt: new Date() })
+      .where(and(eq(inventory.productId, pid), eq(inventory.branchId, branchId)));
+    // Registrar movimiento de stock
+    await db.insert(stockMovements).values({
+      tenantId: order.tenantId,
+      productId: pid,
+      branchId,
+      delta: qty,
+      reason,
+      referenceId: orderId,
+    });
+    // Recalc stockCached
+    const [{ total } = { total: 0 }] = await db
+      .select({ total: sql<number>`coalesce(sum(${inventory.stock}),0)::int` })
+      .from(inventory)
+      .where(and(eq(inventory.tenantId, order.tenantId), eq(inventory.productId, pid)));
+    await db.update(products).set({ stockCached: total }).where(eq(products.id, pid));
+    detail.push(`${l.sku}+${qty}`);
+  }
+  await markRestore(order, `${reason}: ${detail.join(", ")}`);
+  return { ok: true };
+}
+
+async function markRestore(order: typeof orders.$inferSelect, note: string) {
+  const events = [
+    ...(order.events ?? []),
+    { at: new Date().toISOString(), type: STOCK_RESTORE_EVENT, note },
+  ];
+  await db.update(orders).set({ events, updatedAt: new Date() }).where(eq(orders.id, order.id));
 }
 
 async function markDone(order: typeof orders.$inferSelect, branchId: string | null, note: string) {

@@ -7,7 +7,7 @@
  *  - multi_inventory: descuenta stock por sucursal al confirmar la orden.
  */
 import { registerAction } from "./hooks.js";
-import { decrementOrderStock } from "../../services/inventory.js";
+import { decrementOrderStock, restoreOrderStockById } from "../../services/inventory.js";
 import { erpPushOrder } from "../erp_sync/push.js";
 
 let registered = false;
@@ -51,5 +51,23 @@ export function registerBuiltinHooks() {
       await erpPushOrder(ctx.tenantId, ctx.orderId as string);
     },
     { module: "erp_sync" },
+  );
+
+  // multi_inventory — restaurar stock al cancelar un pedido.
+  registerAction(
+    "order.cancelled",
+    async (ctx) => {
+      await restoreOrderStockById(ctx.orderId as string, 'cancel');
+    },
+    { module: "multi_inventory" },
+  );
+
+  // multi_inventory — restaurar stock al reembolsar un pedido.
+  registerAction(
+    "order.refunded",
+    async (ctx) => {
+      await restoreOrderStockById(ctx.orderId as string, 'refund');
+    },
+    { module: "multi_inventory" },
   );
 }

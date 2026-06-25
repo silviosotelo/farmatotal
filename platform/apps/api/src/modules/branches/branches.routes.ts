@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { and, eq, inArray, or, sql } from "drizzle-orm";
+import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
 import { branches, inventory, products } from "../../db/schema";
@@ -250,6 +250,66 @@ export async function branchRoutes(app: FastifyInstance) {
     return reply.send({
       inRange: inRange.length > 0,
       branches: inRange.map(b => ({ id: b.id, name: b.name, distance: haversineKm(lat, lng, Number(b.lat) || 0, Number(b.lng) || 0) })),
+    })
+  })
+
+  // GET /inventory/manager — Grid of all products with stock per branch (for Inventory Manager admin page)
+  app.get("/inventory/manager", async (req, reply) => {
+    const { page = '1', pageSize = '50', search = '' } = req.query as Record<string, string>
+    const offset = (parseInt(page) - 1) * parseInt(pageSize)
+    const tenantId = tid(req)
+
+    // Get all branches for this tenant
+    const allBranches = await db.select()
+      .from(branches)
+      .where(eq(branches.tenantId, tenantId))
+      .orderBy(asc(branches.sortOrder), asc(branches.name))
+
+    // Get products (search by title or SKU)
+    let whereClause = eq(products.tenantId, tenantId)
+    if (search) {
+      whereClause = and(
+        eq(products.tenantId, tenantId),
+        or(ilike(products.title, `%${search}%`), ilike(products.sku, `%${search}%`)),
+      )!
+    }
+
+    const allProducts = await db.select().from(products)
+      .where(whereClause)
+      .limit(parseInt(pageSize))
+      .offset(offset)
+
+    // Get inventory for all fetched products
+    const productIds = allProducts.map(p => p.id)
+    const allInventory = productIds.length > 0
+      ? await db.select().from(inventory)
+          .where(and(eq(inventory.tenantId, tenantId), inArray(inventory.productId, productIds)))
+      : []
+
+    // Build grid: products × branches
+    const grid = allProducts.map(product => {
+      const productInventory = allInventory.filter(i => i.productId === product.id)
+      const stockByBranch: Record<string, number> = {}
+      for (const inv of productInventory) {
+        stockByBranch[inv.branchId] = inv.stock || 0
+      }
+      return {
+        id: product.id,
+        title: product.title,
+        sku: product.sku,
+        totalStock: product.stockCached || 0,
+        branches: allBranches.map(b => ({
+          branchId: b.id,
+          branchName: b.name,
+          stock: stockByBranch[b.id] || 0,
+        })),
+      }
+    })
+
+    return reply.send({
+      data: grid,
+      branches: allBranches.map(b => ({ id: b.id, name: b.name })),
+      pagination: { page: parseInt(page), pageSize: parseInt(pageSize) },
     })
   })
 }

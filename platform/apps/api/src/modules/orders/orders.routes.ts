@@ -263,6 +263,14 @@ export async function orderRoutes(app: FastifyInstance) {
         .set({ status: req.body.status, events, updatedAt: new Date() })
         .where(eq(orders.id, o.id))
         .returning();
+
+      // Fire stock restore hooks on cancellation or refund
+      if (req.body.status === "cancelled") {
+        await doAction("order.cancelled", { tenantId: tid(req), orderId: o.id });
+      } else if (req.body.status === "refunded") {
+        await doAction("order.refunded", { tenantId: tid(req), orderId: o.id });
+      }
+
       return reply.send(row);
     },
   );
@@ -295,6 +303,12 @@ export async function orderRoutes(app: FastifyInstance) {
         .set({ status: isFull ? "refunded" : o.status, events, updatedAt: new Date() })
         .where(eq(orders.id, o.id))
         .returning();
+
+      // Fire stock restore hook on full refund
+      if (isFull) {
+        await doAction("order.refunded", { tenantId: tid(req), orderId: o.id });
+      }
+
       return reply.send(row);
     },
   );
