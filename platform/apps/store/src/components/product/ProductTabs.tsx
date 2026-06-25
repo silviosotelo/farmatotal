@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Input } from "@platform/ui";
+import { Button, Input, Tabs } from "@platform/ui";
 import type { Product } from "@/types";
 import { type ReviewItem, submitReview } from "@/lib/api";
 import { useToast } from "@/components/providers/ToastContext";
 import { cn } from "@/lib/utils";
+
+const { TabList, TabNav, TabContent } = Tabs;
 
 function Stars({ n }: { n: number }) {
   return (
@@ -150,76 +152,67 @@ export function ProductTabs({
 
   return (
     <div>
-      <div className="flex flex-wrap gap-1 border-b border-[#ededf1]">
-        {tabs.map((t) => (
-          <Button
-            key={t.id}
-            type="button"
-            variant="plain"
-            onClick={() => setTab(t.id)}
-            aria-current={tab === t.id}
-            className={cn(
-              "-mb-px rounded-t-md px-4 py-2.5 text-sm font-semibold transition",
-              tab === t.id ? "border-b-2 border-brand-orange text-brand-text" : "text-brand-muted hover:text-brand-text",
-            )}
-          >
-            {t.label}
-          </Button>
-        ))}
-      </div>
+      <Tabs defaultValue="desc" onChange={(v) => setTab(v as "desc" | "info" | "rev")}>
+        <TabList>
+          {tabs.map((t) => (
+            <TabNav key={t.id} value={t.id}>{t.label}</TabNav>
+          ))}
+        </TabList>
+        <div className="py-5 text-sm leading-relaxed text-brand-text">
+          <TabContent value="desc">
+            <p>{product.description}</p>
+          </TabContent>
 
-      <div className="py-5 text-sm leading-relaxed text-brand-text">
-        {tab === "desc" && <p>{product.description}</p>}
+          <TabContent value="info">
+            <table className="w-full max-w-md border-collapse text-sm">
+              <tbody>
+                {[
+                  ["Marca", product.brand ?? "—"],
+                  ["SKU", product.sku ?? "—"],
+                  ["Categoría", product.category ?? "—"],
+                  ["Disponibilidad", product.stock === 0 ? "Sin stock" : "En stock"],
+                  ...customRows,
+                ].map(([k, v]) => (
+                  <tr key={k} className="border-b border-[#ededf1]">
+                    <th className="py-2 pr-4 text-left font-medium text-brand-muted">{k}</th>
+                    <td className="py-2 text-brand-text">{v}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TabContent>
 
-        {tab === "info" && (
-          <table className="w-full max-w-md border-collapse text-sm">
-            <tbody>
-              {[
-                ["Marca", product.brand ?? "—"],
-                ["SKU", product.sku ?? "—"],
-                ["Categoría", product.category ?? "—"],
-                ["Disponibilidad", product.stock === 0 ? "Sin stock" : "En stock"],
-                ...customRows,
-              ].map(([k, v]) => (
-                <tr key={k} className="border-b border-[#ededf1]">
-                  <th className="py-2 pr-4 text-left font-medium text-brand-muted">{k}</th>
-                  <td className="py-2 text-brand-text">{v}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-
-        {tab === "rev" && (
-          <div>
-            {reviews.length > 0 ? (
-              <>
-                <div className="mb-4 flex items-center gap-2">
-                  <Stars n={average} />
-                  <span className="text-sm font-medium text-brand-text">{average.toFixed(1)} / 5</span>
-                  <span className="text-xs text-brand-muted">({reviews.length} valoraciones)</span>
-                </div>
-                <ul className="flex flex-col gap-4">
-                  {reviews.map((r) => (
-                    <li key={r.id} className="border-b border-[#ededf1] pb-4 last:border-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-brand-text">{r.author}</span>
-                        <Stars n={r.rating} />
-                        <span className="text-xs text-brand-muted">{fmtDate(r.createdAt)}</span>
-                      </div>
-                      {r.title && <p className="mt-1 font-medium text-brand-text">{r.title}</p>}
-                      <p className="mt-1 text-brand-muted">{r.body}</p>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : (
-              <p className="text-brand-muted">Aún no hay valoraciones. ¡Sé el primero en opinar!</p>
-            )}
-            <ReviewForm productId={product.id} />
-          </div>
-        )}
-      </div>
+          <TabContent value="rev">
+            <div>
+              {reviews.length > 0 ? (
+                <>
+                  <div className="mb-4 flex items-center gap-2">
+                    <Stars n={average} />
+                    <span className="text-sm font-medium text-brand-text">{average.toFixed(1)} / 5</span>
+                    <span className="text-xs text-brand-muted">({reviews.length} valoraciones)</span>
+                  </div>
+                  <ul className="flex flex-col gap-4">
+                    {reviews.map((r) => (
+                      <li key={r.id} className="border-b border-[#ededf1] pb-4 last:border-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-brand-text">{r.author}</span>
+                          <Stars n={r.rating} />
+                          <span className="text-xs text-brand-muted">{fmtDate(r.createdAt)}</span>
+                        </div>
+                        {r.title && <p className="mt-1 font-medium text-brand-text">{r.title}</p>}
+                        <p className="mt-1 text-brand-muted">{r.body}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="text-brand-muted">Aún no hay valoraciones. ¡Sé el primero en opinar!</p>
+              )}
+              <ReviewForm productId={product.id} />
+            </div>
+          </TabContent>
+        </div>
+      </Tabs>
     </div>
   );
 }
