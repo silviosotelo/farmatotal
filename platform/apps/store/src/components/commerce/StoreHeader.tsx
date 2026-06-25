@@ -21,8 +21,8 @@ type HeaderProps = {
 }
 
 export default function StoreHeader({ config, tokens }: HeaderProps) {
-  const { items } = useCart()
-  const itemCount = items.reduce((s, i) => s + i.quantity, 0)
+  const { lines } = useCart()
+  const itemCount = lines.reduce((s, i) => s + i.quantity, 0)
   const nav = config?.navItems ?? config?.topNav ?? []
 
   return (
