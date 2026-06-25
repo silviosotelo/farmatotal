@@ -14,7 +14,6 @@ import { Link } from 'react-router'
 import { TbArrowLeft } from 'react-icons/tb'
 import useSWR from 'swr'
 import { apiGetPlugin, apiSavePlugin, type PluginField } from '@/services/PluginService'
-import { cn } from '@/lib/utils'
 
 const { TabNav, TabList, TabContent } = Tabs
 
@@ -28,12 +27,11 @@ const VerticalTabs = ({ groups, renderField }: { groups: { group: string; fields
                         <button
                             key={g.group}
                             onClick={() => setActive(g.group)}
-                            className={cn(
-                                'px-4 py-3 text-sm font-medium whitespace-nowrap transition border-b-2 lg:border-b-0 lg:border-l-2 text-left',
+                            className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition border-b-2 lg:border-b-0 lg:border-l-2 text-left ${
                                 active === g.group
                                     ? 'border-primary text-primary bg-primary/5'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50',
-                            )}
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                            }`}
                         >
                             {g.group}
                         </button>

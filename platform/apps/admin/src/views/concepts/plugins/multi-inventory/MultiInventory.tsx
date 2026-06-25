@@ -2,7 +2,6 @@ import { useState } from 'react'
 import PluginConfig from '../PluginConfig'
 import Card from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
-import { cn } from '@/lib/utils'
 
 const TABS = [
     { key: 'config', label: 'Configuración del plugin' },
@@ -37,12 +36,11 @@ const MultiInventory = () => {
                                             setActive(t.key)
                                         }
                                     }}
-                                    className={cn(
-                                        'px-5 py-3.5 text-sm font-medium whitespace-nowrap transition border-b-2 lg:border-b-0 lg:border-l-2 text-left',
+                                    className={`px-5 py-3.5 text-sm font-medium whitespace-nowrap transition border-b-2 lg:border-b-0 lg:border-l-2 text-left ${
                                         active === t.key
                                             ? 'border-primary text-primary bg-primary/5'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50',
-                                    )}
+                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                    }`}
                                 >
                                     {t.label}
                                 </button>
