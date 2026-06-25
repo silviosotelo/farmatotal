@@ -6,6 +6,9 @@ import ToggleDrawer from '@/components/shared/ToggleDrawer'
 import Tag from '@/components/ui/Tag'
 import Switcher from '@/components/ui/Switcher'
 import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
+import Select from '@/components/ui/Select'
+import { FormItem } from '@/components/ui/Form'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
 import Loading from '@/components/shared/Loading'
@@ -49,7 +52,7 @@ function getGroupIcon(group: string): ReactNode {
     return <TbPuzzle />
 }
 
-/** Renderiza un campo del plugin según su tipo */
+/** Renderiza un campo del plugin — 100% componentes Ecme */
 function PluginFieldRenderer({
     field,
     value,
@@ -73,31 +76,29 @@ function PluginFieldRenderer({
     if (field.type === 'select') {
         return (
             <div key={field.key} className="mb-4">
-                <label className="block text-sm font-medium mb-1.5">{field.label}</label>
-                <select
-                    value={String(value ?? '')}
-                    onChange={(e) => onChange(e.target.value)}
-                    className="w-full h-10 px-3 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:bg-gray-700 dark:border-gray-600"
-                >
-                    <option value="">Seleccionar...</option>
-                    {(field.options ?? []).map((o) => (
-                        <option key={String(o.value)} value={String(o.value)}>{o.label}</option>
-                    ))}
-                </select>
+                <FormItem label={field.label}>
+                    <Select
+                        size="md"
+                        options={(field.options ?? []).map((o) => ({ value: String(o.value), label: o.label }))}
+                        value={(field.options ?? []).find((o) => String(o.value) === String(value))}
+                        onChange={(o) => onChange(o?.value)}
+                    />
+                </FormItem>
                 {field.help && <p className="mt-1 text-xs text-gray-400">{field.help}</p>}
             </div>
         )
     }
     return (
         <div key={field.key} className="mb-4">
-            <label className="block text-sm font-medium mb-1.5">{field.label}</label>
-            <input
-                type={field.type === 'password' ? 'password' : field.type === 'number' ? 'number' : 'text'}
-                value={String(value ?? '')}
-                placeholder={field.placeholder}
-                onChange={(e) => onChange(field.type === 'number' ? Number(e.target.value) : e.target.value)}
-                className="w-full h-10 px-3 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:bg-gray-700 dark:border-gray-600"
-            />
+            <FormItem label={field.label}>
+                <Input
+                    size="md"
+                    type={field.type === 'password' ? 'password' : field.type === 'number' ? 'number' : 'text'}
+                    value={String(value ?? '')}
+                    placeholder={field.placeholder}
+                    onChange={(e) => onChange(field.type === 'number' ? Number(e.target.value) : e.target.value)}
+                />
+            </FormItem>
             {field.help && <p className="mt-1 text-xs text-gray-400">{field.help}</p>}
         </div>
     )
