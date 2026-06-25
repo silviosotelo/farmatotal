@@ -14,7 +14,7 @@ export function ProductGallery({ images, alt, discount }: { images: string[]; al
     <div className="flex flex-col gap-3">
       <div className="relative aspect-square w-full overflow-hidden rounded-[10px] border border-[#ededf1] bg-white p-8">
         {discount && discount > 0 && (
-          <span className="absolute left-3 top-3 z-10 rounded-[6px] bg-brand-orange px-2 py-0.5 text-xs font-bold text-white shadow-[0_2px_6px_rgba(241,101,34,0.35)]">
+          <span className="absolute left-3 top-3 z-10 rounded-[6px] bg-brand-orange px-2 py-0.5 text-xs font-bold text-white shadow-[0_2px_6px_rgba(var(--brand-orange-rgb),0.35)]">
             -{discount}%
           </span>
         )}

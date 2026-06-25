@@ -71,7 +71,7 @@ export default function BranchesMap({
           <Marker
             key={b.id}
             position={[b.lat, b.lng]}
-            icon={pin(isNearest ? "#16a34a" : isSel ? "#1f2937" : "#f16522", isNearest || isSel)}
+            icon={pin(isNearest ? "#16a34a" : isSel ? "#1f2937" : "var(--brand-orange)", isNearest || isSel)}
             eventHandlers={{ click: () => onSelect?.(b.id) }}
           >
             <Popup>

@@ -376,6 +376,14 @@ export async function getTenantFlags(): Promise<FeatureFlags> {
   }
 }
 
+/** Convierte hex (#RRGGBB o #RGB) a "R, G, B" para usar en rgba(var(--brand-*-rgb), alpha) */
+function hexToRgb(hex: string): string {
+  let h = hex.replace('#', '')
+  if (h.length === 3) h = h.split('').map(c => c + c).join('')
+  const n = parseInt(h, 16)
+  return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`
+}
+
 /** Genera el CSS de override de tokens de marca.
  * Cada color de la DB sobrescribe tanto los --brand-* como los tokens shadcn
  * correspondientes, de modo que no existan valores hardcodeados en globals.css. */
@@ -394,6 +402,7 @@ export function brandColorVars(colors: BrandColors): string {
     .flatMap((k) => map[k].map((v) => `${v}: ${colors[k]};`));
   if (colors.orange) {
     lines.push(`--brand-border: color-mix(in srgb, ${colors.orange} 10%, white);`);
+    lines.push(`--brand-orange-rgb: ${hexToRgb(colors.orange)};`);
   }
   return lines.length ? `:root{${lines.join("")}}` : "";
 }

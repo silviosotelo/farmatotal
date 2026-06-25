@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef } from "react";
 
 const pin = L.divIcon({
   className: "",
-  html: `<div style="width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#f16522;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45)"></div>`,
+  html: `<div style="width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--brand-orange);border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45)"></div>`,
   iconSize: [30, 30],
   iconAnchor: [15, 30],
 });

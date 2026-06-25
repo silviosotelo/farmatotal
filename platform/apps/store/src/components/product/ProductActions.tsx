@@ -140,7 +140,7 @@ export function ProductActions({
             shape="round"
             onClick={add}
             style={{ color: 'white' }}
-            className="brand-gradient h-[44px] px-8 text-sm font-semibold tracking-wide shadow-[0_4px_12px_rgba(241,101,34,0.25)] hover:shadow-[0_6px_16px_rgba(241,101,34,0.4)] active:scale-[0.98]"
+            className="brand-gradient h-[44px] px-8 text-sm font-semibold tracking-wide shadow-[0_4px_12px_rgba(var(--brand-orange-rgb),0.25)] hover:shadow-[0_6px_16px_rgba(var(--brand-orange-rgb),0.4)] active:scale-[0.98]"
           >
             Añadir al carrito
           </Button>

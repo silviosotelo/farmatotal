@@ -64,7 +64,7 @@ export function SuperRombo({ products }: { products?: Product[] } = {}) {
             ].map(({ value, label }) => (
               <div key={label} className="flex flex-col items-center">
                 <span
-                  className="flex h-[58px] w-[54px] items-center justify-center rounded-[10px] border border-[#ffe0cc] bg-white font-heading text-[34px] font-bold leading-none text-brand-orange shadow-[0_3px_10px_rgba(241,101,34,0.12)] tabular-nums"
+                  className="flex h-[58px] w-[54px] items-center justify-center rounded-[10px] border border-[#ffe0cc] bg-white font-heading text-[34px] font-bold leading-none text-brand-orange shadow-[0_3px_10px_rgba(var(--brand-orange-rgb),0.12)] tabular-nums"
                   aria-hidden="true"
                 >
                   {seconds === null ? "--" : pad(value)}

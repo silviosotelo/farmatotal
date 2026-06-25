@@ -33,10 +33,10 @@ export function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <div className="group card-shadow relative flex h-full flex-col overflow-hidden rounded-[10px] border border-[#ededf1] bg-white transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:border-transparent hover:[box-shadow:0_14px_34px_rgba(241,101,34,0.14),0_6px_14px_rgba(16,24,40,0.08)]">
+    <div className="group card-shadow relative flex h-full flex-col overflow-hidden rounded-[10px] border border-[#ededf1] bg-white transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:border-transparent hover:[box-shadow:0_14px_34px_rgba(var(--brand-orange-rgb),0.14),0_6px_14px_rgba(16,24,40,0.08)]">
       <div className="relative p-5">
         {product.discount > 0 && (
-          <span className="font-price absolute left-3 top-3 z-10 rounded-[8px] bg-brand-orange px-2 py-1 text-xs font-bold leading-none text-white shadow-[0_2px_6px_rgba(241,101,34,0.35)]">
+          <span className="font-price absolute left-3 top-3 z-10 rounded-[8px] bg-brand-orange px-2 py-1 text-xs font-bold leading-none text-white shadow-[0_2px_6px_rgba(var(--brand-orange-rgb),0.35)]">
             -{product.discount}%
           </span>
         )}
@@ -115,7 +115,7 @@ export function ProductCard({ product }: { product: Product }) {
           onClick={onAdd}
           disabled={out}
           style={{ color: 'white' }}
-          className="brand-gradient mt-4 h-[38px] px-5 text-xs font-semibold uppercase tracking-wide shadow-[0_4px_12px_rgba(241,101,34,0.25)] transition-all duration-200 hover:shadow-[0_6px_16px_rgba(241,101,34,0.4)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+          className="brand-gradient mt-4 h-[38px] px-5 text-xs font-semibold uppercase tracking-wide shadow-[0_4px_12px_rgba(var(--brand-orange-rgb),0.25)] transition-all duration-200 hover:shadow-[0_6px_16px_rgba(var(--brand-orange-rgb),0.4)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
         >
           {out ? "Sin stock" : "Añadir al carrito"}
         </Button>
