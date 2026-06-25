@@ -14,26 +14,39 @@ import useSWR from 'swr'
 import { apiGetPlugin, apiSavePlugin, type PluginField } from '@/services/PluginService'
 import type { ToggleDrawerRef } from '@/components/shared/ToggleDrawer'
 import type { ReactNode } from 'react'
+import {
+    TbSettings,
+    TbKey,
+    TbCreditCard,
+    TbRepeat,
+    TbQrcode,
+    TbLink,
+    TbMail,
+    TbTruck,
+    TbEye,
+    TbAdjustments,
+    TbPuzzle,
+} from 'react-icons/tb'
 
 const { MenuItem } = Menu
 
 const GROUP_ICONS: Record<string, ReactNode> = {}
 
-/** Extrae iconos genéricos de los group names para el sidebar */
+/** Extrae iconos de react-icons/tb según el group name */
 function getGroupIcon(group: string): ReactNode {
-    const g = group.toLowerCase()
     if (GROUP_ICONS[group]) return GROUP_ICONS[group]
-    if (g.includes('general')) return '⚙️'
-    if (g.includes('credential') || g.includes('credencial')) return '🔑'
-    if (g.includes('payment') || g.includes('pago')) return '💳'
-    if (g.includes('recurring') || g.includes('recurrente')) return '🔄'
-    if (g.includes('qr')) return '📱'
-    if (g.includes('webhook')) return '🔗'
-    if (g.includes('email') || g.includes('correo')) return '✉️'
-    if (g.includes('shipping') || g.includes('envío')) return '🚚'
-    if (g.includes('display') || g.includes('visual')) return '👁️'
-    if (g.includes('advanced') || g.includes('avanzado')) return '🔧'
-    return '📌'
+    const g = group.toLowerCase()
+    if (g.includes('general') || g.includes('config')) return <TbSettings />
+    if (g.includes('credential') || g.includes('credencial')) return <TbKey />
+    if (g.includes('payment') || g.includes('pago')) return <TbCreditCard />
+    if (g.includes('recurring') || g.includes('recurrente')) return <TbRepeat />
+    if (g.includes('qr')) return <TbQrcode />
+    if (g.includes('webhook')) return <TbLink />
+    if (g.includes('email') || g.includes('correo')) return <TbMail />
+    if (g.includes('shipping') || g.includes('envío')) return <TbTruck />
+    if (g.includes('display') || g.includes('visual')) return <TbEye />
+    if (g.includes('advanced') || g.includes('avanzado')) return <TbAdjustments />
+    return <TbPuzzle />
 }
 
 /** Renderiza un campo del plugin según su tipo */
