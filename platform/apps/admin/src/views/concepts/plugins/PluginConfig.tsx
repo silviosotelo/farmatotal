@@ -14,15 +14,47 @@ import { Link } from 'react-router'
 import { TbArrowLeft } from 'react-icons/tb'
 import useSWR from 'swr'
 import { apiGetPlugin, apiSavePlugin, type PluginField } from '@/services/PluginService'
+import { cn } from '@/lib/utils'
 
 const { TabNav, TabList, TabContent } = Tabs
+
+const VerticalTabs = ({ groups, renderField }: { groups: { group: string; fields: PluginField[] }[]; renderField: (f: PluginField) => React.ReactNode }) => {
+    const [active, setActive] = useState(groups[0]?.group || '')
+    return (
+        <div className="flex flex-col lg:flex-row gap-0">
+            <div className="lg:w-52 shrink-0 border-b lg:border-b-0 lg:border-r border-gray-100">
+                <nav className="flex lg:flex-col overflow-x-auto">
+                    {groups.map((g) => (
+                        <button
+                            key={g.group}
+                            onClick={() => setActive(g.group)}
+                            className={cn(
+                                'px-4 py-3 text-sm font-medium whitespace-nowrap transition border-b-2 lg:border-b-0 lg:border-l-2 text-left',
+                                active === g.group
+                                    ? 'border-primary text-primary bg-primary/5'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50',
+                            )}
+                        >
+                            {g.group}
+                        </button>
+                    ))}
+                </nav>
+            </div>
+            <div className="flex-1 p-6">
+                {groups.filter((g) => g.group === active).map((g) => (
+                    <div key={g.group} className="max-w-xl space-y-1">{g.fields.map(renderField)}</div>
+                ))}
+            </div>
+        </div>
+    )
+}
 
 /**
  * Vista de configuración reutilizable por plugin (cada plugin tiene su propia
  * ruta/vista que monta este componente con su `pluginKey`). Renderiza los
  * campos agrupados en tabs según la definición del backend.
  */
-const PluginConfig = ({ pluginKey, embedded = false }: { pluginKey: string; embedded?: boolean }) => {
+const PluginConfig = ({ pluginKey, embedded = false, layout = 'horizontal' }: { pluginKey: string; embedded?: boolean; layout?: 'horizontal' | 'vertical' }) => {
     const { data, isLoading, mutate } = useSWR(['/plugins', pluginKey], () => apiGetPlugin(pluginKey), {
         revalidateOnFocus: false,
     })
@@ -132,6 +164,8 @@ const PluginConfig = ({ pluginKey, embedded = false }: { pluginKey: string; embe
                         <p className="py-6 text-center text-gray-400">Este plugin no tiene parámetros de configuración.</p>
                     ) : groups.length === 1 ? (
                         <div className="max-w-xl">{groups[0].fields.map(renderField)}</div>
+                    ) : layout === 'vertical' ? (
+                        <VerticalTabs groups={groups} renderField={renderField} />
                     ) : (
                         <Tabs defaultValue={groups[0].group}>
                             <TabList>

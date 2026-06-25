@@ -1,32 +1,71 @@
 import { useState } from 'react'
 import PluginConfig from '../PluginConfig'
-import Tabs from '@/components/ui/Tabs'
-const { TabNav, TabList, TabContent } = Tabs
+import Card from '@/components/ui/Card'
+import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+
+const TABS = [
+    { key: 'config', label: 'Configuración del plugin' },
+    { key: 'branches', label: 'Sucursales', href: '/concepts/branches' },
+    { key: 'stock', label: 'Stock por sucursal', href: '/concepts/inventory' },
+]
 
 const MultiInventory = () => {
-    const [tab, setTab] = useState('config')
+    const [active, setActive] = useState('config')
+
     return (
-        <div>
-            <Tabs defaultValue="config" onChange={(v) => setTab(v as string)}>
-                <TabList>
-                    <TabNav value="config">Configuración</TabNav>
-                    <TabNav value="branches">Sucursales</TabNav>
-                    <TabNav value="stock">Stock</TabNav>
-                </TabList>
-                <div className="mt-4">
-                    <TabContent value="config">
-                        <PluginConfig pluginKey="multi_inventory" embedded />
-                    </TabContent>
-                    <TabContent value="branches">
-                        <p className="text-sm text-gray-500 mb-4">Gestioná las sucursales del plugin Multi-sucursal / Inventario.</p>
-                        <a href="/concepts/branches" className="text-sm text-blue-600 hover:underline">Abrir gestor de sucursales →</a>
-                    </TabContent>
-                    <TabContent value="stock">
-                        <p className="text-sm text-gray-500 mb-4">Gestioná el stock por sucursal.</p>
-                        <a href="/concepts/inventory" className="text-sm text-blue-600 hover:underline">Abrir gestor de inventario →</a>
-                    </TabContent>
+        <div className="flex flex-col gap-4">
+            <div>
+                <h3 className="mb-1">Multi-sucursal / Inventario</h3>
+                <p className="text-gray-500">
+                    Configurá las sucursales, stock por ubicación, costos de envío, click & collect, y más.
+                </p>
+            </div>
+
+            <Card>
+                <div className="flex flex-col lg:flex-row gap-0">
+                    {/* Sidebar tabs */}
+                    <div className="lg:w-56 shrink-0 border-b lg:border-b-0 lg:border-r border-gray-100">
+                        <nav className="flex lg:flex-col overflow-x-auto">
+                            {TABS.map((t) => (
+                                <button
+                                    key={t.key}
+                                    onClick={() => {
+                                        if (t.href) {
+                                            window.location.href = t.href
+                                        } else {
+                                            setActive(t.key)
+                                        }
+                                    }}
+                                    className={cn(
+                                        'px-5 py-3.5 text-sm font-medium whitespace-nowrap transition border-b-2 lg:border-b-0 lg:border-l-2 text-left',
+                                        active === t.key
+                                            ? 'border-primary text-primary bg-primary/5'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50',
+                                    )}
+                                >
+                                    {t.label}
+                                </button>
+                            ))}
+                        </nav>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 p-6">
+                        {active === 'config' && <PluginConfig pluginKey="multi_inventory" embedded layout="vertical" />}
+                        {active === 'branches' && (
+                            <div>
+                                <p className="text-sm text-gray-500 mb-4">Gestioná las sucursales del plugin.</p>
+                            </div>
+                        )}
+                        {active === 'stock' && (
+                            <div>
+                                <p className="text-sm text-gray-500 mb-4">Gestioná el stock por sucursal.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </Tabs>
+            </Card>
         </div>
     )
 }
