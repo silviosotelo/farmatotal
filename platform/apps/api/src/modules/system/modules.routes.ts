@@ -2,11 +2,26 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
-import { settings } from "../../db/schema";
+import { settings, tenants } from "../../db/schema";
 import { tid } from "../../plugins/tenant";
 import { MODULES } from "./registry.js";
 
 const STATE_KEY = "modules_state";
+
+const PLUGIN_FLAG_MAP: Record<string, string[]> = {
+  multi_inventory: ["branches", "inventory"],
+};
+
+async function syncTenantFlags(tenantId: string, moduleKey: string, enabled: boolean) {
+  const flags = PLUGIN_FLAG_MAP[moduleKey];
+  if (!flags || flags.length === 0) return;
+  const [row] = await db.select().from(tenants).where(eq(tenants.id, tenantId)).limit(1);
+  const cfg = { ...((row?.config as Record<string, unknown>) ?? {}) };
+  for (const flag of flags) {
+    cfg[flag] = enabled;
+  }
+  await db.update(tenants).set({ config: cfg }).where(eq(tenants.id, tenantId));
+}
 
 async function readState(req: FastifyRequest): Promise<Record<string, boolean>> {
   const [row] = await db
@@ -28,20 +43,17 @@ async function writeState(req: FastifyRequest, state: Record<string, boolean>) {
 }
 
 export async function moduleRoutes(app: FastifyInstance) {
-  // Lista de módulos instalados + estado habilitado.
   app.get("/modules", async (req) => {
     const state = await readState(req);
     return {
       data: MODULES.map((m) => ({
         ...m,
-        // Los nativos siempre activos; los plugins por defecto activos salvo que se apaguen.
         enabled: m.kind === "native" ? true : (state[m.key] ?? true),
       })),
       total: MODULES.length,
     };
   });
 
-  // Habilitar / deshabilitar un módulo (los core no se pueden tocar).
   app.patch(
     "/modules/:key",
     { schema: { params: z.object({ key: z.string() }), body: z.object({ enabled: z.boolean() }) } },
@@ -52,11 +64,11 @@ export async function moduleRoutes(app: FastifyInstance) {
       const state = await readState(req);
       state[mod.key] = req.body.enabled;
       await writeState(req, state);
+      await syncTenantFlags(tid(req), mod.key, req.body.enabled);
       return reply.send({ key: mod.key, enabled: req.body.enabled });
     },
   );
 
-  // Saber si un módulo está activo (lo usan otros endpoints como guard opcional).
   app.get("/modules/:key/status", { schema: { params: z.object({ key: z.string() }) } }, async (req) => {
     const mod = MODULES.find((m) => m.key === req.params.key);
     if (!mod) return { key: req.params.key, installed: false, enabled: false };
