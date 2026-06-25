@@ -3,18 +3,19 @@ import { Mail, Phone, MapPin } from "lucide-react"
 
 type FooterProps = {
   config: {
-    brandName: string
+    brandName?: string
     columns?: Array<{ title: string; links: Array<{ label: string; href: string }> }>
-    social?: Array<{ platform: string; url: string }>
     copyright?: string
+    partner?: { href: string; image: string; alt: string } | null
+    social?: Array<{ platform: string; url: string }>
     newsletter?: boolean
-  }
+  } | null
   tokens: { footerVariant: string }
 }
 
 export default function StoreFooter({ config, tokens }: FooterProps) {
   const isDark = tokens.footerVariant === "dark" || tokens.footerVariant === "newsletter"
-  const cols = config.columns ?? []
+  const cols = config?.columns ?? []
 
   return (
     <footer className={isDark ? "bg-gray-900 text-gray-300" : "bg-surface border-t border-border"}>
@@ -35,7 +36,7 @@ export default function StoreFooter({ config, tokens }: FooterProps) {
       <div className="mx-auto px-4 py-10" style={{ maxWidth: "var(--container-max)" }}>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div>
-            <h4 className={`text-sm font-bold uppercase tracking-wider mb-4 ${isDark ? "text-white" : "text-foreground"}`}>{config.brandName}</h4>
+            <h4 className={`text-sm font-bold uppercase tracking-wider mb-4 ${isDark ? "text-white" : "text-foreground"}`}>{config?.brandName ?? 'Mi Tienda'}</h4>
             <p className="text-sm text-muted-foreground leading-relaxed">Tu tienda online de confianza para productos frescos y de calidad.</p>
           </div>
           {cols.map((col) => (
@@ -50,7 +51,7 @@ export default function StoreFooter({ config, tokens }: FooterProps) {
       </div>
       <div className={`border-t ${isDark ? "border-gray-800" : "border-border"}`}>
         <div className="mx-auto flex flex-col md:flex-row items-center justify-between gap-2 px-4 py-4 text-xs text-muted-foreground" style={{ maxWidth: "var(--container-max)" }}>
-          <p>{config.copyright ?? `© ${new Date().getFullYear()} ${config.brandName}. Todos los derechos reservados.`}</p>
+          <p>{config?.copyright ?? `© ${new Date().getFullYear()} ${config?.brandName ?? 'Mi Tienda'}. Todos los derechos reservados.`}</p>
           <div className="flex items-center gap-3">
             <span>Medios de pago:</span>
             <div className="flex gap-2 opacity-60">

@@ -3,13 +3,17 @@ import Link from "next/link"
 import { Search, ShoppingCart, Heart, User, Phone, MapPin, Menu, ChevronDown } from "lucide-react"
 import { useCart } from "@/components/providers/CartContext"
 
+type NavItem = { label: string; href: string; children?: NavItem[] }
+
 type HeaderProps = {
   config: {
-    brandName: string
+    brandName?: string
     logo?: string
     phone?: string
-    navItems?: Array<{ label: string; href: string; children?: Array<{ label: string; href: string }> }>
-  }
+    navItems?: NavItem[]
+    topNav?: NavItem[]
+    categories?: NavItem[]
+  } | null
   tokens: {
     headerVariant: string
     primary: string
@@ -19,7 +23,7 @@ type HeaderProps = {
 export default function StoreHeader({ config, tokens }: HeaderProps) {
   const { items } = useCart()
   const itemCount = items.reduce((s, i) => s + i.quantity, 0)
-  const nav = config.navItems ?? []
+  const nav = config?.navItems ?? config?.topNav ?? []
 
   return (
     <header className="sticky top-0 z-50 bg-surface border-b border-border shadow-sm" style={{ fontFamily: "var(--font-family)" }}>
@@ -27,7 +31,7 @@ export default function StoreHeader({ config, tokens }: HeaderProps) {
       <div className="hidden md:block border-b border-border">
         <div className="mx-auto flex items-center justify-between px-4 py-1.5 text-xs text-muted-foreground" style={{ maxWidth: "var(--container-max)" }}>
           <div className="flex items-center gap-4">
-            {config.phone && <a href={`tel:${config.phone}`} className="flex items-center gap-1 hover:text-primary"><Phone className="w-3 h-3" />{config.phone}</a>}
+            {config?.phone && <a href={`tel:${config.phone}`} className="flex items-center gap-1 hover:text-primary"><Phone className="w-3 h-3" />{config.phone}</a>}
             <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />Envíos a todo Paraguay</span>
           </div>
           <div className="flex items-center gap-4">
@@ -39,7 +43,7 @@ export default function StoreHeader({ config, tokens }: HeaderProps) {
       {/* Main bar */}
       <div className="mx-auto flex items-center gap-4 px-4 py-3" style={{ maxWidth: "var(--container-max)" }}>
         <Link href="/" className="shrink-0">
-          {config.logo ? <img src={config.logo} alt={config.brandName} className="h-8" /> : <span className="text-xl font-bold" style={{ color: "var(--primary)" }}>{config.brandName}</span>}
+          {config?.logo ? <img src={config.logo} alt={config.brandName ?? 'Tienda'} className="h-8" /> : <span className="text-xl font-bold" style={{ color: "var(--primary)" }}>{config?.brandName ?? 'Tienda'}</span>}
         </Link>
         <form action="/buscar" method="get" className="flex-1 hidden md:flex items-center max-w-xl">
           <input name="q" placeholder="Buscar productos..." className="flex-1 px-4 py-2 rounded-l-lg border border-r-0 border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" style={{ borderRadius: "var(--radius) 0 0 var(--radius)" }} />
