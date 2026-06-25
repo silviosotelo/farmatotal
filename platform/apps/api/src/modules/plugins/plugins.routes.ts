@@ -9,24 +9,9 @@ import { isModuleEnabled, setModuleEnabled } from "../system/moduleState.js";
 
 const STORE_KEY = (k: string) => `plugin_${k}`;
 
-/** Mapeo plugin → tenant config flags que controla */
-const PLUGIN_FLAG_MAP: Record<string, string[]> = {
-  multi_inventory: ["branches", "inventory"],
-  erp_sync: [],
-  stock: [],
-  gw_bancard: [],
-  gw_dinelco: [],
-  gw_tigomoney: [],
-  gw_personalpay: [],
-  feat_scan_search: [],
-  wh_whatsapp: [],
-  mk_google: [],
-  mk_meta: [],
-  infra_cloudflare: [],
-};
-
 async function syncTenantFlags(tenantId: string, pluginKey: string, enabled: boolean) {
-  const flags = PLUGIN_FLAG_MAP[pluginKey];
+  const mod = MODULES.find((m) => m.key === pluginKey);
+  const flags = mod?.controlsFlags;
   if (!flags || flags.length === 0) return;
   const [row] = await db.select().from(tenants).where(eq(tenants.id, tenantId)).limit(1);
   const cfg = { ...((row?.config as Record<string, unknown>) ?? {}) };

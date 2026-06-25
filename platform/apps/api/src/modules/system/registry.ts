@@ -45,24 +45,17 @@ export type ModuleManifest = {
   kind: ModuleKind;
   category: ModuleCategory;
   version: string;
-  /** Para pasarelas: se registra dentro del módulo nativo "payments". */
   registersInto?: string;
-  /** Setting key donde guarda su config. */
   settingsKey?: string;
-  /** Ruta del admin (si tiene vista propia). */
   adminPath?: string;
-  /** Sub-features que expone (tabs de su vista). */
   features?: string[];
-  /** Schema de config (campos agrupados) que renderiza el admin genérico. */
   configSchema?: ConfigField[];
-  /** Otras keys de módulo requeridas para poder activarse. */
   dependsOn?: string[];
-  /** Hooks (acciones/filtros) que este módulo dispara. */
   provides?: string[];
-  /** Hooks que este módulo escucha (registra handlers). */
   consumes?: string[];
-  /** Si el módulo arranca activo cuando no hay estado guardado. */
   enabledByDefault?: boolean;
+  /** Tenant config flags que este plugin controla al activarse/desactivarse. */
+  controlsFlags?: string[];
 };
 
 const envOpts = [
@@ -206,6 +199,7 @@ export const MODULES: ModuleManifest[] = [
     key: "multi_inventory", name: "Multi-sucursal / Inventario", description: "Sucursales configurables, stock por sucursal, costos y radio de envío, import/export.",
     kind: "plugin", category: "logistics", version: "1.0.0", settingsKey: "plugin_multiinventory", adminPath: "/concepts/branches",
     features: ["Sucursales", "Stock por sucursal", "Costos/Radio", "Import/Export", "Logs"], enabledByDefault: true, consumes: ["order.created", "order.paid"],
+    controlsFlags: ["branches", "inventory"],
     configSchema: [
       { key: "decrementOnConfirm", label: "Descontar stock al confirmar la orden", type: "toggle", group: "Stock" },
       { key: "deliverySource", label: "Sucursal de origen en delivery", type: "select", group: "Stock", options: [{ value: "nearest", label: "Más cercana al cliente" }, { value: "most_stock", label: "La de mayor stock" }] },

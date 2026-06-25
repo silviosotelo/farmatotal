@@ -8,12 +8,9 @@ import { MODULES } from "./registry.js";
 
 const STATE_KEY = "modules_state";
 
-const PLUGIN_FLAG_MAP: Record<string, string[]> = {
-  multi_inventory: ["branches", "inventory"],
-};
-
 async function syncTenantFlags(tenantId: string, moduleKey: string, enabled: boolean) {
-  const flags = PLUGIN_FLAG_MAP[moduleKey];
+  const mod = MODULES.find((m) => m.key === moduleKey);
+  const flags = mod?.controlsFlags;
   if (!flags || flags.length === 0) return;
   const [row] = await db.select().from(tenants).where(eq(tenants.id, tenantId)).limit(1);
   const cfg = { ...((row?.config as Record<string, unknown>) ?? {}) };
