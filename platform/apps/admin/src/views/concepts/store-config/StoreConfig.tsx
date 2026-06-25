@@ -29,10 +29,11 @@ type StoreConfigValue = {
     theme?: string
 }
 
-const THEMES: { key: string; name: string; description: string }[] = [
-    { key: 'base', name: 'Base (Bacola)', description: 'Farmacia/grocery. Naranja, denso, orientado a catálogo.' },
-    { key: 'ekomart', name: 'Ekomart', description: 'Market moderno (Bootstrap). Verde, amplio, con grillas.' },
-    { key: 'anvogue', name: 'Anvogue', description: 'Multipropósito moderno (fashion/retail). Limpio, minimalista.' },
+const THEMES: { key: string; name: string; description: string; color: string }[] = [
+    { key: 'base', name: 'Farmatotal', description: 'Pharmacy — default', color: '#E8590C' },
+    { key: 'ekomart', name: 'Ekomart', description: 'Grocery — dense, Bootstrap', color: '#2B8A3E' },
+    { key: 'anvogue', name: 'Anvogue', description: 'Fashion — minimal', color: '#E94560' },
+    { key: 'grostore', name: 'Grostore', description: 'Grocery — clean, modern', color: '#00A859' },
 ]
 
 const CURRENCY_OPTIONS = [
@@ -198,7 +199,13 @@ const StoreConfig = () => {
                                     }`}
                                 >
                                     <div className="flex items-center justify-between">
-                                        <span className="font-semibold">{t.name}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span
+                                                className="inline-block w-3 h-3 rounded-full"
+                                                style={{ backgroundColor: t.color }}
+                                            />
+                                            <span className="font-semibold">{t.name}</span>
+                                        </div>
                                         {active && <span className="text-indigo-600 text-sm">● Activo</span>}
                                     </div>
                                     <p className="text-sm text-gray-500 mt-1">{t.description}</p>

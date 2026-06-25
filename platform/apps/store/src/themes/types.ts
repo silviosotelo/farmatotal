@@ -1,26 +1,61 @@
-import type { Product } from "@/types";
-import type { ReviewsResult, ProductVariant } from "@/lib/api";
+export type ThemeKey = 'base' | 'ekomart' | 'anvogue' | 'grostore'
 
-/**
- * Contrato de props para las páginas internas tematizadas. La ruta del clone
- * hace el fetch una sola vez y pasa los datos al componente del tema activo
- * (farmatotal = base inline; ekomart/anvogue = componentes propios).
- */
+export type ThemeTokens = {
+  // Colors (semantic, not Bacola-centric)
+  primary: string
+  primaryForeground: string
+  secondary: string
+  secondaryForeground: string
+  accent: string
+  accentForeground: string
+  background: string
+  foreground: string
+  surface: string
+  surfaceForeground: string
+  muted: string
+  mutedForeground: string
+  border: string
+  destructive: string
+  success: string
+  warning: string
+  // Typography
+  fontFamily: string
+  fontHeading: string
+  // Layout
+  borderRadius: string
+  headerVariant: 'classic' | 'modern' | 'compact' | 'mega'
+  footerVariant: 'standard' | 'dark' | 'minimal' | 'newsletter'
+  containerMax: string
+  // CSS framework
+  cssFramework: 'tailwind' | 'bootstrap'
+}
+
+export type ThemeManifest = {
+  key: ThemeKey
+  name: string
+  description: string
+  thumbnail: string
+  tokens: ThemeTokens
+  defaultBlocks: Record<string, unknown[]>  // CMS page blocks per route
+}
+
 export type ThemeProductDetailProps = {
-  product: Product;
-  related: Product[];
-  reviews: ReviewsResult;
-  variants: ProductVariant[];
-};
+  product: any
+  variants: any[]
+  slug: string
+  /** Legacy fields kept for backward compatibility with ekomart/anvogue themes */
+  related?: any[]
+  reviews?: any
+}
 
 export type ThemeCatalogProps = {
-  products: Product[];
-  total: number;
-  page: number;
-  /** Título de la página (ej. "Catálogo (1.500)" o el nombre de la categoría). */
-  title: string;
-  /** Base para los links de paginación (default "/catalogo"). */
-  basePath?: string;
-  /** Mostrar paginación (default true). En categoría se trae todo y va en false. */
-  paginated?: boolean;
-};
+  products: any[]
+  categories?: any[]
+  total: number
+  page: number
+  pageSize?: number
+  /** Legacy fields kept for backward compatibility with ekomart/anvogue themes */
+  title?: string
+  basePath?: string
+  paginated?: boolean
+}
