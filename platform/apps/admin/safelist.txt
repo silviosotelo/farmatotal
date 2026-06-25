@@ -1,0 +1,27 @@
+# Select component dynamic classes (react-select classNames prop)
+select-control
+select-control-focused
+select-control-invalid
+bg-gray-100
+bg-transparent
+ring-1
+ring-primary
+ring-error
+border-primary
+border-error
+min-h-8
+min-h-10
+min-h-12
+min-h-14
+h-8
+h-10
+h-12
+h-14
+dark:bg-gray-700
+dark:border-gray-700
+
+# FormItem label heights
+h-8
+h-10
+h-12
+h-14
