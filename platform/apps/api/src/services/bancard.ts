@@ -1,7 +1,7 @@
 import { createHash } from "crypto"
 import { and, eq } from "drizzle-orm"
 import { db } from "../db/client.js"
-import { settings } from "../db/schema.js"
+import { settings } from "../db/schema/index.js"
 
 const PLUGIN_KEY = "gw_bancard"
 const STORE_KEY = `plugin_${PLUGIN_KEY}`
