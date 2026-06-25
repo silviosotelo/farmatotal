@@ -97,11 +97,11 @@ export default async function RootLayout({
                   >
                     Saltar al contenido
                   </a>
-                  <StoreHeader config={header} tokens={manifest.tokens} />
+                  <StoreHeader config={header ?? { brandName: store?.brandName ?? 'Mi Tienda' }} tokens={manifest.tokens} />
                   <div id="contenido" className="flex flex-1 flex-col">
                     {children}
                   </div>
-                  <StoreFooter config={footer} tokens={manifest.tokens} />
+                  <StoreFooter config={footer ?? { brandName: store?.brandName ?? 'Mi Tienda' }} tokens={manifest.tokens} />
                   <FloatingButtons />
                   <SucursalModal />
                   <MiniCart />

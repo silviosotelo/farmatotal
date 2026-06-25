@@ -1,7 +1,7 @@
 "use client"
 import Link from "next/link"
 import { Search, ShoppingCart, Heart, User, Phone, MapPin, Menu, ChevronDown } from "lucide-react"
-import { useCart } from "@/components/contexts/CartContext"
+import { useCart } from "@/components/providers/CartContext"
 
 type HeaderProps = {
   config: {

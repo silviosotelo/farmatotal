@@ -2,7 +2,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { ShoppingCart, Heart, Eye } from "lucide-react"
-import { useCart } from "@/components/contexts/CartContext"
+import { useCart } from "@/components/providers/CartContext"
 
 type Props = {
   product: {

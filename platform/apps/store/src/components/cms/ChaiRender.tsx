@@ -1,5 +1,5 @@
 import React from "react";
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { ChaiClipboardProvider, type ChaiBlock } from "./ChaiClipboard";
 import { Truck, RotateCcw, ShieldCheck, Headphones } from "lucide-react";
 import {
   HomeDealsBlock,
@@ -93,49 +93,7 @@ const MOTION_KEYFRAMES = `
  * `AsyncRenderChaiBlocks` oficial (ver docs/research/visual-editor-comparison.md).
  */
 
-// ─── Clipboard Context (Copy/Paste Elements) ───
-type ClipboardCtx = {
-  copiedBlocks: ChaiBlock[];
-  copy: (blocks: ChaiBlock[]) => void;
-  paste: () => ChaiBlock[] | null;
-  hasCopied: boolean;
-};
-
-const ChaiClipboardContext = createContext<ClipboardCtx>({
-  copiedBlocks: [],
-  copy: () => {},
-  paste: () => null,
-  hasCopied: false,
-});
-
-export function useChaiClipboard() {
-  return useContext(ChaiClipboardContext);
-}
-
-export function ChaiClipboardProvider({ children }: { children: ReactNode }) {
-  const [copiedBlocks, setCopiedBlocks] = useState<ChaiBlock[]>([]);
-  const copy = useCallback((blocks: ChaiBlock[]) => {
-    setCopiedBlocks(JSON.parse(JSON.stringify(blocks)));
-  }, []);
-  const paste = useCallback(() => {
-    if (copiedBlocks.length === 0) return null;
-    return JSON.parse(JSON.stringify(copiedBlocks));
-  }, [copiedBlocks]);
-  return (
-    <ChaiClipboardContext.Provider value={{ copiedBlocks, copy, paste, hasCopied: copiedBlocks.length > 0 }}>
-      {children}
-    </ChaiClipboardContext.Provider>
-  );
-}
-
-export type ChaiBlock = {
-  _id: string;
-  _type: string;
-  _parent?: string | null;
-  styles?: string;
-  content?: string;
-  [k: string]: unknown;
-};
+export type { ChaiBlock };
 
 /** Chai serializa estilos como "#styles:<binding>,<clases tailwind>". */
 function cls(styles?: unknown): string {
