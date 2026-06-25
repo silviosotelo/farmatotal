@@ -197,7 +197,7 @@ export const MODULES: ModuleManifest[] = [
   // ──────────────── PLUGINS · Comercio / Builder ────────────────
   {
     key: "multi_inventory", name: "Multi-sucursal / Inventario", description: "Sucursales configurables, stock por sucursal, costos y radio de envío, import/export.",
-    kind: "plugin", category: "logistics", version: "1.0.0", settingsKey: "plugin_multiinventory", adminPath: "/concepts/branches",
+    kind: "plugin", category: "logistics", version: "1.0.0", settingsKey: "plugin_multiinventory", adminPath: "/concepts/plugins/multi-inventory",
     features: ["Sucursales", "Stock por sucursal", "Costos/Radio", "Import/Export", "Logs"], enabledByDefault: true, consumes: ["order.created", "order.paid"],
     controlsFlags: ["branches", "inventory"],
     configSchema: [

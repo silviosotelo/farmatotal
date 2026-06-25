@@ -187,6 +187,13 @@ const conceptsRoute: Routes = [
         meta: { pageContainerType: 'contained' },
     },
     {
+        key: 'plugin.multiInventory',
+        path: `${CONCEPTS_PREFIX_PATH}/plugins/multi-inventory`,
+        component: lazy(() => import('@/views/concepts/plugins/multi-inventory/MultiInventory')),
+        authority: [ADMIN, USER],
+        meta: { pageContainerType: 'contained' },
+    },
+    {
         key: 'plugin.scanSearch',
         path: `${CONCEPTS_PREFIX_PATH}/plugins/scan-search`,
         component: lazy(() => import('@/views/concepts/plugins/scan-search/ScanSearch')),
