@@ -20,10 +20,6 @@ export const pages = appSchema.table(
     blocks: jsonb("blocks").$type<PageBlock[]>().default(sql`'[]'::jsonb`),
     seo: jsonb("seo").$type<SeoMeta>(),
     published: boolean("published").notNull().default(false),
-    isGlobalWidget: boolean("is_global_widget").notNull().default(false),
-    isTemplate: boolean("is_template").notNull().default(false),
-    templateCategory: varchar("template_category", { length: 120 }),
-    templateThumbnail: varchar("template_thumbnail", { length: 500 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
