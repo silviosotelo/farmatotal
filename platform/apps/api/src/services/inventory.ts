@@ -10,7 +10,7 @@
  */
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client";
-import { branches, inventory, orderLines, orders, products } from "../db/schema";
+import { branches, inventory, orderLines, orders, products, stockMovements } from "../db/schema";
 
 const STOCK_EVENT = "stock_decremented";
 
@@ -113,4 +113,88 @@ async function resolveSourceBranch(order: typeof orders.$inferSelect, productIds
   const poolIds = new Set(pool.map((b) => b.id));
   const best = stocks.filter((s) => poolIds.has(s.branchId)).sort((a, b) => b.total - a.total)[0];
   return best?.branchId ?? pool[0]!.id;
+}
+
+/** Restaurar stock cuando se cancela un pedido */
+export async function restoreOrderStock(order: {
+  id: string
+  branchId?: string
+  shippingMethod?: string
+  lines: Array<{ productId: string; quantity: number }>
+  tenantId: string
+  reason: 'cancel' | 'refund' | 'manual'
+}) {
+  for (const line of order.lines) {
+    if (!line.quantity) continue
+
+    const [existing] = await db.select()
+      .from(inventory)
+      .where(and(
+        eq(inventory.tenantId, order.tenantId),
+        eq(inventory.productId, line.productId),
+      ))
+      .limit(1)
+
+    const branchId = order.branchId || existing?.branchId || ''
+    if (!branchId) continue
+
+    const [row] = await db.select()
+      .from(inventory)
+      .where(and(
+        eq(inventory.tenantId, order.tenantId),
+        eq(inventory.productId, line.productId),
+        eq(inventory.branchId, branchId),
+      ))
+      .limit(1)
+
+    if (row) {
+      const newStock = (row.stock || 0) + line.quantity
+      await db.update(inventory)
+        .set({ stock: newStock, updatedAt: new Date() })
+        .where(and(
+          eq(inventory.tenantId, order.tenantId),
+          eq(inventory.productId, line.productId),
+          eq(inventory.branchId, branchId),
+        ))
+
+      await db.insert(stockMovements).values({
+        tenantId: order.tenantId,
+        productId: line.productId,
+        branchId,
+        delta: line.quantity,
+        reason: order.reason,
+        referenceId: order.id,
+      })
+
+      await updateProductCachedStock(order.tenantId, line.productId)
+    }
+  }
+}
+
+/** Registrar movimiento de stock manual */
+export async function logStockMovement(data: {
+  tenantId: string
+  productId: string
+  branchId: string
+  delta: number
+  reason: string
+  referenceId?: string
+  note?: string
+}) {
+  await db.insert(stockMovements).values(data)
+}
+
+/** Helper: recalcular stockCached de un producto = suma de todos los branches */
+async function updateProductCachedStock(tenantId: string, productId: string) {
+  const rows = await db.select({ stock: inventory.stock })
+    .from(inventory)
+    .where(and(
+      eq(inventory.tenantId, tenantId),
+      eq(inventory.productId, productId),
+    ))
+  const totalStock = rows.reduce((sum, r) => sum + (r.stock || 0), 0)
+  await db.update(products).set({ stockCached: totalStock }).where(and(
+    eq(products.tenantId, tenantId),
+    eq(products.id, productId),
+  ))
 }

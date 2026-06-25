@@ -201,8 +201,134 @@ export const MODULES: ModuleManifest[] = [
     features: ["Sucursales", "Stock por sucursal", "Costos/Radio", "Import/Export", "Logs"], enabledByDefault: true, consumes: ["order.created", "order.paid"],
     controlsFlags: ["branches", "inventory"],
     configSchema: [
+      // General
+      { key: "inventoryPrices", label: "Precios por inventario", type: "toggle", group: "General" },
+      { key: "inventoryPricesModifyWhenSelected", label: "Mostrar precio del inventario seleccionado", type: "toggle", group: "General" },
+      { key: "defaultInventory", label: "Inventario por defecto", type: "select", group: "General", placeholder: "ID del inventario" },
+      { key: "hideProductsInCategories", label: "Ocultar productos no disponibles en categorías", type: "toggle", group: "General" },
+      { key: "inventoryRequired", label: "Requerir selección de inventario antes de agregar al carrito", type: "toggle", group: "General" },
+      { key: "inventoryAllowEmptyProducts", label: "Permitir productos sin datos de inventario", type: "toggle", group: "General" },
+
+      // Carrito
+      { key: "showInventoryInCartAndCheckout", label: "Mostrar inventario en carrito y checkout", type: "toggle", group: "Carrito" },
+      { key: "restrictInventoryCart", label: "Restringir carrito a un solo inventario", type: "toggle", group: "Carrito" },
+      { key: "restrictInventoryCartText", label: "Mensaje al eliminar productos por cambio de inventario", type: "text", group: "Carrito" },
+      { key: "mixedCartInfo", label: "Mostrar aviso de carrito mixto", type: "toggle", group: "Carrito" },
+      { key: "mixedCartInfoText", label: "Texto de carrito mixto", type: "text", group: "Carrito" },
+      { key: "cartShowSwitchInventory", label: "Mostrar botón Cambiar inventario en carrito", type: "toggle", group: "Carrito" },
+
+      // Stock
+      { key: "modifyStockQuantity", label: "Mostrar solo stock del inventario seleccionado", type: "toggle", group: "Stock" },
+      { key: "reduceManualOrdersStock", label: "Descontar stock en pedidos manuales", type: "toggle", group: "Stock" },
+      { key: "restockUnpaidOrdersStock", label: "Reponer stock al cancelar pedidos impagos", type: "toggle", group: "Stock" },
+      { key: "reduceStockOnPendingPayments", label: "Descontar stock en estado pendiente", type: "toggle", group: "Stock" },
+      { key: "backendEditDisable", label: "Deshabilitar edición de stock en edición de producto", type: "toggle", group: "Stock" },
+      { key: "showInventoriesInProductsBackend", label: "Mostrar columna de inventario en lista de productos", type: "toggle", group: "Stock" },
       { key: "decrementOnConfirm", label: "Descontar stock al confirmar la orden", type: "toggle", group: "Stock" },
       { key: "deliverySource", label: "Sucursal de origen en delivery", type: "select", group: "Stock", options: [{ value: "nearest", label: "Más cercana al cliente" }, { value: "most_stock", label: "La de mayor stock" }] },
+
+      // Click & Collect
+      { key: "clickCollectEnable", label: "Habilitar Click & Collect", type: "toggle", group: "Click & Collect" },
+      { key: "deliveryInventory", label: "ID de inventario de delivery", type: "text", group: "Click & Collect" },
+      { key: "clickCollectShowDeliveryInPopup", label: "Mostrar delivery en popup", type: "toggle", group: "Click & Collect" },
+      { key: "clickCollectOverrideDeliveryAddress", label: "Sobrescribir dirección de envío con inventario", type: "toggle", group: "Click & Collect" },
+      { key: "clickCollectDeliveryShippingMethods", label: "Métodos de envío permitidos (delivery)", type: "text", group: "Click & Collect", placeholder: "Separados por coma" },
+      { key: "clickCollectPickupShippingMethods", label: "Métodos de envío permitidos (retiro)", type: "text", group: "Click & Collect", placeholder: "Separados por coma" },
+      { key: "clickCollectDeliveryPaymentGateways", label: "Pasarelas de pago permitidas (delivery)", type: "text", group: "Click & Collect", placeholder: "Separados por coma" },
+      { key: "clickCollectPickupPaymentGateways", label: "Pasarelas de pago permitidas (retiro)", type: "text", group: "Click & Collect", placeholder: "Separados por coma" },
+
+      // Página de producto
+      { key: "productPageEnable", label: "Mostrar inventarios en página de producto", type: "toggle", group: "Página de producto" },
+      { key: "productPageValidateStock", label: "Validar stock en tiempo real", type: "toggle", group: "Página de producto" },
+      { key: "productPageHideEmptyInventories", label: "Ocultar inventarios sin stock", type: "toggle", group: "Página de producto" },
+      { key: "productPageDisplay", label: "Modo de visualización", type: "select", group: "Página de producto", options: [
+        { value: "radio", label: "Radio" },
+        { value: "select", label: "Select" },
+        { value: "label", label: "Label" },
+        { value: "labelPopup", label: "Label + Popup" },
+        { value: "hidden", label: "Oculto" },
+        { value: "text", label: "Texto" },
+        { value: "textOnlySelected", label: "Texto (solo seleccionado)" },
+      ] },
+      { key: "productPageStockDisplay", label: "Visualización de stock", type: "select", group: "Página de producto", options: [
+        { value: "count", label: "Cantidad" },
+        { value: "inout", label: "Disponible / No disponible" },
+        { value: "hidden", label: "Oculto" },
+      ] },
+      { key: "productPageOrder", label: "Orden de inventarios", type: "select", group: "Página de producto", options: [
+        { value: "order", label: "Orden manual" },
+        { value: "name", label: "Nombre" },
+        { value: "most_stock", label: "Mayor stock" },
+        { value: "lowest_stock", label: "Menor stock" },
+      ] },
+
+      // Popup
+      { key: "popupEnable", label: "Habilitar popup de selección", type: "toggle", group: "Popup" },
+      { key: "popupLayout", label: "Layout del popup", type: "select", group: "Popup", options: [
+        { value: "1", label: "Layout 1" },
+        { value: "2", label: "Layout 2" },
+        { value: "3", label: "Layout 3" },
+      ] },
+      { key: "popupShowAutomatically", label: "Mostrar automáticamente en primera visita", type: "toggle", group: "Popup" },
+      { key: "popupHideClose", label: "Forzar selección (sin botón cerrar)", type: "toggle", group: "Popup" },
+      { key: "popupShowStock", label: "Mostrar stock en popup", type: "toggle", group: "Popup" },
+      { key: "popupDisableGeolocation", label: "Deshabilitar geolocalización del navegador", type: "toggle", group: "Popup" },
+      { key: "popupShowSearch", label: "Mostrar búsqueda de dirección", type: "toggle", group: "Popup" },
+      { key: "popupMiles", label: "Usar millas en vez de kilómetros", type: "toggle", group: "Popup" },
+      { key: "popupMaxResults", label: "Máximo de resultados mostrados", type: "number", group: "Popup" },
+      { key: "popupBackgroundColor", label: "Color de fondo del popup", type: "text", group: "Popup" },
+      { key: "popupTextColor", label: "Color de texto del popup", type: "text", group: "Popup" },
+      { key: "popupButtonBackgroundColor", label: "Color de fondo del botón", type: "text", group: "Popup" },
+      { key: "popupButtonTextColor", label: "Color de texto del botón", type: "text", group: "Popup" },
+
+      // Order Flow
+      { key: "orderFlowOption", label: "Auto-asignación de inventario", type: "select", group: "Order Flow", options: [
+        { value: "custom", label: "Personalizado" },
+        { value: "most_stock", label: "Mayor stock" },
+        { value: "lowest_stock", label: "Menor stock" },
+        { value: "name", label: "Nombre" },
+        { value: "order", label: "Orden manual" },
+        { value: "distance", label: "Distancia" },
+        { value: "country", label: "País" },
+      ] },
+      { key: "orderFlowAlwaysUse", label: "Siempre usar auto-asignación", type: "toggle", group: "Order Flow" },
+      { key: "orderFlowSplitOrders", label: "Dividir pedidos por inventario", type: "toggle", group: "Order Flow" },
+      { key: "orderFlowCustomInventory", label: "ID de inventario personalizado", type: "text", group: "Order Flow" },
+      { key: "orderFlowFallback", label: "Inventario de respaldo (modo país)", type: "text", group: "Order Flow" },
+
+      // Envío por radio
+      { key: "radiusShipping", label: "Habilitar envío por radio", type: "toggle", group: "Envío por radio" },
+      { key: "radiusShippingUseMiles", label: "Usar millas en vez de kilómetros", type: "toggle", group: "Envío por radio" },
+      { key: "radiusShippingFeesEnable", label: "Habilitar tarifas por distancia", type: "toggle", group: "Envío por radio" },
+      { key: "radiusShippingFeesLabel", label: "Etiqueta de tarifa", type: "text", group: "Envío por radio" },
+      { key: "radiusShippingDistanceEnable", label: "Bloquear checkout fuera del radio", type: "toggle", group: "Envío por radio" },
+      { key: "radiusShippingDistanceRadius", label: "Radio máximo (km)", type: "number", group: "Envío por radio" },
+      { key: "radiusShippingDistanceMessage", label: "Mensaje de error fuera de radio", type: "text", group: "Envío por radio" },
+
+      // Costos de envío
+      { key: "deliveryCosts", label: "Habilitar costos de envío por inventario", type: "toggle", group: "Costos de envío" },
+      { key: "deliveryCostsText", label: "Plantilla de etiqueta de tarifa", type: "text", group: "Costos de envío" },
+
+      // Textos
+      { key: "textsInventoryLabel", label: "Texto: etiqueta de inventario", type: "text", group: "Textos" },
+      { key: "textsStock", label: "Texto: stock", type: "text", group: "Textos" },
+      { key: "textsLeftInStock", label: "Texto: quedan en stock", type: "text", group: "Textos" },
+      { key: "textsInStock", label: "Texto: en stock", type: "text", group: "Textos" },
+      { key: "textsOutOfStock", label: "Texto: sin stock", type: "text", group: "Textos" },
+      { key: "textsNotInStock", label: "Texto: no disponible", type: "text", group: "Textos" },
+      { key: "textsNotEnoughStock", label: "Texto: stock insuficiente", type: "text", group: "Textos" },
+      { key: "textsNoInventorySelected", label: "Texto: inventario no seleccionado", type: "text", group: "Textos" },
+      { key: "textsDeliveryTime", label: "Texto: tiempo de entrega", type: "text", group: "Textos" },
+      { key: "textsSelectStore", label: "Texto: seleccionar tienda", type: "text", group: "Textos" },
+      { key: "textsLocalPickup", label: "Texto: retiro en local", type: "text", group: "Textos" },
+      { key: "textsDelivery", label: "Texto: delivery", type: "text", group: "Textos" },
+
+      // Usuarios de inventario
+      { key: "inventoryUsers", label: "Habilitar acceso por usuario a inventarios", type: "toggle", group: "Usuarios de inventario" },
+      { key: "inventoryUsersOrdersBackend", label: "Limitar pedidos del backend a inventarios asignados", type: "toggle", group: "Usuarios de inventario" },
+
+      // Log
+      { key: "loggingEnabled", label: "Registrar cambios de stock", type: "toggle", group: "Log" },
     ],
   },
   { key: "page_builder", name: "Editor visual", description: "Constructor de páginas estilo Elementor (Chai Builder).", kind: "plugin", category: "builder", version: "1.0.0", adminPath: "/concepts/page-builder", features: ["Builder visual", "Bloques", "Tailwind"], enabledByDefault: true },

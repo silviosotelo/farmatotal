@@ -3,6 +3,14 @@ import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
 import { branches, inventory, products } from "../../db/schema";
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
 import { tid } from "../../plugins/tenant";
 
 const branchInput = z.object({
@@ -215,4 +223,33 @@ export async function branchRoutes(app: FastifyInstance) {
       return reply.send({ ok, failed: errors.length, errors: errors.slice(0, 50) });
     },
   );
+
+  // GET /branches/delivery-cost?branchId=X
+  app.get("/branches/delivery-cost", async (req, reply) => {
+    const { branchId } = req.query as { branchId: string }
+    const [row] = await db.select({ deliveryCost: branches.deliveryCost })
+      .from(branches)
+      .where(and(eq(branches.tenantId, tid(req)), eq(branches.id, branchId)))
+      .limit(1)
+    return reply.send({ deliveryCost: row?.deliveryCost || 0 })
+  })
+
+  // POST /branches/check-radius — Check if a delivery address is within any branch's radius
+  app.post("/branches/check-radius", async (req, reply) => {
+    const { lat, lng } = req.body as { lat: number; lng: number }
+    const allBranches = await db.select()
+      .from(branches)
+      .where(and(eq(branches.tenantId, tid(req)), eq(branches.active, true), eq(branches.deliveryEnabled, true)))
+
+    const inRange = allBranches.filter(b => {
+      if (!b.deliveryRadius || b.deliveryRadius === 0) return true
+      const dist = haversineKm(lat, lng, Number(b.lat) || 0, Number(b.lng) || 0)
+      return dist <= b.deliveryRadius
+    })
+
+    return reply.send({
+      inRange: inRange.length > 0,
+      branches: inRange.map(b => ({ id: b.id, name: b.name, distance: haversineKm(lat, lng, Number(b.lat) || 0, Number(b.lng) || 0) })),
+    })
+  })
 }
