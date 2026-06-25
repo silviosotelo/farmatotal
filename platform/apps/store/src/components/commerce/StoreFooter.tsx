@@ -19,7 +19,7 @@ export default function StoreFooter({ config, tokens }: FooterProps) {
 
   return (
     <footer className={isDark ? "bg-gray-900 text-gray-300" : "bg-surface border-t border-border"}>
-      {config.newsletter && (
+      {config?.newsletter && (
         <div className={`border-b ${isDark ? "border-gray-800" : "border-border"}`}>
           <div className="mx-auto flex flex-col md:flex-row items-center justify-between gap-4 px-4 py-8" style={{ maxWidth: "var(--container-max)" }}>
             <div>
