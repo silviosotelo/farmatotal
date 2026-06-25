@@ -78,12 +78,14 @@ const PluginConfig = ({ pluginKey, embedded = false }: { pluginKey: string; embe
                 <FormItem label={f.label}>
                     {f.type === 'select' ? (
                     <Select
+                        size="md"
                         options={f.options ?? []}
                         value={(f.options ?? []).find((o) => o.value === values[f.key])}
                         onChange={(o) => set(f.key, o?.value)}
                     />
                 ) : (
                     <Input
+                        size="md"
                         type={f.type === 'password' ? 'password' : 'text'}
                         value={(values[f.key] as string) ?? ''}
                         placeholder={f.placeholder}
