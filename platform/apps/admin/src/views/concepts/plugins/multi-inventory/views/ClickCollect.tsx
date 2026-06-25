@@ -3,6 +3,7 @@ import Card from '@/components/ui/Card'
 import Switcher from '@/components/ui/Switcher'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
+import FormItem from '@/components/ui/Form'
 import Button from '@/components/ui/Button'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
@@ -45,38 +46,35 @@ const ClickCollect = () => {
                 {fields.map((f) => {
                     if (f.type === 'toggle') {
                         return (
-                            <div key={f.key} className="flex items-center justify-between gap-4 py-2">
-                                <span className="text-sm">{f.label}</span>
+                            <div key={f.key} className="flex items-center justify-between gap-4 py-3 border-b border-gray-100 last:border-0">
+                                <div>
+                                    <span className="text-sm font-medium">{f.label}</span>
+                                    {f.help && <p className="text-xs text-gray-400 mt-0.5">{f.help}</p>}
+                                </div>
                                 <Switcher checked={!!values[f.key]} onChange={(c) => set(f.key, c)} />
                             </div>
                         )
                     }
                     return (
-                        <div key={f.key} className="mb-3">
-                            <label className="block text-sm font-medium mb-1">{f.label}</label>
-                            {f.type === 'select' ? (
-                                <Select
-                                    size="md"
-                                    options={f.options || []}
-                                    value={(f.options || []).find((o) => o.value === values[f.key])}
-                                    onChange={(o) => set(f.key, o?.value)}
-                                />
-                            ) : f.type === 'number' ? (
-                                <Input
-                                    size="md"
-                                    type="number"
-                                    value={String(values[f.key] ?? '')}
-                                    onChange={(e) => set(f.key, Number(e.target.value))}
-                                />
-                            ) : (
-                                <Input
-                                    size="md"
-                                    type={f.type === 'password' ? 'password' : 'text'}
-                                    value={String(values[f.key] ?? '')}
-                                    placeholder={f.placeholder}
-                                    onChange={(e) => set(f.key, e.target.value)}
-                                />
-                            )}
+                        <div key={f.key} className="mb-4">
+                            <FormItem label={f.label}>
+                                {f.type === 'select' ? (
+                                    <Select
+                                        size="md"
+                                        options={(f.options ?? []).map(o => ({ value: String(o.value), label: o.label }))}
+                                        value={(f.options ?? []).find((o) => String(o.value) === String(values[f.key]))}
+                                        onChange={(o) => set(f.key, o?.value)}
+                                    />
+                                ) : (
+                                    <Input
+                                        size="md"
+                                        type={f.type === 'password' ? 'password' : f.type === 'number' ? 'number' : 'text'}
+                                        value={String(values[f.key] ?? '')}
+                                        placeholder={f.placeholder}
+                                        onChange={(e) => set(f.key, f.type === 'number' ? Number(e.target.value) : e.target.value)}
+                                    />
+                                )}
+                            </FormItem>
                             {f.help && <p className="mt-1 text-xs text-gray-400">{f.help}</p>}
                         </div>
                     )

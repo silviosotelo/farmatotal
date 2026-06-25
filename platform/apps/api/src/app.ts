@@ -103,6 +103,11 @@ export async function buildApp() {
     "POST /reviews",
     "POST /payments/bancard/create",
     "POST /payments/bancard/confirm",
+    "POST /payments/bancard/cards/new",
+    "POST /payments/bancard/charge",
+    "POST /payments/bancard/rollback",
+    "POST /payments/bancard/delete-card",
+    "POST /payments/bancard/users-cards",
   ]);
   const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
   app.addHook("onRequest", async (req, reply) => {

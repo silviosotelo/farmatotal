@@ -273,4 +273,49 @@ export async function paymentRoutes(app: FastifyInstance) {
       return { data: rows, page, perPage };
     },
   );
+
+  // ─── Bancard: Catastro de tarjeta (cards/new) ───
+  app.post("/payments/bancard/cards/new", async (req, reply) => {
+    const { cardsNew } = await import("../../services/bancard.js")
+    const { cardId, userId, userCellPhone, userMail, returnUrl } = req.body as {
+      cardId: number; userId: number; userCellPhone: string; userMail: string; returnUrl: string
+    }
+    const result = await cardsNew({ cardId, userId, userCellPhone, userMail, returnUrl })
+    return reply.send(result)
+  })
+
+  // ─── Bancard: Listar tarjetas catastradas (users_cards) ───
+  app.post("/payments/bancard/users-cards", async (req, reply) => {
+    const { usersCards } = await import("../../services/bancard.js")
+    const { userId } = req.body as { userId: number }
+    const result = await usersCards(userId)
+    return reply.send(result)
+  })
+
+  // ─── Bancard: Eliminar tarjeta catastrada ───
+  app.post("/payments/bancard/delete-card", async (req, reply) => {
+    const { deleteCard } = await import("../../services/bancard.js")
+    const { userId, cardToken } = req.body as { userId: number; cardToken: string }
+    const result = await deleteCard(userId, cardToken)
+    return reply.send(result)
+  })
+
+  // ─── Bancard: Pago con token (charge) ───
+  app.post("/payments/bancard/charge", async (req, reply) => {
+    const { charge } = await import("../../services/bancard.js")
+    const { shopProcessId, amount, currency, aliasToken, description, returnUrl, cancelUrl, additionalData, billing } = req.body as {
+      shopProcessId: number; amount: number; currency?: string; aliasToken: string
+      description?: string; returnUrl: string; cancelUrl?: string; additionalData?: string; billing?: Record<string, unknown>
+    }
+    const result = await charge({ shopProcessId, amount, currency, aliasToken, description, returnUrl, cancelUrl, additionalData, billing })
+    return reply.send(result)
+  })
+
+  // ─── Bancard: Reversa (rollback) ───
+  app.post("/payments/bancard/rollback", async (req, reply) => {
+    const { rollback } = await import("../../services/bancard.js")
+    const { shopProcessId } = req.body as { shopProcessId: number }
+    const result = await rollback(shopProcessId)
+    return reply.send(result)
+  })
 }

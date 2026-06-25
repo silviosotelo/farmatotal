@@ -1,119 +1,267 @@
-/**
- * Cliente Bancard vPOS (API 0.3). Port del gateway de evershop.
- * Operaciones: single_buy (crear pago), confirmations (consultar), rollback (anular).
- * Tokens = md5(private_key + shop_process_id + <suffix|amount+currency>).
- * Claves en env (BANCARD_PUBLIC_KEY/PRIVATE_KEY/ENV). Vacío = deshabilitado.
- */
-import crypto from "node:crypto";
-import { env } from "../env.js";
+import { createHash } from "crypto"
+import { env } from "../env.js"
 
-const ENVS = {
-  staging: "https://vpos.infonet.com.py:8888",
-  production: "https://vpos.infonet.com.py",
-} as const;
-
-export function isBancardEnabled() {
-  return !!env.BANCARD_PUBLIC_KEY && !!env.BANCARD_PRIVATE_KEY;
-}
-function baseUrl() {
-  return ENVS[env.BANCARD_ENV] ?? ENVS.staging;
-}
-export function bancardJsUrl() {
-  return `${baseUrl()}/checkout/javascript/dist/bancard-checkout-4.0.0.js`;
-}
-function md5(s: string) {
-  return crypto.createHash("md5").update(s, "utf8").digest("hex");
-}
-/** PYG no tiene centavos pero la API pide 2 decimales. */
-export function fmtAmount(value: number) {
-  return (Math.round(value * 100) / 100).toFixed(2);
+/** URL base de Bancard vPOS según el entorno */
+function baseUrl(): string {
+  return env.BANCARD_ENV === "production"
+    ? "https://vpos.infonet.com.py"
+    : "https://vpos.infonet.com.py:8888"
 }
 
-async function post(path: string, body: unknown) {
-  const res = await fetch(`${baseUrl()}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(body),
-  });
-  const text = await res.text();
-  try {
-    return { httpStatus: res.status, ...(JSON.parse(text) as Record<string, unknown>) };
-  } catch {
-    return { httpStatus: res.status, status: "error", raw: text };
-  }
+/** Genera token MD5 según la documentación oficial de Bancard vPOS 2.0 */
+function md5(...parts: (string | number)[]): string {
+  return createHash("md5").update(parts.join("")).digest("hex")
 }
 
-export async function singleBuy(opts: {
-  shopProcessId: number;
-  amount: number;
-  currency?: string;
-  description?: string;
-  returnUrl: string;
-  cancelUrl: string;
+/** Verifica si Bancard está habilitado (keys configuradas) */
+export function isBancardEnabled(): boolean {
+  return Boolean(env.BANCARD_PUBLIC_KEY && env.BANCARD_PRIVATE_KEY)
+}
+
+/** 1. single_buy — Inicia proceso de pago (pago ocasional / Zimple) */
+export async function singleBuy(params: {
+  shopProcessId: number
+  amount: number
+  currency?: string
+  description?: string
+  returnUrl: string
+  cancelUrl?: string
+  additionalData?: string
+  preauthorization?: boolean
+  billing?: Record<string, unknown>
+  zimple?: boolean
+  testClient?: boolean
 }) {
-  const currency = opts.currency ?? "PYG";
-  const amt = fmtAmount(opts.amount);
-  const token = md5(`${env.BANCARD_PRIVATE_KEY}${opts.shopProcessId}${amt}${currency}`);
-  return post("/vpos/api/0.3/single_buy", {
+  const currency = params.currency ?? "PYG"
+  const token = md5(
+    env.BANCARD_PRIVATE_KEY,
+    params.shopProcessId,
+    params.amount.toFixed(2),
+    currency,
+  )
+
+  const operation: Record<string, unknown> = {
+    token,
+    shop_process_id: params.shopProcessId,
+    amount: params.amount.toFixed(2),
+    currency,
+    description: (params.description ?? "Pago").substring(0, 20),
+    return_url: params.returnUrl,
+    cancel_url: params.cancelUrl ?? params.returnUrl,
+  }
+
+  if (params.additionalData) operation.additional_data = params.additionalData
+  if (params.preauthorization) operation.preauthorization = "S"
+  if (params.billing) operation.billing = params.billing
+  if (params.zimple) operation.zimple = "S"
+  if (params.testClient) operation.test_client = "S"
+
+  const body = { public_key: env.BANCARD_PUBLIC_KEY, operation }
+
+  const res = await fetch(`${baseUrl()}/vpos/api/0.3/single_buy`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+  return res.json() as Promise<{ status: string; process_id: string }>
+}
+
+/** 2. cards/new — Catastro de tarjeta (registra tarjeta para pago con token) */
+export async function cardsNew(params: {
+  cardId: number
+  userId: number
+  userCellPhone: string
+  userMail: string
+  returnUrl: string
+}) {
+  const token = md5(
+    env.BANCARD_PRIVATE_KEY,
+    params.cardId,
+    params.userId,
+    "request_new_card",
+  )
+
+  const body = {
     public_key: env.BANCARD_PUBLIC_KEY,
     operation: {
       token,
-      shop_process_id: opts.shopProcessId,
-      amount: amt,
-      currency,
-      additional_data: "",
-      description: (opts.description ?? "Compra online").slice(0, 20),
-      return_url: opts.returnUrl,
-      cancel_url: opts.cancelUrl,
+      card_id: params.cardId,
+      user_id: params.userId,
+      user_cell_phone: params.userCellPhone,
+      user_mail: params.userMail,
+      return_url: params.returnUrl,
     },
-  });
+  }
+
+  const res = await fetch(`${baseUrl()}/vpos/api/0.3/cards/new`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+  return res.json() as Promise<{ status: string; process_id: string }>
 }
 
-/** Verifica el token de la confirmación server-to-server de Bancard. */
-export function verifyConfirmationToken(opts: {
-  shopProcessId: number;
-  amount: number;
-  currency?: string;
-  token: string;
+/** 3. users_cards — Lista tarjetas catastradas de un usuario */
+export async function usersCards(userId: number) {
+  const token = md5(env.BANCARD_PRIVATE_KEY, userId, "request_user_cards")
+
+  const body = {
+    public_key: env.BANCARD_PUBLIC_KEY,
+    operation: {
+      token,
+      user_id: userId,
+    },
+  }
+
+  const res = await fetch(`${baseUrl()}/vpos/api/0.3/users_cards`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+  return res.json() as Promise<{
+    status: string
+    data: Array<{ card_id: number; card_token: string; mask: string; brand: string; expiry: string }>
+  }>
+}
+
+/** 4. charge — Pago con token (catastro previo) */
+export async function charge(params: {
+  shopProcessId: number
+  amount: number
+  currency?: string
+  aliasToken: string
+  description?: string
+  returnUrl: string
+  cancelUrl?: string
+  additionalData?: string
+  billing?: Record<string, unknown>
 }) {
-  const currency = opts.currency ?? "PYG";
-  const expected = md5(
-    `${env.BANCARD_PRIVATE_KEY}${opts.shopProcessId}confirm${fmtAmount(opts.amount)}${currency}`,
-  );
-  return expected === opts.token;
+  const currency = params.currency ?? "PYG"
+  const token = md5(
+    env.BANCARD_PRIVATE_KEY,
+    params.shopProcessId,
+    "charge",
+    params.amount.toFixed(2),
+    currency,
+    params.aliasToken,
+  )
+
+  const operation: Record<string, unknown> = {
+    token,
+    shop_process_id: params.shopProcessId,
+    amount: params.amount.toFixed(2),
+    currency,
+    alias_token: params.aliasToken,
+    description: (params.description ?? "Pago").substring(0, 20),
+    return_url: params.returnUrl,
+    cancel_url: params.cancelUrl ?? params.returnUrl,
+  }
+
+  if (params.additionalData) operation.additional_data = params.additionalData
+  if (params.billing) operation.billing = params.billing
+
+  const body = { public_key: env.BANCARD_PUBLIC_KEY, operation }
+
+  const res = await fetch(`${baseUrl()}/vpos/api/0.3/charge`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+  return res.json() as Promise<{ status: string; process_id: string }>
 }
 
+/** 5. delete — Elimina tarjeta catastrada */
+export async function deleteCard(userId: number, cardToken: string) {
+  const token = md5(env.BANCARD_PRIVATE_KEY, "delete_card", userId, cardToken)
+
+  const body = {
+    public_key: env.BANCARD_PUBLIC_KEY,
+    operation: {
+      token,
+      user_id: userId,
+      card_token: cardToken,
+    },
+  }
+
+  const res = await fetch(`${baseUrl()}/vpos/api/0.3/delete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+  return res.json() as Promise<{ status: string }>
+}
+
+/** 6. single_buy_rollback — Reversa de transacción */
 export async function rollback(shopProcessId: number) {
-  const token = md5(`${env.BANCARD_PRIVATE_KEY}${shopProcessId}rollback0.00`);
-  return post("/vpos/api/0.3/single_buy/rollback", {
+  const token = md5(env.BANCARD_PRIVATE_KEY, shopProcessId, "rollback", "0.00")
+
+  const body = {
     public_key: env.BANCARD_PUBLIC_KEY,
-    operation: { token, shop_process_id: shopProcessId },
-  });
+    operation: {
+      token,
+      shop_process_id: shopProcessId,
+    },
+  }
+
+  const res = await fetch(`${baseUrl()}/vpos/api/0.3/single_buy/rollback`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+  return res.json() as Promise<{ status: string }>
 }
 
-export type BancardConfirmation = {
-  response?: string; // "S" = aprobada
-  response_code?: string; // "00" = aprobada
-  response_description?: string;
-  amount?: string;
-  currency?: string;
-  authorization_number?: string;
-  ticket_number?: string;
-};
-
-/**
- * Consulta activa del estado de una transacción (get_single_buy_confirmation).
- * No depende del webhook server-to-server: el comercio pregunta a vPOS si la
- * compra fue confirmada. Si aún no hay confirmación, `confirmation` viene null.
- */
+/** 7. get_single_buy_confirmation — Consulta estado de transacción */
 export async function getConfirmation(shopProcessId: number) {
-  const token = md5(`${env.BANCARD_PRIVATE_KEY}${shopProcessId}get_confirmation`);
-  const res = (await post("/vpos/api/0.3/single_buy/confirmations", {
+  const token = md5(env.BANCARD_PRIVATE_KEY, shopProcessId, "get_confirmation")
+
+  const body = {
     public_key: env.BANCARD_PUBLIC_KEY,
-    operation: { token, shop_process_id: String(shopProcessId) },
-  })) as { status?: string; confirmation?: BancardConfirmation | null; messages?: unknown };
-  const c = res.confirmation ?? null;
-  const approved = !!c && (c.response === "S" || c.response_code === "00");
-  const settled = !!c && c.response_code != null; // hay veredicto (aprobada o rechazada)
-  return { raw: res, confirmation: c, approved, settled };
+    operation: {
+      token,
+      shop_process_id: shopProcessId,
+    },
+  }
+
+  const res = await fetch(`${baseUrl()}/vpos/api/0.3/single_buy/confirmations`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+  const raw = await res.json() as {
+    status?: string
+    confirmation?: { response?: string; response_code?: string; authorization_number?: string } | null
+  }
+  const c = raw.confirmation ?? null
+  const approved = !!c && (c.response === "S" || c.response_code === "00")
+  const settled = !!c && c.response_code != null
+  return { raw, confirmation: c, approved, settled }
+}
+
+/** 8. verifyConfirmationToken — Valida el token del webhook de Bancard */
+export function verifyConfirmationToken(params: {
+  shopProcessId: number
+  amount: number
+  currency?: string
+  token: string
+}): boolean {
+  const currency = params.currency ?? "PYG"
+  const expected = md5(
+    env.BANCARD_PRIVATE_KEY,
+    params.shopProcessId,
+    "confirm",
+    params.amount.toFixed(2),
+    currency,
+  )
+  return expected === params.token
+}
+
+/** URL del JS SDK de Bancard para el iframe */
+export function bancardJsUrl(): string {
+  return `${baseUrl()}/checkout/javascript/dist/bancard-checkout-4.0.0.js`
+}
+
+/** URL del JS SDK de Bancard para Zimple */
+export function bancardZimpleJsUrl(): string {
+  return `${baseUrl()}/checkout/javascript/dist/bancard-checkout-3.0.0.js`
 }

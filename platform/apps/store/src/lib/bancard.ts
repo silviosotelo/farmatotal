@@ -15,22 +15,6 @@ const BANCARD_API_URL = process.env.BANCARD_API_URL ?? "https://vpos.infonet.com
 const BANCARD_PUBLIC_KEY = process.env.BANCARD_PUBLIC_KEY ?? "pk_test";
 const BANCARD_PRIVATE_KEY = process.env.BANCARD_PRIVATE_KEY ?? "sk_test";
 
-interface SingleBuyRequest {
-  shop_process_id: number;
-  amount: number;
-  currency: string; // "PYG"
-  description: string;
-  return_url: string;
-  cancel_url: string;
-  additional_data?: string;
-}
-
-interface SingleBuyResponse {
-  process_id: number;
-  token: string;
-  status: string;
-}
-
 interface ConfirmResponse {
   amount: number;
   currency: string;
@@ -42,15 +26,10 @@ interface ConfirmResponse {
   secure_verification: string;
 }
 
-function authHash(processId: number): string {
-  // SHA-1(private_key + process_id) — formato de autenticación de Bancard
+function authHash(processId: number, amount: number, currency: string = "PYG"): string {
   const crypto = require("crypto");
-  return crypto.createHash("sha1").update(`${BANCARD_PRIVATE_KEY}${processId}`).digest("hex");
-}
-
-function encToken(): string {
-  // Token codificado con la clave pública (base64)
-  return Buffer.from(BANCARD_PUBLIC_KEY).toString("base64");
+  const amt = (Math.round(amount * 100) / 100).toFixed(2);
+  return crypto.createHash("md5").update(`${BANCARD_PRIVATE_KEY}${processId}${amt}${currency}`).digest("hex");
 }
 
 /**
@@ -61,21 +40,29 @@ export async function createBancardCheckout(params: {
   amount: number;
   description: string;
 }): Promise<{ processId: number; token: string }> {
-  const shopProcessId = Date.now(); // timestamp como ID único
-  const body: SingleBuyRequest = {
-    shop_process_id: shopProcessId,
-    amount: params.amount,
-    currency: "PYG",
-    description: params.description,
-    return_url: `${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/caja?result=SUCCESS&process_id=${shopProcessId}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/caja?result=FAILURE&process_id=${shopProcessId}`,
+  const crypto = require("crypto");
+  const shopProcessId = Date.now();
+  const amt = (Math.round(params.amount * 100) / 100).toFixed(2);
+  const currency = "PYG";
+  const token = crypto.createHash("md5").update(`${BANCARD_PRIVATE_KEY}${shopProcessId}${amt}${currency}`).digest("hex");
+
+  const body = {
+    public_key: BANCARD_PUBLIC_KEY,
+    operation: {
+      token,
+      shop_process_id: shopProcessId,
+      amount: amt,
+      currency,
+      description: params.description.slice(0, 20),
+      return_url: `${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/caja?result=SUCCESS&process_id=${shopProcessId}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/caja?result=FAILURE&process_id=${shopProcessId}`,
+    },
   };
 
   const response = await fetch(`${BANCARD_API_URL}/vpos/api/0.3/single_buy`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Basic ${encToken()}`,
     },
     body: JSON.stringify(body),
   });
@@ -85,15 +72,15 @@ export async function createBancardCheckout(params: {
     throw new Error(`Bancard error ${response.status}: ${errText}`);
   }
 
-  const data: SingleBuyResponse = await response.json();
+  const data = await response.json();
   return { processId: data.process_id, token: data.token };
 }
 
 /**
  * Confirma un pago con Bancard (single_buy/confirmations).
  */
-export async function confirmBancardPayment(processId: number): Promise<ConfirmResponse> {
-  const hash = authHash(processId);
+export async function confirmBancardPayment(processId: number, amount: number, currency: string = "PYG"): Promise<ConfirmResponse> {
+  const hash = authHash(processId, amount, currency);
   const response = await fetch(
     `${BANCARD_API_URL}/vpos/api/0.3/single_buy/confirmations?process_id=${processId}&token=${hash}`,
     { method: "GET" }

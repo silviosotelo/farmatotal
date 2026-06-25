@@ -19,6 +19,7 @@ const schema = z.object({
   BANCARD_ENV: z.enum(["staging", "production"]).default("staging"),
   BANCARD_PUBLIC_KEY: z.string().default(""),
   BANCARD_PRIVATE_KEY: z.string().default(""),
+  BANCARD_MERCHANT_CODE: z.string().default(""),
   PUBLIC_BASE_URL: z.string().default("http://localhost:3000"),
   // URL pública del propio motor (para construir URLs de /media/file/*).
   PUBLIC_API_URL: z.string().default("http://localhost:4000"),
