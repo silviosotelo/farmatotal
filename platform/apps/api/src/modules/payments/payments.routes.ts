@@ -53,7 +53,7 @@ export async function paymentRoutes(app: FastifyInstance) {
     "/payments/bancard/create",
     { schema: { body: z.object({ orderId: z.string().uuid() }) } },
     async (req, reply) => {
-      if (!isBancardEnabled())
+      if (!await isBancardEnabled(tid(req)))
         return reply.serviceUnavailable("Bancard no configurado (claves vacías)");
       const [order] = await db
         .select()
@@ -71,7 +71,7 @@ export async function paymentRoutes(app: FastifyInstance) {
       });
 
       const base = env.PUBLIC_BASE_URL;
-      const res = await singleBuy({
+      const res = await singleBuy(tid(req), {
         shopProcessId,
         amount: order.total,
         description: `Orden ${order.number}`,
@@ -80,7 +80,7 @@ export async function paymentRoutes(app: FastifyInstance) {
       });
       const processId = (res as { process_id?: string }).process_id;
       if (!processId) return reply.badGateway("Bancard no devolvió process_id");
-      return reply.send({ processId, jsUrl: bancardJsUrl(), shopProcessId });
+      return reply.send({ processId, jsUrl: await bancardJsUrl(tid(req)), shopProcessId });
     },
   );
 
@@ -97,7 +97,7 @@ export async function paymentRoutes(app: FastifyInstance) {
       .limit(1);
     if (!pay) return reply.notFound("pago no encontrado");
 
-    const valid = verifyConfirmationToken({
+    const valid = await verifyConfirmationToken(tid(req), {
       shopProcessId,
       amount: pay.amount,
       currency: String(op.currency ?? "PYG"),
@@ -125,9 +125,9 @@ export async function paymentRoutes(app: FastifyInstance) {
         .limit(1);
       if (!pay) return { status: "none", provider: "bancard" };
 
-      if (pay.status === "pending" && pay.provider === "bancard" && isBancardEnabled() && pay.providerRef) {
+      if (pay.status === "pending" && pay.provider === "bancard" && await isBancardEnabled(tid(req)) && pay.providerRef) {
         try {
-          const conf = await getConfirmation(Number(pay.providerRef));
+          const conf = await getConfirmation(tid(req), Number(pay.providerRef));
           if (conf.settled) {
             await applyVerdict(pay, conf.approved, JSON.stringify(conf.raw));
             return { status: conf.approved ? "approved" : "rejected", provider: "bancard" };
@@ -280,7 +280,7 @@ export async function paymentRoutes(app: FastifyInstance) {
     const { cardId, userId, userCellPhone, userMail, returnUrl } = req.body as {
       cardId: number; userId: number; userCellPhone: string; userMail: string; returnUrl: string
     }
-    const result = await cardsNew({ cardId, userId, userCellPhone, userMail, returnUrl })
+    const result = await cardsNew(tid(req), { cardId, userId, userCellPhone, userMail, returnUrl })
     return reply.send(result)
   })
 
@@ -288,7 +288,7 @@ export async function paymentRoutes(app: FastifyInstance) {
   app.post("/payments/bancard/users-cards", async (req, reply) => {
     const { usersCards } = await import("../../services/bancard.js")
     const { userId } = req.body as { userId: number }
-    const result = await usersCards(userId)
+    const result = await usersCards(tid(req), userId)
     return reply.send(result)
   })
 
@@ -296,7 +296,7 @@ export async function paymentRoutes(app: FastifyInstance) {
   app.post("/payments/bancard/delete-card", async (req, reply) => {
     const { deleteCard } = await import("../../services/bancard.js")
     const { userId, cardToken } = req.body as { userId: number; cardToken: string }
-    const result = await deleteCard(userId, cardToken)
+    const result = await deleteCard(tid(req), userId, cardToken)
     return reply.send(result)
   })
 
@@ -307,7 +307,7 @@ export async function paymentRoutes(app: FastifyInstance) {
       shopProcessId: number; amount: number; currency?: string; aliasToken: string
       description?: string; returnUrl: string; cancelUrl?: string; additionalData?: string; billing?: Record<string, unknown>
     }
-    const result = await charge({ shopProcessId, amount, currency, aliasToken, description, returnUrl, cancelUrl, additionalData, billing })
+    const result = await charge(tid(req), { shopProcessId, amount, currency, aliasToken, description, returnUrl, cancelUrl, additionalData, billing })
     return reply.send(result)
   })
 
@@ -315,7 +315,7 @@ export async function paymentRoutes(app: FastifyInstance) {
   app.post("/payments/bancard/rollback", async (req, reply) => {
     const { rollback } = await import("../../services/bancard.js")
     const { shopProcessId } = req.body as { shopProcessId: number }
-    const result = await rollback(shopProcessId)
+    const result = await rollback(tid(req), shopProcessId)
     return reply.send(result)
   })
 }

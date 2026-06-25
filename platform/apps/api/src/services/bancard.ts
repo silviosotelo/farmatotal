@@ -1,9 +1,31 @@
 import { createHash } from "crypto"
-import { env } from "../env.js"
+import { and, eq } from "drizzle-orm"
+import { db } from "../db/client.js"
+import { settings } from "../db/schema.js"
 
-/** URL base de Bancard vPOS según el entorno */
-function baseUrl(): string {
-  return env.BANCARD_ENV === "production"
+const PLUGIN_KEY = "gw_bancard"
+const STORE_KEY = `plugin_${PLUGIN_KEY}`
+
+type BancardConfig = {
+  env?: string
+  publicKey?: string
+  privateKey?: string
+  merchantCode?: string
+}
+
+/** Lee la config de Bancard desde el plugin settings en la DB */
+async function getConfig(tenantId: string): Promise<BancardConfig> {
+  const [row] = await db
+    .select()
+    .from(settings)
+    .where(and(eq(settings.tenantId, tenantId), eq(settings.key, STORE_KEY)))
+    .limit(1)
+  return (row?.value as BancardConfig) ?? {}
+}
+
+/** URL base de Bancard vPOS según el entorno del plugin */
+function baseUrl(env?: string): string {
+  return env === "production"
     ? "https://vpos.infonet.com.py"
     : "https://vpos.infonet.com.py:8888"
 }
@@ -13,32 +35,32 @@ function md5(...parts: (string | number)[]): string {
   return createHash("md5").update(parts.join("")).digest("hex")
 }
 
-/** Verifica si Bancard está habilitado (keys configuradas) */
-export function isBancardEnabled(): boolean {
-  return Boolean(env.BANCARD_PUBLIC_KEY && env.BANCARD_PRIVATE_KEY)
+/** Verifica si Bancard está habilitado (keys configuradas en el plugin) */
+export async function isBancardEnabled(tenantId: string): Promise<boolean> {
+  const cfg = await getConfig(tenantId)
+  return Boolean(cfg.publicKey && cfg.privateKey)
 }
 
 /** 1. single_buy — Inicia proceso de pago (pago ocasional / Zimple) */
-export async function singleBuy(params: {
-  shopProcessId: number
-  amount: number
-  currency?: string
-  description?: string
-  returnUrl: string
-  cancelUrl?: string
-  additionalData?: string
-  preauthorization?: boolean
-  billing?: Record<string, unknown>
-  zimple?: boolean
-  testClient?: boolean
-}) {
+export async function singleBuy(
+  tenantId: string,
+  params: {
+    shopProcessId: number
+    amount: number
+    currency?: string
+    description?: string
+    returnUrl: string
+    cancelUrl?: string
+    additionalData?: string
+    preauthorization?: boolean
+    billing?: Record<string, unknown>
+    zimple?: boolean
+    testClient?: boolean
+  },
+) {
+  const cfg = await getConfig(tenantId)
   const currency = params.currency ?? "PYG"
-  const token = md5(
-    env.BANCARD_PRIVATE_KEY,
-    params.shopProcessId,
-    params.amount.toFixed(2),
-    currency,
-  )
+  const token = md5(cfg.privateKey, params.shopProcessId, params.amount.toFixed(2), currency)
 
   const operation: Record<string, unknown> = {
     token,
@@ -56,9 +78,9 @@ export async function singleBuy(params: {
   if (params.zimple) operation.zimple = "S"
   if (params.testClient) operation.test_client = "S"
 
-  const body = { public_key: env.BANCARD_PUBLIC_KEY, operation }
+  const body = { public_key: cfg.publicKey, operation }
 
-  const res = await fetch(`${baseUrl()}/vpos/api/0.3/single_buy`, {
+  const res = await fetch(`${baseUrl(cfg.env)}/vpos/api/0.3/single_buy`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -67,22 +89,21 @@ export async function singleBuy(params: {
 }
 
 /** 2. cards/new — Catastro de tarjeta (registra tarjeta para pago con token) */
-export async function cardsNew(params: {
-  cardId: number
-  userId: number
-  userCellPhone: string
-  userMail: string
-  returnUrl: string
-}) {
-  const token = md5(
-    env.BANCARD_PRIVATE_KEY,
-    params.cardId,
-    params.userId,
-    "request_new_card",
-  )
+export async function cardsNew(
+  tenantId: string,
+  params: {
+    cardId: number
+    userId: number
+    userCellPhone: string
+    userMail: string
+    returnUrl: string
+  },
+) {
+  const cfg = await getConfig(tenantId)
+  const token = md5(cfg.privateKey, params.cardId, params.userId, "request_new_card")
 
   const body = {
-    public_key: env.BANCARD_PUBLIC_KEY,
+    public_key: cfg.publicKey,
     operation: {
       token,
       card_id: params.cardId,
@@ -93,7 +114,7 @@ export async function cardsNew(params: {
     },
   }
 
-  const res = await fetch(`${baseUrl()}/vpos/api/0.3/cards/new`, {
+  const res = await fetch(`${baseUrl(cfg.env)}/vpos/api/0.3/cards/new`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -102,18 +123,16 @@ export async function cardsNew(params: {
 }
 
 /** 3. users_cards — Lista tarjetas catastradas de un usuario */
-export async function usersCards(userId: number) {
-  const token = md5(env.BANCARD_PRIVATE_KEY, userId, "request_user_cards")
+export async function usersCards(tenantId: string, userId: number) {
+  const cfg = await getConfig(tenantId)
+  const token = md5(cfg.privateKey, userId, "request_user_cards")
 
   const body = {
-    public_key: env.BANCARD_PUBLIC_KEY,
-    operation: {
-      token,
-      user_id: userId,
-    },
+    public_key: cfg.publicKey,
+    operation: { token, user_id: userId },
   }
 
-  const res = await fetch(`${baseUrl()}/vpos/api/0.3/users_cards`, {
+  const res = await fetch(`${baseUrl(cfg.env)}/vpos/api/0.3/users_cards`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -125,26 +144,23 @@ export async function usersCards(userId: number) {
 }
 
 /** 4. charge — Pago con token (catastro previo) */
-export async function charge(params: {
-  shopProcessId: number
-  amount: number
-  currency?: string
-  aliasToken: string
-  description?: string
-  returnUrl: string
-  cancelUrl?: string
-  additionalData?: string
-  billing?: Record<string, unknown>
-}) {
+export async function charge(
+  tenantId: string,
+  params: {
+    shopProcessId: number
+    amount: number
+    currency?: string
+    aliasToken: string
+    description?: string
+    returnUrl: string
+    cancelUrl?: string
+    additionalData?: string
+    billing?: Record<string, unknown>
+  },
+) {
+  const cfg = await getConfig(tenantId)
   const currency = params.currency ?? "PYG"
-  const token = md5(
-    env.BANCARD_PRIVATE_KEY,
-    params.shopProcessId,
-    "charge",
-    params.amount.toFixed(2),
-    currency,
-    params.aliasToken,
-  )
+  const token = md5(cfg.privateKey, params.shopProcessId, "charge", params.amount.toFixed(2), currency, params.aliasToken)
 
   const operation: Record<string, unknown> = {
     token,
@@ -160,9 +176,9 @@ export async function charge(params: {
   if (params.additionalData) operation.additional_data = params.additionalData
   if (params.billing) operation.billing = params.billing
 
-  const body = { public_key: env.BANCARD_PUBLIC_KEY, operation }
+  const body = { public_key: cfg.publicKey, operation }
 
-  const res = await fetch(`${baseUrl()}/vpos/api/0.3/charge`, {
+  const res = await fetch(`${baseUrl(cfg.env)}/vpos/api/0.3/charge`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -171,19 +187,16 @@ export async function charge(params: {
 }
 
 /** 5. delete — Elimina tarjeta catastrada */
-export async function deleteCard(userId: number, cardToken: string) {
-  const token = md5(env.BANCARD_PRIVATE_KEY, "delete_card", userId, cardToken)
+export async function deleteCard(tenantId: string, userId: number, cardToken: string) {
+  const cfg = await getConfig(tenantId)
+  const token = md5(cfg.privateKey, "delete_card", userId, cardToken)
 
   const body = {
-    public_key: env.BANCARD_PUBLIC_KEY,
-    operation: {
-      token,
-      user_id: userId,
-      card_token: cardToken,
-    },
+    public_key: cfg.publicKey,
+    operation: { token, user_id: userId, card_token: cardToken },
   }
 
-  const res = await fetch(`${baseUrl()}/vpos/api/0.3/delete`, {
+  const res = await fetch(`${baseUrl(cfg.env)}/vpos/api/0.3/delete`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -192,18 +205,16 @@ export async function deleteCard(userId: number, cardToken: string) {
 }
 
 /** 6. single_buy_rollback — Reversa de transacción */
-export async function rollback(shopProcessId: number) {
-  const token = md5(env.BANCARD_PRIVATE_KEY, shopProcessId, "rollback", "0.00")
+export async function rollback(tenantId: string, shopProcessId: number) {
+  const cfg = await getConfig(tenantId)
+  const token = md5(cfg.privateKey, shopProcessId, "rollback", "0.00")
 
   const body = {
-    public_key: env.BANCARD_PUBLIC_KEY,
-    operation: {
-      token,
-      shop_process_id: shopProcessId,
-    },
+    public_key: cfg.publicKey,
+    operation: { token, shop_process_id: shopProcessId },
   }
 
-  const res = await fetch(`${baseUrl()}/vpos/api/0.3/single_buy/rollback`, {
+  const res = await fetch(`${baseUrl(cfg.env)}/vpos/api/0.3/single_buy/rollback`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -212,18 +223,16 @@ export async function rollback(shopProcessId: number) {
 }
 
 /** 7. get_single_buy_confirmation — Consulta estado de transacción */
-export async function getConfirmation(shopProcessId: number) {
-  const token = md5(env.BANCARD_PRIVATE_KEY, shopProcessId, "get_confirmation")
+export async function getConfirmation(tenantId: string, shopProcessId: number) {
+  const cfg = await getConfig(tenantId)
+  const token = md5(cfg.privateKey, shopProcessId, "get_confirmation")
 
   const body = {
-    public_key: env.BANCARD_PUBLIC_KEY,
-    operation: {
-      token,
-      shop_process_id: shopProcessId,
-    },
+    public_key: cfg.publicKey,
+    operation: { token, shop_process_id: shopProcessId },
   }
 
-  const res = await fetch(`${baseUrl()}/vpos/api/0.3/single_buy/confirmations`, {
+  const res = await fetch(`${baseUrl(cfg.env)}/vpos/api/0.3/single_buy/confirmations`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -239,29 +248,29 @@ export async function getConfirmation(shopProcessId: number) {
 }
 
 /** 8. verifyConfirmationToken — Valida el token del webhook de Bancard */
-export function verifyConfirmationToken(params: {
-  shopProcessId: number
-  amount: number
-  currency?: string
-  token: string
-}): boolean {
+export async function verifyConfirmationToken(
+  tenantId: string,
+  params: {
+    shopProcessId: number
+    amount: number
+    currency?: string
+    token: string
+  },
+): Promise<boolean> {
+  const cfg = await getConfig(tenantId)
   const currency = params.currency ?? "PYG"
-  const expected = md5(
-    env.BANCARD_PRIVATE_KEY,
-    params.shopProcessId,
-    "confirm",
-    params.amount.toFixed(2),
-    currency,
-  )
+  const expected = md5(cfg.privateKey, params.shopProcessId, "confirm", params.amount.toFixed(2), currency)
   return expected === params.token
 }
 
 /** URL del JS SDK de Bancard para el iframe */
-export function bancardJsUrl(): string {
-  return `${baseUrl()}/checkout/javascript/dist/bancard-checkout-4.0.0.js`
+export async function bancardJsUrl(tenantId: string): Promise<string> {
+  const cfg = await getConfig(tenantId)
+  return `${baseUrl(cfg.env)}/checkout/javascript/dist/bancard-checkout-4.0.0.js`
 }
 
 /** URL del JS SDK de Bancard para Zimple */
-export function bancardZimpleJsUrl(): string {
-  return `${baseUrl()}/checkout/javascript/dist/bancard-checkout-3.0.0.js`
+export async function bancardZimpleJsUrl(tenantId: string): Promise<string> {
+  const cfg = await getConfig(tenantId)
+  return `${baseUrl(cfg.env)}/checkout/javascript/dist/bancard-checkout-3.0.0.js`
 }
