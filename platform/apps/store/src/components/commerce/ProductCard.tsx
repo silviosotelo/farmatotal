@@ -47,7 +47,7 @@ export default function ProductCard({ product, variant = "grid" }: Props) {
           <span className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full">-{discount}%</span>
         )}
         <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button className="p-1.5 bg-white/90 rounded-full shadow hover:bg-white" aria-label="Agregar al carrito" onClick={() => addItem({ productId: product.id, name: product.name, slug: product.slug, price: product.priceWeb, image: product.image, quantity: 1 })}>
+          <button className="p-1.5 bg-white/90 rounded-full shadow hover:bg-white" aria-label="Agregar al carrito" onClick={() => addItem({ productId: product.id, name: product.name, slug: product.slug, price: product.priceWeb, image: product.image ?? "/img/placeholder.png", quantity: 1 })}>
             <ShoppingCart className="w-4 h-4" />
           </button>
           <button className="p-1.5 bg-white/90 rounded-full shadow hover:bg-white" aria-label="Favoritos">
