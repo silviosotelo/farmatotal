@@ -1,15 +1,34 @@
+import { notFound } from "next/navigation";
+import { getActiveTheme } from "@/themes/registry";
+import { EkomartHome } from "@/themes/ekomart/EkomartHome";
+import { AnvogueHome } from "@/themes/anvogue/AnvogueHome";
 import { getPage } from "@/lib/api";
 import ChaiRender, { type ChaiBlock } from "@/components/cms/ChaiRender";
 
-export default async function HomePage() {
+function hasChaiBlocks(blocks: unknown): blocks is ChaiBlock[] {
+  return Array.isArray(blocks) && blocks.length > 0;
+}
+
+export default async function Home() {
+  const theme = await getActiveTheme();
+
+  if (theme === "ekomart") {
+    return <EkomartHome />;
+  }
+  if (theme === "anvogue") {
+    return <AnvogueHome />;
+  }
+
+  // Farmatotal: home construido en el builder (editable, bloques data-bound que
+  // consumen el backend). El doc "home" debe estar publicado con bloques.
   const page = await getPage("home").catch(() => null);
-  if (!page?.blocks || !Array.isArray(page.blocks) || page.blocks.length === 0) {
+  if (page?.published && hasChaiBlocks(page.blocks)) {
     return (
-      <div className="ft-container py-20 text-center">
-        <h1>Bienvenido a tu tienda</h1>
-        <p>Configurá tu homepage desde el CMS.</p>
-      </div>
+      <main className="flex-1 pb-14">
+        <h1 className="sr-only">Tu tienda online</h1>
+        <ChaiRender blocks={page.blocks as ChaiBlock[]} />
+      </main>
     );
   }
-  return <ChaiRender blocks={page.blocks as ChaiBlock[]} />;
+  notFound();
 }
