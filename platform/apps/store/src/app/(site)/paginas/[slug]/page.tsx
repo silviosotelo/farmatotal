@@ -8,17 +8,17 @@ type Args = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Args): Promise<Metadata> {
   const { slug } = await params;
-  const page = await getPage(slug);
-  if (!page) return { title: "Página no encontrada - Farmatotal" };
+  const page = await getPage(slug).catch(() => null);
+  if (!page) return { title: "Página no encontrada" };
   return {
-    title: page.seo?.title || `${page.title} - Farmatotal`,
+    title: page.seo?.title || `${page.title}`,
     description: page.seo?.description,
   };
 }
 
 export default async function CmsPage({ params }: Args) {
   const { slug } = await params;
-  const page = await getPage(slug);
+  const page = await getPage(slug).catch(() => null);
   if (!page || !page.published) notFound();
 
   if (!Array.isArray(page.blocks) || page.blocks.length === 0) notFound();

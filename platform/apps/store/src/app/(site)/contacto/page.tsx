@@ -7,7 +7,8 @@ import ChaiRender, { type ChaiBlock } from "@/components/cms/ChaiRender";
 const SLUG = "contacto";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const page = await getPage(SLUG);
+  const page = await getPage(SLUG).catch(() => null);
+  if (!page) return { title: "Contacto" };
   return {
     title: page?.seo?.title || page?.title || "Contacto",
     description: page?.seo?.description,

@@ -7,7 +7,8 @@ import ChaiRender, { type ChaiBlock } from "@/components/cms/ChaiRender";
 const SLUG = "politica-de-privacidad";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const page = await getPage(SLUG);
+  const page = await getPage(SLUG).catch(() => null);
+  if (!page) return { title: "Política de privacidad" };
   return {
     title: page?.seo?.title || page?.title || "Política de privacidad",
     description: page?.seo?.description,
@@ -19,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * El contenido vive en la página CMS con slug `politica-de-privacidad`.
  */
 export default async function PoliticaPrivacidadPage() {
-  const page = await getPage(SLUG);
+  const page = await getPage(SLUG).catch(() => null);
   if (!page || !page.published || !Array.isArray(page.blocks)) notFound();
 
   return (
