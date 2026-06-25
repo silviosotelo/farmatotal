@@ -19,8 +19,8 @@ export function useTexts() {
   const config = usePluginConfig()
 
   const get = (key: string, ...args: (string | number)[]) => {
-    const template = (config[key] as string) || DEFAULTS[key] || key
-    return args.reduce((str, arg, i) => str.replace(`%${i + 1}`, String(arg)), template)
+    const template = String((config[key] as string) || DEFAULTS[key] || key)
+    return args.reduce((str: string, arg, i) => str.replace(`%${i + 1}`, String(arg)), template)
   }
 
   return { get, all: { ...DEFAULTS, ...config } as Record<string, string> }
