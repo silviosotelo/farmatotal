@@ -48,11 +48,24 @@ async function applyVerdict(pay: PaymentRow, approved: boolean, rawPayload?: str
 }
 
 export async function paymentRoutes(app: FastifyInstance) {
+  // Rate limit simple para /payments/bancard/create: máx 5/min por IP
+  const createHits = new Map<string, number[]>();
+  function rateLimitCreate(req: FastifyRequest): boolean {
+    const ip = req.ip || "unknown";
+    const now = Date.now();
+    const hits = (createHits.get(ip) ?? []).filter((t) => now - t < 60_000);
+    hits.push(now);
+    createHits.set(ip, hits);
+    return hits.length <= 5;
+  }
+
   // Crea el pago Bancard vPOS para una orden → devuelve process_id para el iframe.
   app.post(
     "/payments/bancard/create",
     { schema: { body: z.object({ orderId: z.string().uuid() }) } },
     async (req, reply) => {
+      if (!rateLimitCreate(req))
+        return reply.tooManyRequests("Demasiadas solicitudes de pago. Intentá nuevamente en un minuto.");
       if (!await isBancardEnabled(tid(req)))
         return reply.serviceUnavailable("Bancard no configurado (claves vacías)");
 

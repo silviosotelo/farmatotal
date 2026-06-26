@@ -11,6 +11,7 @@ import { useSucursal } from "@/components/sucursal/SucursalContext";
 import { useToast } from "@/components/providers/ToastContext";
 import { useMoney } from "@/components/providers/CurrencyContext";
 import { useFlags } from "@/components/providers/FeatureFlagsContext";
+import { useAuth } from "@/components/providers/AuthContext";
 import { formatQty, unitLabel } from "@/lib/units";
 import { fetchSucursales, zonasOf, departmentsOf, departmentOf, type Sucursal } from "@/lib/sucursales";
 import { useShippingQuote, useTaxConfig, usePaymentMethods, defaultRate, computeTax } from "@/lib/checkout";
@@ -104,10 +105,28 @@ export function CheckoutBlock() {
 
   const payOptions = (paymentMethods ?? []).filter((m) => m.enabled);
   const [paymentKey, setPaymentKey] = useState("");
+  const { user } = useAuth();
+  const [savedCards, setSavedCards] = useState<Array<{ card_id: number; card_masked_number: string; card_brand: string; alias_token: string }>>([]);
+  const [selectedCard, setSelectedCard] = useState<string>("");
+  const [chargingCard, setChargingCard] = useState(false);
+
   useEffect(() => {
     if (payOptions.length === 0) return;
     setPaymentKey((prev) => (payOptions.some((o) => o.key === prev) ? prev : payOptions[0].key));
   }, [paymentMethods]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cargar tarjetas guardadas cuando el usuario selecciona Bancard y está logueado
+  useEffect(() => {
+    if (paymentKey !== "bancard" || !user?.id) { setSavedCards([]); setSelectedCard(""); return; }
+    fetch("/api/payments/bancard/users-cards", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: parseInt(user.id) }),
+    })
+      .then((r) => r.json())
+      .then((d) => { setSavedCards(d?.data ?? []); setSelectedCard(""); })
+      .catch(() => setSavedCards([]));
+  }, [paymentKey, user?.id]);
 
   useEffect(() => {
     fetchSucursales().then(setBranches);
@@ -207,7 +226,43 @@ export function CheckoutBlock() {
       try {
         localStorage.setItem("ft_last_order_v1", JSON.stringify({ id: order.number, date: new Date().toISOString(), status: order.status, total: order.total, sucursal: isPickup ? selected?.name : undefined, paymentMethod: chosen?.name, lines: lines.map(({ product, quantity }) => ({ title: product.title, sku: product.sku, quantity, price: product.priceWeb, image: product.image })) }));
       } catch { /* ignore */ }
-      if (paymentMethod === "online") { window.location.href = `/pago/${order.id}`; return; }
+      if (paymentMethod === "online") {
+        // Si hay tarjeta guardada seleccionada → charge con token (pago recurrente)
+        if (selectedCard) {
+          setChargingCard(true);
+          try {
+            const chargeRes = await fetch("/api/payments/bancard/charge", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                shopProcessId: Date.now(),
+                amount: order.total,
+                currency: "PYG",
+                aliasToken: selectedCard,
+                description: `Orden ${order.number}`,
+                returnUrl: `${window.location.origin}/pago/retorno?order=${order.id}`,
+                cancelUrl: `${window.location.origin}/pago/retorno?order=${order.id}&cancel=1`,
+              }),
+            });
+            const chargeData = await chargeRes.json();
+            if (chargeData.status === "approved" || chargeData.response_code === "0" || chargeData.response_code === "00") {
+              clear();
+              router.push(`/pago/retorno?order=${order.id}&status=payment_success`);
+              return;
+            }
+            // Si charge falla, ir al retorno con payment_fail
+            router.push(`/pago/retorno?order=${order.id}&status=payment_fail`);
+            return;
+          } catch {
+            toast("Error al procesar el pago con tarjeta guardada.", "error");
+            setChargingCard(false);
+            return;
+          }
+        }
+        // Si no hay tarjeta guardada → iframe (single_buy)
+        window.location.href = `/pago/${order.id}`;
+        return;
+      }
       clear();
       router.push("/pedido-recibido");
     } catch {
@@ -389,6 +444,40 @@ export function CheckoutBlock() {
                       <span className="text-sm font-medium text-brand-text">{o.name}</span>
                     </label>
                   ))}
+
+                  {/* Tarjetas guardadas cuando se selecciona Bancard y hay usuario logueado */}
+                  {paymentKey === "bancard" && user?.id && savedCards.length > 0 && (
+                    <div className="mt-2 space-y-2 pl-2">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-brand-muted mb-1">Tarjetas guardadas</p>
+                      {savedCards.map((c) => (
+                        <label
+                          key={c.card_id}
+                          className={"flex w-full items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors " + (selectedCard === c.alias_token ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}
+                        >
+                          <input
+                            type="radio"
+                            name="saved-card"
+                            value={c.alias_token}
+                            checked={selectedCard === c.alias_token}
+                            onChange={() => setSelectedCard(c.alias_token)}
+                            className="sr-only"
+                          />
+                          <span className={"size-4 shrink-0 rounded-full border-2 flex items-center justify-center " + (selectedCard === c.alias_token ? "border-brand-orange" : "border-[#c0c0c0]")}>
+                            {selectedCard === c.alias_token && <span className="size-2 rounded-full bg-brand-orange" />}
+                          </span>
+                          <span className="text-sm font-medium text-brand-text">{c.card_masked_number}</span>
+                          <span className="text-xs text-brand-muted">{c.card_brand}</span>
+                        </label>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCard("")}
+                        className="text-xs text-brand-orange hover:underline"
+                      >
+                        Usar otra tarjeta
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </section>
@@ -422,13 +511,13 @@ export function CheckoutBlock() {
                 type="submit"
                 variant="solid"
                 shape="round"
-                loading={submitting}
-                disabled={submitting}
+                loading={submitting || chargingCard}
+                disabled={submitting || chargingCard}
                 block
                 style={{ color: 'white' }}
                 className="mt-6 brand-gradient h-11"
               >
-                {submitting ? "Procesando..." : "Realizar pedido"}
+                {submitting || chargingCard ? "Procesando..." : "Realizar pedido"}
               </Button>
             </div>
           </aside>
