@@ -43,28 +43,20 @@ function RetornoContent() {
   }, [orderId, clear])
 
   useEffect(() => {
-    // Bancard redirect status — show immediately
+    // Cancelación explícita del usuario
     if (cancelled || bancardStatus === "cancel") {
       setStatus("rejected")
       clear()
       return
     }
-    if (bancardStatus === "payment_fail") {
-      setStatus("rejected")
-      clear()
-      return
-    }
-    if (bancardStatus === "payment_success") {
-      setStatus("approved")
-      setOrderDate(new Date().toLocaleDateString("es-PY"))
-      clear()
-      return
-    }
+
+    // Si no hay orderId, rechazar
     if (!orderId) {
       setStatus("rejected")
       return
     }
 
+    // Siempre poll — el status de la URL de Bancard puede no coincidir con el webhook
     let tries = 0
     let timer: ReturnType<typeof setTimeout>
     let stopped = false
@@ -73,11 +65,15 @@ function RetornoContent() {
       tries += 1
       const done = await poll()
       if (done || stopped) return
-      if (tries >= 15) {
-        setStatus("pending")
+      if (tries >= 20) {
+        // Si después de 20 intentos no hay webhook, mostrar el status de la URL
+        if (bancardStatus === "payment_fail") {
+          setStatus("rejected")
+          clear()
+        }
         return
       }
-      timer = setTimeout(pollLoop, 2000)
+      timer = setTimeout(pollLoop, 1500)
     }
 
     pollLoop()
