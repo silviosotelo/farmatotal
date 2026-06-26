@@ -55,6 +55,13 @@ export async function paymentRoutes(app: FastifyInstance) {
     async (req, reply) => {
       if (!await isBancardEnabled(tid(req)))
         return reply.serviceUnavailable("Bancard no configurado (claves vacías)");
+
+      // Leer URLs del plugin config
+      const { getConfig } = await import("../../services/bancard.js")
+      const pluginCfg = await getConfig(tid(req))
+      const storeUrl = pluginCfg.storeUrl || env.PUBLIC_BASE_URL
+      const publicApiUrl = pluginCfg.publicApiUrl || env.PUBLIC_API_URL
+
       const [order] = await db
         .select()
         .from(orders)
@@ -70,17 +77,21 @@ export async function paymentRoutes(app: FastifyInstance) {
         providerRef: String(shopProcessId),
       });
 
-      const base = env.PUBLIC_BASE_URL;
       const res = await singleBuy(tid(req), {
         shopProcessId,
         amount: order.total,
         description: `Orden ${order.number}`,
-        returnUrl: `${base}/pago/retorno?order=${order.id}`,
-        cancelUrl: `${base}/pago/retorno?order=${order.id}&cancel=1`,
+        returnUrl: `${storeUrl}/pago/retorno?order=${order.id}`,
+        cancelUrl: `${storeUrl}/pago/retorno?order=${order.id}&cancel=1`,
       });
       const processId = (res as { process_id?: string }).process_id;
       if (!processId) return reply.badGateway("Bancard no devolvió process_id");
-      return reply.send({ processId, jsUrl: await bancardJsUrl(tid(req)), shopProcessId });
+      return reply.send({
+        processId,
+        jsUrl: await bancardJsUrl(tid(req)),
+        shopProcessId,
+        webhookUrl: `${publicApiUrl}/payments/bancard/confirm`,
+      });
     },
   );
 

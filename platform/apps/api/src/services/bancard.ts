@@ -11,10 +11,12 @@ type BancardConfig = {
   publicKey?: string
   privateKey?: string
   merchantCode?: string
+  publicApiUrl?: string
+  storeUrl?: string
 }
 
 /** Lee la config de Bancard desde el plugin settings en la DB */
-async function getConfig(tenantId: string): Promise<BancardConfig> {
+export async function getConfig(tenantId: string): Promise<BancardConfig> {
   const [row] = await db
     .select()
     .from(settings)
