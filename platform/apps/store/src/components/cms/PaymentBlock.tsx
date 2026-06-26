@@ -145,7 +145,7 @@ export function PaymentBlock({
         )}
 
         {(state.kind === "unavailable" || state.kind === "error") && (
-          <div className="rounded-xl border border-[#ededf1] p-8 text-center">
+          <div className="rounded-xl border border-[#ededf1] bg-white p-8 text-center">
             <p className="mb-6 text-sm text-brand-text">{state.message}</p>
             <Link
               href={returnHref}

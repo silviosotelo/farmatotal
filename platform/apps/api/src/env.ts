@@ -15,11 +15,7 @@ const schema = z.object({
     .string()
     .default("http://localhost:5173,http://localhost:3000")
     .transform((s) => s.split(",").map((x) => x.trim()).filter(Boolean)),
-  // Bancard vPOS (pasarela). Claves vacías = deshabilitado.
-  BANCARD_ENV: z.enum(["staging", "production"]).default("staging"),
-  BANCARD_PUBLIC_KEY: z.string().default(""),
-  BANCARD_PRIVATE_KEY: z.string().default(""),
-  BANCARD_MERCHANT_CODE: z.string().default(""),
+  // Bancard vPOS: config is in the DB (plugin_gw_bancard), NOT env vars.
   PUBLIC_BASE_URL: z.string().default("http://localhost:3000"),
   // URL pública del propio motor (para construir URLs de /media/file/*).
   PUBLIC_API_URL: z.string().default("http://localhost:4000"),

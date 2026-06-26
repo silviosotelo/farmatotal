@@ -287,12 +287,17 @@ export async function paymentRoutes(app: FastifyInstance) {
 
   // ─── Bancard: Catastro de tarjeta (cards/new) ───
   app.post("/payments/bancard/cards/new", async (req, reply) => {
-    const { cardsNew } = await import("../../services/bancard.js")
+    const { cardsNew, bancardJsUrl } = await import("../../services/bancard.js")
     const { cardId, userId, userCellPhone, userMail, returnUrl } = req.body as {
       cardId: number; userId: number; userCellPhone: string; userMail: string; returnUrl: string
     }
     const result = await cardsNew(tid(req), { cardId, userId, userCellPhone, userMail, returnUrl })
-    return reply.send(result)
+    const processId = (result as { process_id?: string }).process_id
+    if (!processId) return reply.badGateway("Bancard no devolvió process_id")
+    return reply.send({
+      processId,
+      jsUrl: await bancardJsUrl(tid(req)),
+    })
   })
 
   // ─── Bancard: Listar tarjetas catastradas (users_cards) ───

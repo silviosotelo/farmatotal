@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-const API = process.env.API_URL || "http://api:4000"
+const API = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "http://localhost:4000"
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const r = await fetch(`${API}/payments/bancard/delete-card`, {
