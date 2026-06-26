@@ -9,6 +9,22 @@ import { isModuleEnabled, setModuleEnabled } from "../system/moduleState.js";
 
 const STORE_KEY = (k: string) => `plugin_${k}`;
 
+/** Campos sensibles que NUNCA se exponen al frontend */
+const SENSITIVE_FIELDS = new Set(["privateKey", "secretKey", "accessToken", "password", "token", "secret"]);
+
+/** Filtra valores sensibles antes de enviar al frontend */
+function sanitizeValues(values: Record<string, unknown>): Record<string, unknown> {
+  const safe: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(values)) {
+    if (SENSITIVE_FIELDS.has(k)) {
+      safe[k] = typeof v === "string" && v.length > 0 ? "••••••••" : "";
+    } else {
+      safe[k] = v;
+    }
+  }
+  return safe;
+}
+
 async function syncTenantFlags(tenantId: string, pluginKey: string, enabled: boolean) {
   const mod = MODULES.find((m) => m.key === pluginKey);
   const flags = mod?.controlsFlags;
@@ -35,7 +51,8 @@ export async function pluginRoutes(app: FastifyInstance) {
     const mod = MODULES.find((m) => m.key === req.params.key && m.kind === "plugin");
     if (!mod) return reply.notFound("Plugin no encontrado");
     const fields = mod.configSchema ?? [];
-    const values = await readVals(req, mod.key);
+    const rawValues = await readVals(req, mod.key);
+    const values = sanitizeValues(rawValues);
     return reply.send({
       key: mod.key,
       name: mod.name,
