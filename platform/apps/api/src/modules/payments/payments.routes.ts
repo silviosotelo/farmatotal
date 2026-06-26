@@ -15,7 +15,7 @@ import {
 } from "../../services/bancard.js";
 
 function genShopProcessId(): number {
-  return Number(process.hrtime.bigint() % 1000000000n);
+  return Number(process.hrtime.bigint() % 1000000000n) * 1000 + Math.floor(Math.random() * 1000);
 }
 
 type PaymentRow = typeof payments.$inferSelect;
