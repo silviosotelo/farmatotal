@@ -7,20 +7,6 @@ import { useMoney } from "@/components/providers/CurrencyContext";
 
 const CONTAINER_ID = "bancard-iframe-container";
 
-declare global {
-  interface Window {
-    Bancard?: {
-      Checkout: {
-        createForm: (
-          containerId: string,
-          processId: string,
-          options?: Record<string, unknown>,
-        ) => void;
-      };
-    };
-  }
-}
-
 /** Carga el JS de Bancard una sola vez y resuelve cuando window.Bancard está disponible. */
 function loadBancardScript(jsUrl: string): Promise<void> {
   return new Promise((resolve, reject) => {

@@ -144,9 +144,3 @@ export default function MisTarjetas() {
     </div>
   )
 }
-
-declare global {
-  interface Window {
-    Bancard?: Record<string, any>
-  }
-}
