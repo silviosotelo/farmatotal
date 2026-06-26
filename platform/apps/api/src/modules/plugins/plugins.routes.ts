@@ -48,6 +48,12 @@ export async function pluginRoutes(app: FastifyInstance) {
     const fields = mod.configSchema ?? [];
     const rawValues = await readVals(req, mod.key);
     const values = sanitizeValues(rawValues, fields);
+
+    // Compute derived fields (webhook URL for payment gateways)
+    if (mod.key === "gw_bancard" && rawValues.publicApiUrl) {
+      values._webhookUrl = `${rawValues.publicApiUrl}/payments/bancard/confirm`;
+    }
+
     return reply.send({
       key: mod.key,
       name: mod.name,

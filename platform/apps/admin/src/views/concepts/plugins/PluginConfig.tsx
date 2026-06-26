@@ -96,6 +96,7 @@ function PluginFieldRenderer({
                     type={field.type === 'password' ? 'password' : field.type === 'number' ? 'number' : 'text'}
                     value={String(value ?? '')}
                     placeholder={field.placeholder}
+                    readOnly={field.key.startsWith('_')}
                     onChange={(e) => onChange(field.type === 'number' ? Number(e.target.value) : e.target.value)}
                 />
             </FormItem>

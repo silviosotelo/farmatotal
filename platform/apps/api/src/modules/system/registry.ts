@@ -103,6 +103,7 @@ export const MODULES: ModuleManifest[] = [
       { key: "merchantCode", label: "Código de comercio", type: "text", group: "Credenciales", help: "Código de comercio asignado por Bancard" },
       { key: "publicApiUrl", label: "URL pública del API", type: "text", group: "Credenciales", help: "URL pública del backend (para generar el webhook). Ej: https://api.tudominio.com" },
       { key: "storeUrl", label: "URL de la tienda", type: "text", group: "Credenciales", help: "URL del storefront (para retorno después del pago). Ej: https://tienda.tudominio.com" },
+      { key: "_webhookUrl", label: "URL de confirmación del pago (copiar y pegar en el portal de Bancard)", type: "text", group: "Credenciales", help: "Esta URL se genera automáticamente. Copiala y pegala en la configuración de tu app en https://comercios.bancard.com.py", sensitive: false },
       { key: "simpleEnabled", label: "Habilitar pagos simples", type: "toggle", group: "Pagos simples", help: "Pagos únicos con tarjeta de crédito/débito" },
       { key: "simpleCurrency", label: "Moneda", type: "select", group: "Pagos simples", options: [{ value: "PYG", label: "Guaraní (PYG)" }, { value: "USD", label: "Dólar (USD)" }] },
       { key: "simpleMaxAmount", label: "Monto máximo por pago", type: "number", group: "Pagos simples", help: "Límite máximo por transacción (0 = sin límite)" },
