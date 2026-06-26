@@ -110,23 +110,40 @@ export function CheckoutBlock() {
   const [selectedCard, setSelectedCard] = useState<string>("");
   const [chargingCard, setChargingCard] = useState(false);
 
+  // Cargar tarjetas guardadas del usuario logueado (para pago con token)
   useEffect(() => {
-    if (payOptions.length === 0) return;
-    setPaymentKey((prev) => (payOptions.some((o) => o.key === prev) ? prev : payOptions[0].key));
-  }, [paymentMethods]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Cargar tarjetas guardadas cuando el usuario selecciona Bancard y está logueado
-  useEffect(() => {
-    if (paymentKey !== "bancard" || !user?.id) { setSavedCards([]); setSelectedCard(""); return; }
+    if (!user?.id) { setSavedCards([]); return; }
     fetch("/api/payments/bancard/users-cards", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: parseInt(user.id) }),
     })
       .then((r) => r.json())
-      .then((d) => { setSavedCards(d?.data ?? []); setSelectedCard(""); })
+      .then((d) => setSavedCards(d?.data ?? []))
       .catch(() => setSavedCards([]));
-  }, [paymentKey, user?.id]);
+  }, [user?.id]);
+
+  // Construir opciones de pago: separar Bancard en "tarjeta nueva" y "tarjeta guardada"
+  const allPayOptions = useMemo(() => {
+    const opts: Array<{ key: string; name: string; isBancard: boolean; isToken: boolean }> = [];
+    for (const o of payOptions) {
+      if (o.key === "bancard") {
+        // Solo mostrar "tarjeta guardada" si el usuario tiene tarjetas
+        if (savedCards.length > 0) {
+          opts.push({ key: "bancard_token", name: "Tarjeta guardada", isBancard: true, isToken: true });
+        }
+        opts.push({ key: "bancard_simple", name: "Tarjeta de crédito/débito", isBancard: true, isToken: false });
+      } else {
+        opts.push({ key: o.key, name: o.name, isBancard: false, isToken: false });
+      }
+    }
+    return opts;
+  }, [payOptions, savedCards]);
+
+  useEffect(() => {
+    if (allPayOptions.length === 0) return;
+    setPaymentKey((prev) => (allPayOptions.some((o) => o.key === prev) ? prev : allPayOptions[0].key));
+  }, [allPayOptions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchSucursales().then(setBranches);
@@ -196,8 +213,12 @@ export function CheckoutBlock() {
     }
     setSubmitting(true);
     try {
-      const chosen = payOptions.find((o) => o.key === paymentKey);
-      const paymentMethod = paymentKey === "bancard" ? "online" : "contraentrega";
+      const chosen = allPayOptions.find((o) => o.key === paymentKey);
+      const isBancard = chosen?.isBancard ?? false;
+      const isToken = chosen?.isToken ?? false;
+      const paymentMethod = isBancard ? "online" : "contraentrega";
+      const paymentKeyForApi = isBancard ? "bancard" : paymentKey;
+      const paymentLabel = chosen?.name ?? "";
       const shippingMethod = requiresShipping && !isPickup ? "delivery" : "pickup";
       const customFields: Record<string, string> = {};
       for (const f of enabledFields) {
@@ -211,7 +232,7 @@ export function CheckoutBlock() {
         body: JSON.stringify({
           lines: lines.map(({ product, quantity }) => ({ productId: product.variantOf ?? product.id, sku: product.sku, title: product.title, quantity, unitPrice: product.priceWeb })),
           couponCode: coupon?.code,
-          paymentMethod, paymentKey, paymentLabel: chosen?.name,
+          paymentMethod, paymentKey: paymentKeyForApi, paymentLabel,
           shippingMethod,
           shippingMethodId: shippingMethod === "delivery" ? (ship.selectedId ?? undefined) : undefined,
           taxRateId: rate?.id,
@@ -227,8 +248,8 @@ export function CheckoutBlock() {
         localStorage.setItem("ft_last_order_v1", JSON.stringify({ id: order.number, date: new Date().toISOString(), status: order.status, total: order.total, sucursal: isPickup ? selected?.name : undefined, paymentMethod: chosen?.name, lines: lines.map(({ product, quantity }) => ({ title: product.title, sku: product.sku, quantity, price: product.priceWeb, image: product.image })) }));
       } catch { /* ignore */ }
       if (paymentMethod === "online") {
-        // Si hay tarjeta guardada seleccionada → charge con token (pago recurrente)
-        if (selectedCard) {
+        // Pago con token (tarjeta guardada) → charge directo
+        if (isToken && selectedCard) {
           setChargingCard(true);
           try {
             const chargeRes = await fetch("/api/payments/bancard/charge", {
@@ -250,7 +271,6 @@ export function CheckoutBlock() {
               router.push(`/pago/retorno?order=${order.id}&status=payment_success`);
               return;
             }
-            // Si charge falla, ir al retorno con payment_fail
             router.push(`/pago/retorno?order=${order.id}&status=payment_fail`);
             return;
           } catch {
@@ -259,7 +279,7 @@ export function CheckoutBlock() {
             return;
           }
         }
-        // Si no hay tarjeta guardada → iframe (single_buy)
+        // Pago simple (tarjeta nueva) → iframe single_buy
         window.location.href = `/pago/${order.id}`;
         return;
       }
@@ -419,65 +439,68 @@ export function CheckoutBlock() {
               <h3 className="font-heading text-lg text-brand-text mb-5">Método de pago</h3>
               {paymentMethods === null ? (
                 <p className="text-sm text-brand-muted">Cargando medios de pago…</p>
-              ) : payOptions.length === 0 ? (
+              ) : allPayOptions.length === 0 ? (
                 <p className="text-sm text-brand-muted">No hay medios de pago configurados.</p>
               ) : (
                 <div className="flex w-full flex-col gap-3">
-                  {payOptions.map((o) => (
-                    <label
-                      key={o.key}
-                      htmlFor={`pay-${o.key}`}
-                      className={"flex w-full items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors " + (paymentKey === o.key ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}
-                    >
-                      <input
-                        type="radio"
-                        id={`pay-${o.key}`}
-                        name="payment-method"
-                        value={o.key}
-                        checked={paymentKey === o.key}
-                        onChange={() => setPaymentKey(o.key)}
-                        className="sr-only"
-                      />
-                      <span className={"size-4 shrink-0 rounded-full border-2 flex items-center justify-center " + (paymentKey === o.key ? "border-brand-orange" : "border-[#c0c0c0]")}>
-                        {paymentKey === o.key && <span className="size-2 rounded-full bg-brand-orange" />}
-                      </span>
-                      <span className="text-sm font-medium text-brand-text">{o.name}</span>
-                    </label>
-                  ))}
-
-                  {/* Tarjetas guardadas cuando se selecciona Bancard y hay usuario logueado */}
-                  {paymentKey === "bancard" && user?.id && savedCards.length > 0 && (
-                    <div className="mt-2 space-y-2 pl-2">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-brand-muted mb-1">Tarjetas guardadas</p>
-                      {savedCards.map((c) => (
-                        <label
-                          key={c.card_id}
-                          className={"flex w-full items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors " + (selectedCard === c.alias_token ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}
-                        >
-                          <input
-                            type="radio"
-                            name="saved-card"
-                            value={c.alias_token}
-                            checked={selectedCard === c.alias_token}
-                            onChange={() => setSelectedCard(c.alias_token)}
-                            className="sr-only"
-                          />
-                          <span className={"size-4 shrink-0 rounded-full border-2 flex items-center justify-center " + (selectedCard === c.alias_token ? "border-brand-orange" : "border-[#c0c0c0]")}>
-                            {selectedCard === c.alias_token && <span className="size-2 rounded-full bg-brand-orange" />}
-                          </span>
-                          <span className="text-sm font-medium text-brand-text">{c.card_masked_number}</span>
-                          <span className="text-xs text-brand-muted">{c.card_brand}</span>
-                        </label>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedCard("")}
-                        className="text-xs text-brand-orange hover:underline"
+                  {allPayOptions.map((o) => (
+                    <div key={o.key}>
+                      <label
+                        htmlFor={`pay-${o.key}`}
+                        className={"flex w-full items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors " + (paymentKey === o.key ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}
                       >
-                        Usar otra tarjeta
-                      </button>
+                        <input
+                          type="radio"
+                          id={`pay-${o.key}`}
+                          name="payment-method"
+                          value={o.key}
+                          checked={paymentKey === o.key}
+                          onChange={() => { setPaymentKey(o.key); if (!o.isToken) setSelectedCard(""); }}
+                          className="sr-only"
+                        />
+                        <span className={"size-4 shrink-0 rounded-full border-2 flex items-center justify-center " + (paymentKey === o.key ? "border-brand-orange" : "border-[#c0c0c0]")}>
+                          {paymentKey === o.key && <span className="size-2 rounded-full bg-brand-orange" />}
+                        </span>
+                        <div className="flex-1">
+                          <span className="text-sm font-medium text-brand-text">{o.name}</span>
+                          {o.isBancard && (
+                            <p className="text-xs text-brand-muted mt-0.5">
+                              {o.isToken
+                                ? "Paga con tu tarjeta guardada. Comprá sin volver a ingresar los datos."
+                                : "Paga con tarjeta de crédito/débito. Los datos no se guardan."}
+                            </p>
+                          )}
+                        </div>
+                      </label>
+
+                      {/* Si es "tarjeta guardada" y está seleccionada → mostrar tarjetas */}
+                      {o.isToken && paymentKey === o.key && savedCards.length > 0 && (
+                        <div className="mt-2 ml-7 space-y-2">
+                          {savedCards.map((c) => (
+                            <label
+                              key={c.card_id}
+                              className={"flex w-full items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors " + (selectedCard === c.alias_token ? "border-brand-orange bg-[#fff4ec]" : "border-[#ededf1] hover:border-brand-orange/40")}
+                            >
+                              <input
+                                type="radio"
+                                name="saved-card"
+                                value={c.alias_token}
+                                checked={selectedCard === c.alias_token}
+                                onChange={() => setSelectedCard(c.alias_token)}
+                                className="sr-only"
+                              />
+                              <span className={"size-4 shrink-0 rounded-full border-2 flex items-center justify-center " + (selectedCard === c.alias_token ? "border-brand-orange" : "border-[#c0c0c0]")}>
+                                {selectedCard === c.alias_token && <span className="size-2 rounded-full bg-brand-orange" />}
+                              </span>
+                              <span className="text-sm font-medium text-brand-text">{c.card_masked_number}</span>
+                              <span className="text-xs text-brand-muted">{c.card_brand}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  ))}
+                  <p className="text-xs text-brand-muted pt-2">Bancard — Tarjetas soportadas: Visa, MasterCard, Bancard.</p>
                 </div>
               )}
             </section>
