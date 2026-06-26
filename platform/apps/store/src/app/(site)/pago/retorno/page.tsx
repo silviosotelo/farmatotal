@@ -36,7 +36,6 @@ function RetornoContent() {
         return true
       }
       if (d.status === "rejected") {
-        clear()
         setStatus("rejected")
         return true
       }
@@ -45,7 +44,7 @@ function RetornoContent() {
   }, [orderId, clear])
 
   useEffect(() => {
-    if (cancelled) { clear(); setStatus("rejected"); return }
+    if (cancelled) { setStatus("rejected"); return }
     if (!orderId) { setStatus("rejected"); return }
 
     let tries = 0
@@ -57,7 +56,7 @@ function RetornoContent() {
       const done = await poll()
       if (done || stopped) return
       if (tries >= 20) {
-        if (bancardStatus === "payment_fail") { clear(); setStatus("rejected") }
+        if (bancardStatus === "payment_fail") { setStatus("rejected") }
         return
       }
       timer = setTimeout(loop, 1500)
