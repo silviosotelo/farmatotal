@@ -11,6 +11,7 @@ function RetornoContent() {
   const sp = useSearchParams()
   const { clear } = useCart()
   const orderId = sp.get("order")
+  const bancardStatus = sp.get("status")
   const cancelled = sp.get("cancel") === "1"
   const [status, setStatus] = useState<PaymentStatus>("pending")
   const [orderNumber, setOrderNumber] = useState("")
@@ -42,8 +43,21 @@ function RetornoContent() {
   }, [orderId, clear])
 
   useEffect(() => {
-    if (cancelled) {
+    // Bancard redirect status — show immediately
+    if (cancelled || bancardStatus === "cancel") {
       setStatus("rejected")
+      clear()
+      return
+    }
+    if (bancardStatus === "payment_fail") {
+      setStatus("rejected")
+      clear()
+      return
+    }
+    if (bancardStatus === "payment_success") {
+      setStatus("approved")
+      setOrderDate(new Date().toLocaleDateString("es-PY"))
+      clear()
       return
     }
     if (!orderId) {
@@ -71,7 +85,7 @@ function RetornoContent() {
       stopped = true
       clearTimeout(timer)
     }
-  }, [orderId, cancelled, poll])
+  }, [orderId, cancelled, bancardStatus, poll, clear])
 
   useEffect(() => {
     if (status !== "pending") return
