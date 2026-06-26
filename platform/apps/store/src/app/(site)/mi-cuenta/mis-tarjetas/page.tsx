@@ -46,8 +46,8 @@ export default function MisTarjetas() {
         const script = document.createElement("script")
         script.src = data.jsUrl || "https://vpos.infonet.com.py:8888/checkout/javascript/dist/bancard-checkout-3.0.0.js"
         script.onload = () => {
-          if (window.Bancard?.Cards) {
-            window.Bancard.Cards.createForm("card-iframe-container", data.process_id, {})
+          if ((window.Bancard as any)?.Cards) {
+            (window.Bancard as any).Cards.createForm("card-iframe-container", data.process_id, {})
           }
         }
         document.body.appendChild(script)
@@ -147,10 +147,6 @@ export default function MisTarjetas() {
 
 declare global {
   interface Window {
-    Bancard?: {
-      Cards?: {
-        createForm: (containerId: string, processId: string, options: Record<string, unknown>) => void
-      }
-    }
+    Bancard?: Record<string, any>
   }
 }
