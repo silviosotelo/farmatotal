@@ -244,7 +244,7 @@ export async function getConfirmation(tenantId: string, shopProcessId: number) {
     confirmation?: { response?: string; response_code?: string; authorization_number?: string } | null
   }
   const c = raw.confirmation ?? null
-  const approved = !!c && (c.response === "S" || c.response_code === "00")
+  const approved = !!c && (c.response_code === "0" || c.response_code === "00")
   const settled = !!c && c.response_code != null
   return { raw, confirmation: c, approved, settled }
 }

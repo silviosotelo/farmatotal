@@ -116,7 +116,7 @@ export async function paymentRoutes(app: FastifyInstance) {
     });
     if (!valid) return reply.unauthorized("token inválido");
 
-    const approved = op.response === "S" || op.response_code === "00";
+    const approved = op.response_code === "0" || op.response_code === "00";
     await applyVerdict(pay, approved, JSON.stringify(req.body));
 
     return reply.send({ status: "success" });
