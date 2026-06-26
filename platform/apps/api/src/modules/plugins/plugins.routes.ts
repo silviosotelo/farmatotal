@@ -9,18 +9,13 @@ import { isModuleEnabled, setModuleEnabled } from "../system/moduleState.js";
 
 const STORE_KEY = (k: string) => `plugin_${k}`;
 
-/** Campos sensibles que NUNCA se exponen al frontend */
-const SENSITIVE_FIELDS = new Set(["privateKey", "secretKey", "accessToken", "password", "token", "secret"]);
-
-/** Filtra valores sensibles antes de enviar al frontend */
-function sanitizeValues(values: Record<string, unknown>): Record<string, unknown> {
+/** Filtra campos marcados como `sensitive` en el configSchema del registry */
+function sanitizeValues(values: Record<string, unknown>, fields: Array<{ key: string; sensitive?: boolean }>): Record<string, unknown> {
+  const sensitiveKeys = new Set(fields.filter((f) => f.sensitive).map((f) => f.key));
+  if (sensitiveKeys.size === 0) return values;
   const safe: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(values)) {
-    if (SENSITIVE_FIELDS.has(k)) {
-      safe[k] = typeof v === "string" && v.length > 0 ? "••••••••" : "";
-    } else {
-      safe[k] = v;
-    }
+    safe[k] = sensitiveKeys.has(k) && typeof v === "string" && v.length > 0 ? "••••••••" : v;
   }
   return safe;
 }
@@ -52,7 +47,7 @@ export async function pluginRoutes(app: FastifyInstance) {
     if (!mod) return reply.notFound("Plugin no encontrado");
     const fields = mod.configSchema ?? [];
     const rawValues = await readVals(req, mod.key);
-    const values = sanitizeValues(rawValues);
+    const values = sanitizeValues(rawValues, fields);
     return reply.send({
       key: mod.key,
       name: mod.name,

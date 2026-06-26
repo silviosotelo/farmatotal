@@ -33,6 +33,7 @@ export type ConfigField = {
   label: string;
   type: ConfigFieldType;
   group: string;
+  sensitive?: boolean;
   options?: { value: string; label: string }[];
   placeholder?: string;
   help?: string;
@@ -97,8 +98,8 @@ export const MODULES: ModuleManifest[] = [
     consumes: ["payment.confirmed"],
     configSchema: [
       { key: "env", label: "Entorno", type: "select", group: "Credenciales", options: envOpts, help: "Staging para pruebas, Producción para pagos reales" },
-      { key: "publicKey", label: "Public Key", type: "password", group: "Credenciales", help: "Clave pública de Bancard vPOS" },
-      { key: "privateKey", label: "Private Key", type: "password", group: "Credenciales", help: "Clave privada de Bancard vPOS (nunca compartir)" },
+      { key: "publicKey", label: "Public Key", type: "password", group: "Credenciales", sensitive: true, help: "Clave pública de Bancard vPOS" },
+      { key: "privateKey", label: "Private Key", type: "password", group: "Credenciales", sensitive: true, help: "Clave privada de Bancard vPOS (nunca compartir)" },
       { key: "merchantCode", label: "Código de comercio", type: "text", group: "Credenciales", help: "Código de comercio asignado por Bancard" },
       { key: "publicApiUrl", label: "URL pública del API", type: "text", group: "Credenciales", help: "URL pública del backend (para generar el webhook). Ej: https://api.tudominio.com" },
       { key: "storeUrl", label: "URL de la tienda", type: "text", group: "Credenciales", help: "URL del storefront (para retorno después del pago). Ej: https://tienda.tudominio.com" },
