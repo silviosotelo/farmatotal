@@ -11,7 +11,7 @@ import { appSchema } from "./_pgSchema";
 import { tenants } from "./globals";
 import { users } from "./identity";
 import { branches } from "./branches";
-import { products } from "./products";
+import { products } from "./catalog";
 import { productVariants } from "./variants";
 
 export const inventory = appSchema.table(

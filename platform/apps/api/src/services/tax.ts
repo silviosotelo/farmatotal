@@ -1,10 +1,10 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { settings } from "../db/schema/index.js";
+import { options } from "../db/schema/index.js";
 
 /**
  * Impuestos per-tenant. Fuente única de la lógica (la usan tax.routes Y el checkout)
- * para que el cálculo no diverja. Config en settings `mod_tax`.
+  * para que el cálculo no diverja. Config en options `mod_tax`.
  */
 export const TAX_SETTINGS_KEY = "mod_tax";
 
@@ -24,8 +24,8 @@ export const TAX_DEFAULTS: TaxConfig = {
 export async function readTaxConfig(tenantId: string): Promise<TaxConfig> {
   const [row] = await db
     .select()
-    .from(settings)
-    .where(and(eq(settings.tenantId, tenantId), eq(settings.key, TAX_SETTINGS_KEY)))
+    .from(options)
+    .where(and(eq(options.tenantId, tenantId), eq(options.name, TAX_SETTINGS_KEY)))
     .limit(1);
   return (row?.value as TaxConfig) ?? TAX_DEFAULTS;
 }

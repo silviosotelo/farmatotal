@@ -9,8 +9,8 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 import { appSchema } from "./_pgSchema";
-import { tenants } from "./tenants";
-import { users } from "./users";
+import { tenants } from "./globals";
+import { users } from "./identity";
 import { media } from "./media";
 
 export const postTypes = ["page", "slide", "blog_post", "cms_block"] as const;

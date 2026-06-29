@@ -9,7 +9,7 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 import { appSchema } from "./_pgSchema";
-import { tenants } from "./tenants";
+import { tenants } from "./globals";
 
 export const termObjectTypes = ["post", "product", "variant"] as const;
 export type TermObjectType = (typeof termObjectTypes)[number];

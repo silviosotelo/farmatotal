@@ -3,7 +3,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
 import { sql } from "drizzle-orm";
-import { settings, erpFieldMappings, syncRuns, branches, inventory, products } from "../../db/schema";
+import { options, erpFieldMappings, syncRuns, branches, inventory, products } from "../../db/schema";
 import { tid } from "../../plugins/tenant";
 import { isModuleEnabled } from "../system/moduleState.js";
 import { getAdapter, listAdapters } from "./adapters/types.js";
@@ -13,8 +13,8 @@ import { importEntity } from "./generic-import.js";
 async function readConfig(req: FastifyRequest): Promise<Record<string, unknown>> {
   const [row] = await db
     .select()
-    .from(settings)
-    .where(and(eq(settings.tenantId, tid(req)), eq(settings.key, "plugin_erp_sync")))
+    .from(options)
+    .where(and(eq(options.tenantId, tid(req)), eq(options.name, "plugin_erp_sync")))
     .limit(1);
   return (row?.value as Record<string, unknown>) ?? {};
 }
@@ -111,13 +111,13 @@ export async function erpSyncRoutes(app: FastifyInstance) {
         if (!pid) continue;
         await db
           .update(inventory)
-          .set({ stock: Math.max(0, Math.trunc(qty)), updatedAt: new Date() })
+          .set({ onHand: String(Math.max(0, Math.trunc(qty))), updatedAt: new Date() })
           .where(and(eq(inventory.productId, pid), eq(inventory.branchId, br.id)));
         const [{ total } = { total: 0 }] = await db
-          .select({ total: sql<number>`coalesce(sum(${inventory.stock}),0)::int` })
+          .select({ total: sql<number>`coalesce(sum(${inventory.onHand}),0)::int` })
           .from(inventory)
           .where(and(eq(inventory.tenantId, t), eq(inventory.productId, pid)));
-        await db.update(products).set({ stockCached: total }).where(eq(products.id, pid));
+        await db.update(products).set({ totalSales: total }).where(eq(products.id, pid));
         updated++;
       }
       return reply.send({ ok: true, branch: br.code, queried: bySku.size, updated });

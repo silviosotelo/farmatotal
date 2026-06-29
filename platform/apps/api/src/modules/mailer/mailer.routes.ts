@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
-import { emailLog, emailQueue, emailTemplates, settings } from "../../db/schema";
+import { emailLog, emailQueue, emailTemplates, options } from "../../db/schema";
 import { enqueueEmail, getMailerConfig, processQueue } from "../../services/mailer.js";
 import { tid } from "../../plugins/tenant";
 
@@ -88,9 +88,9 @@ export async function mailerRoutes(app: FastifyInstance) {
     { schema: { body: z.record(z.string(), z.unknown()) } },
     async (req, reply) => {
       await db
-        .insert(settings)
-        .values({ tenantId: tid(req), key: "mod_mailer", value: req.body })
-        .onConflictDoUpdate({ target: [settings.tenantId, settings.key], set: { value: req.body, updatedAt: new Date() } });
+        .insert(options)
+        .values({ tenantId: tid(req), name: "mod_mailer", value: req.body })
+        .onConflictDoUpdate({ target: [options.tenantId, options.name], set: { value: req.body, updatedAt: new Date() } });
       return reply.send({ ok: true });
     },
   );

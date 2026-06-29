@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { and, asc, desc, eq, gt, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import {
   brandDTO,
   brandInput,
@@ -13,15 +13,21 @@ import {
 } from "@platform/shared-types";
 import { z } from "zod";
 import { db } from "../../db/client";
-import { brands, categories, productImages, products } from "../../db/schema";
+import {
+  media,
+  posts,
+  productImages,
+  products,
+  termRelationships,
+  terms,
+  termTaxonomy,
+} from "../../db/schema";
 import { tid } from "../../plugins/tenant";
 
 const idParam = z.object({ id: z.string().uuid() });
 
 export async function catalogRoutes(app: FastifyInstance) {
-  // ============ CATEGORIES ============
-  // Lista plana. Filtros: ?parentId=null → solo departamentos top-level;
-  // ?parentId=<uuid> → subcategorías de ese departamento; sin filtro → todas.
+  // ============ CATEGORIES (termTaxonomy WHERE taxonomy = 'product_cat') ============
   app.get(
     "/catalog/categories",
     {
@@ -33,14 +39,26 @@ export async function catalogRoutes(app: FastifyInstance) {
     async (req) => {
       const { parentId } = req.query as { parentId?: string };
       const where = and(
-        eq(categories.tenantId, tid(req)),
-        parentId === "null" ? isNull(categories.parentId) : parentId ? eq(categories.parentId, parentId) : undefined,
+        eq(termTaxonomy.tenantId, tid(req)),
+        eq(termTaxonomy.taxonomy, "product_cat"),
+        parentId === "null"
+          ? isNull(termTaxonomy.parentId)
+          : parentId
+            ? eq(termTaxonomy.parentId, parentId)
+            : undefined,
       );
       const rows = await db
-        .select()
-        .from(categories)
+        .select({
+          id: termTaxonomy.id,
+          name: terms.name,
+          slug: terms.slug,
+          description: termTaxonomy.description,
+          parentId: termTaxonomy.parentId,
+        })
+        .from(termTaxonomy)
+        .innerJoin(terms, eq(terms.id, termTaxonomy.termId))
         .where(where)
-        .orderBy(asc(categories.position), asc(categories.name));
+        .orderBy(asc(terms.name));
       return {
         data: rows.map(toCategoryDTO),
         page: 1,
@@ -51,13 +69,19 @@ export async function catalogRoutes(app: FastifyInstance) {
     },
   );
 
-  // Árbol jerárquico de categorías (departamentos → subcategorías).
   app.get("/catalog/categories/tree", async (req) => {
     const rows = await db
-      .select()
-      .from(categories)
-      .where(eq(categories.tenantId, tid(req)))
-      .orderBy(asc(categories.position), asc(categories.name));
+      .select({
+        id: termTaxonomy.id,
+        name: terms.name,
+        slug: terms.slug,
+        description: termTaxonomy.description,
+        parentId: termTaxonomy.parentId,
+      })
+      .from(termTaxonomy)
+      .innerJoin(terms, eq(terms.id, termTaxonomy.termId))
+      .where(and(eq(termTaxonomy.tenantId, tid(req)), eq(termTaxonomy.taxonomy, "product_cat")))
+      .orderBy(asc(terms.name));
     type Node = ReturnType<typeof toCategoryDTO> & { children: Node[] };
     const byId = new Map<string, Node>(rows.map((r) => [r.id, { ...toCategoryDTO(r), children: [] }]));
     const roots: Node[] = [];
@@ -73,8 +97,30 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/categories",
     { schema: { body: categoryInput, response: { 200: categoryDTO } } },
     async (req, reply) => {
-      const [row] = await db.insert(categories).values({ ...req.body, tenantId: tid(req) }).returning();
-      return reply.send(toCategoryDTO(row!));
+      const { name, slug, description, parentId } = req.body;
+      const [term] = await db
+        .insert(terms)
+        .values({ tenantId: tid(req), name, slug })
+        .returning();
+      const [tt] = await db
+        .insert(termTaxonomy)
+        .values({
+          tenantId: tid(req),
+          termId: term!.id,
+          taxonomy: "product_cat",
+          description: description ?? null,
+          parentId: parentId ?? null,
+        })
+        .returning();
+      return reply.send(
+        toCategoryDTO({
+          id: tt!.id,
+          name: term!.name,
+          slug: term!.slug,
+          description: tt!.description,
+          parentId: tt!.parentId,
+        }),
+      );
     },
   );
 
@@ -82,13 +128,36 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/categories/:id",
     { schema: { params: idParam, body: categoryInput.partial(), response: { 200: categoryDTO } } },
     async (req, reply) => {
-      const [row] = await db
-        .update(categories)
-        .set({ ...req.body, updatedAt: new Date() })
-        .where(eq(categories.id, req.params.id))
+      const [tt] = await db
+        .update(termTaxonomy)
+        .set({
+          ...(req.body.description !== undefined && { description: req.body.description }),
+          ...(req.body.parentId !== undefined && { parentId: req.body.parentId }),
+          updatedAt: new Date(),
+        })
+        .where(and(eq(termTaxonomy.tenantId, tid(req)), eq(termTaxonomy.id, req.params.id)))
         .returning();
-      if (!row) return reply.notFound();
-      return reply.send(toCategoryDTO(row));
+      if (!tt) return reply.notFound();
+      if (req.body.name || req.body.slug) {
+        await db
+          .update(terms)
+          .set({
+            ...(req.body.name && { name: req.body.name }),
+            ...(req.body.slug && { slug: req.body.slug }),
+            updatedAt: new Date(),
+          })
+          .where(eq(terms.id, tt.termId));
+      }
+      const [term] = await db.select().from(terms).where(eq(terms.id, tt.termId)).limit(1);
+      return reply.send(
+        toCategoryDTO({
+          id: tt.id,
+          name: term!.name,
+          slug: term!.slug,
+          description: tt.description,
+          parentId: tt.parentId,
+        }),
+      );
     },
   );
 
@@ -96,17 +165,29 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/categories/:id",
     { schema: { params: idParam } },
     async (req, reply) => {
-      await db.delete(categories).where(eq(categories.id, req.params.id));
+      await db
+        .delete(termTaxonomy)
+        .where(and(eq(termTaxonomy.tenantId, tid(req)), eq(termTaxonomy.id, req.params.id)));
       return reply.send({ ok: true });
     },
   );
 
-  // ============ BRANDS ============
+  // ============ BRANDS (termTaxonomy WHERE taxonomy = 'product_brand') ============
   app.get(
     "/catalog/brands",
     { schema: { response: { 200: paginated(brandDTO) } } },
     async (req) => {
-      const rows = await db.select().from(brands).where(eq(brands.tenantId, tid(req))).orderBy(asc(brands.name));
+      const rows = await db
+        .select({
+          id: termTaxonomy.id,
+          name: terms.name,
+          slug: terms.slug,
+          description: termTaxonomy.description,
+        })
+        .from(termTaxonomy)
+        .innerJoin(terms, eq(terms.id, termTaxonomy.termId))
+        .where(and(eq(termTaxonomy.tenantId, tid(req)), eq(termTaxonomy.taxonomy, "product_brand")))
+        .orderBy(asc(terms.name));
       return {
         data: rows.map(toBrandDTO),
         page: 1,
@@ -121,8 +202,28 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/brands",
     { schema: { body: brandInput, response: { 200: brandDTO } } },
     async (req, reply) => {
-      const [row] = await db.insert(brands).values({ ...req.body, tenantId: tid(req) }).returning();
-      return reply.send(toBrandDTO(row!));
+      const { name, slug, description } = req.body;
+      const [term] = await db
+        .insert(terms)
+        .values({ tenantId: tid(req), name, slug })
+        .returning();
+      const [tt] = await db
+        .insert(termTaxonomy)
+        .values({
+          tenantId: tid(req),
+          termId: term!.id,
+          taxonomy: "product_brand",
+          description: description ?? null,
+        })
+        .returning();
+      return reply.send(
+        toBrandDTO({
+          id: tt!.id,
+          name: term!.name,
+          slug: term!.slug,
+          description: tt!.description,
+        }),
+      );
     },
   );
 
@@ -143,41 +244,50 @@ export async function catalogRoutes(app: FastifyInstance) {
         ids: idsCsv,
         status,
         featured,
-        onPromo,
-        inStock,
         priceMin,
         priceMax,
         sort,
       } = req.query;
 
-      // Filtros por slug (los emite el constructor). Se resuelven a id.
       let catId = categoryId;
       if (!catId && category) {
         const [c] = await db
-          .select({ id: categories.id })
-          .from(categories)
-          .where(and(eq(categories.tenantId, tid(req)), eq(categories.slug, category)))
+          .select({ id: termTaxonomy.id })
+          .from(termTaxonomy)
+          .innerJoin(terms, eq(terms.id, termTaxonomy.termId))
+          .where(
+            and(
+              eq(termTaxonomy.tenantId, tid(req)),
+              eq(termTaxonomy.taxonomy, "product_cat"),
+              eq(terms.slug, category),
+            ),
+          )
           .limit(1);
         catId = c?.id;
       }
       let brId = brandId;
       if (!brId && brand) {
         const [b] = await db
-          .select({ id: brands.id })
-          .from(brands)
-          .where(and(eq(brands.tenantId, tid(req)), eq(brands.slug, brand)))
+          .select({ id: termTaxonomy.id })
+          .from(termTaxonomy)
+          .innerJoin(terms, eq(terms.id, termTaxonomy.termId))
+          .where(
+            and(
+              eq(termTaxonomy.tenantId, tid(req)),
+              eq(termTaxonomy.taxonomy, "product_brand"),
+              eq(terms.slug, brand),
+            ),
+          )
           .limit(1);
         brId = b?.id;
       }
 
-      // Al filtrar por categoría, incluir sus descendientes: elegir un
-      // departamento (top-level) trae los productos de todas sus subcategorías.
       let catIds: string[] | undefined;
       if (catId) {
         const all = await db
-          .select({ id: categories.id, parentId: categories.parentId })
-          .from(categories)
-          .where(eq(categories.tenantId, tid(req)));
+          .select({ id: termTaxonomy.id, parentId: termTaxonomy.parentId })
+          .from(termTaxonomy)
+          .where(and(eq(termTaxonomy.tenantId, tid(req)), eq(termTaxonomy.taxonomy, "product_cat")));
         const childrenOf = new Map<string, string[]>();
         for (const c of all) {
           if (c.parentId) {
@@ -198,31 +308,47 @@ export async function catalogRoutes(app: FastifyInstance) {
         catIds = acc;
       }
 
-      // Selección manual (Elementor "Manual selection"): ids separados por coma.
       const manualIds = (idsCsv || "")
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
 
+      let productIdsByTerm: string[] | undefined;
+      const termIds: string[] = [];
+      if (catIds) termIds.push(...catIds);
+      if (brId) termIds.push(brId);
+      if (termIds.length) {
+        const rels = await db
+          .select({ objectId: termRelationships.objectId })
+          .from(termRelationships)
+          .where(
+            and(
+              eq(termRelationships.tenantId, tid(req)),
+              eq(termRelationships.objectType, "product"),
+              inArray(termRelationships.termTaxonomyId, termIds),
+            ),
+          );
+        productIdsByTerm = [...new Set(rels.map((r) => r.objectId))];
+      }
+
       const where = and(
         eq(products.tenantId, tid(req)),
         q
           ? or(
-              ilike(products.title, `%${q}%`),
               ilike(products.sku, `%${q}%`),
-              ilike(products.codInterno, `%${q}%`),
               ilike(products.barcode, `%${q}%`),
+              inArray(
+                products.postId,
+                db.select({ id: posts.id }).from(posts).where(ilike(posts.title, `%${q}%`)),
+              ),
             )
           : undefined,
         manualIds.length ? inArray(products.id, manualIds) : undefined,
-        catIds ? inArray(products.categoryId, catIds) : undefined,
-        brId ? eq(products.brandId, brId) : undefined,
+        productIdsByTerm ? inArray(products.id, productIdsByTerm) : undefined,
         status ? eq(products.status, status) : undefined,
         featured !== undefined ? eq(products.featured, featured) : undefined,
-        onPromo !== undefined ? eq(products.onPromo, onPromo) : undefined,
-        inStock ? gt(products.stockCached, 0) : undefined,
-        priceMin !== undefined ? gte(products.priceWeb, priceMin) : undefined,
-        priceMax !== undefined ? lte(products.priceWeb, priceMax) : undefined,
+        priceMin !== undefined ? gte(products.salePrice, String(priceMin)) : undefined,
+        priceMax !== undefined ? lte(products.salePrice, String(priceMax)) : undefined,
       );
 
       const [{ count } = { count: 0 }] = await db
@@ -235,13 +361,13 @@ export async function catalogRoutes(app: FastifyInstance) {
           case "createdAt:asc":
             return asc(products.createdAt);
           case "title:asc":
-            return asc(products.title);
+            return asc(posts.title);
           case "title:desc":
-            return desc(products.title);
+            return desc(posts.title);
           case "priceWeb:asc":
-            return asc(products.priceWeb);
+            return asc(products.salePrice);
           case "priceWeb:desc":
-            return desc(products.priceWeb);
+            return desc(products.salePrice);
           case "random":
             return sql`random()`;
           default:
@@ -251,21 +377,28 @@ export async function catalogRoutes(app: FastifyInstance) {
 
       const skip = offset ?? (page - 1) * perPage;
       const rows = await db
-        .select()
+        .select({ product: products, post: posts })
         .from(products)
+        .leftJoin(posts, eq(posts.id, products.postId))
         .where(where)
         .orderBy(orderBy)
         .limit(perPage)
         .offset(skip);
 
-      // Adjuntar la imagen primaria de cada producto al listado (1 query).
-      const ids = rows.map((r) => r.id);
+      const ids = rows.map((r) => r.product.id);
       const imgs = ids.length
         ? await db
-            .select()
+            .select({
+              id: productImages.id,
+              productId: productImages.productId,
+              altText: productImages.altText,
+              sortOrder: productImages.sortOrder,
+              url: media.url,
+            })
             .from(productImages)
+            .innerJoin(media, eq(media.id, productImages.mediaId))
             .where(inArray(productImages.productId, ids))
-            .orderBy(asc(productImages.position))
+            .orderBy(asc(productImages.sortOrder))
         : [];
       const imgByProduct = new Map<string, (typeof imgs)[number]>();
       for (const im of imgs) {
@@ -274,8 +407,8 @@ export async function catalogRoutes(app: FastifyInstance) {
 
       return {
         data: rows.map((r) => {
-          const dto = toProductDTO(r);
-          const im = imgByProduct.get(r.id);
+          const dto = toProductDTO(r.product, r.post);
+          const im = imgByProduct.get(r.product.id);
           return im ? { ...dto, images: [toImageDTO(im)] } : dto;
         }),
         page,
@@ -290,18 +423,26 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/products/:id",
     { schema: { params: idParam, response: { 200: productDTO } } },
     async (req, reply) => {
-      const [p] = await db
-        .select()
+      const [row] = await db
+        .select({ product: products, post: posts })
         .from(products)
+        .leftJoin(posts, eq(posts.id, products.postId))
         .where(and(eq(products.tenantId, tid(req)), eq(products.id, req.params.id)))
         .limit(1);
-      if (!p) return reply.notFound();
+      if (!row?.product) return reply.notFound();
       const imgs = await db
-        .select()
+        .select({
+          id: productImages.id,
+          productId: productImages.productId,
+          altText: productImages.altText,
+          sortOrder: productImages.sortOrder,
+          url: media.url,
+        })
         .from(productImages)
-        .where(eq(productImages.productId, p.id))
-        .orderBy(asc(productImages.position));
-      return reply.send({ ...toProductDTO(p), images: imgs.map(toImageDTO) });
+        .innerJoin(media, eq(media.id, productImages.mediaId))
+        .where(eq(productImages.productId, row.product.id))
+        .orderBy(asc(productImages.sortOrder));
+      return reply.send({ ...toProductDTO(row.product, row.post), images: imgs.map(toImageDTO) });
     },
   );
 
@@ -311,18 +452,26 @@ export async function catalogRoutes(app: FastifyInstance) {
       schema: { params: z.object({ slug: z.string() }), response: { 200: productDTO } },
     },
     async (req, reply) => {
-      const [p] = await db
-        .select()
+      const [row] = await db
+        .select({ product: products, post: posts })
         .from(products)
-        .where(and(eq(products.tenantId, tid(req)), eq(products.slug, req.params.slug)))
+        .innerJoin(posts, eq(posts.id, products.postId))
+        .where(and(eq(products.tenantId, tid(req)), eq(posts.slug, req.params.slug)))
         .limit(1);
-      if (!p) return reply.notFound();
+      if (!row?.product) return reply.notFound();
       const imgs = await db
-        .select()
+        .select({
+          id: productImages.id,
+          productId: productImages.productId,
+          altText: productImages.altText,
+          sortOrder: productImages.sortOrder,
+          url: media.url,
+        })
         .from(productImages)
-        .where(eq(productImages.productId, p.id))
-        .orderBy(asc(productImages.position));
-      return reply.send({ ...toProductDTO(p), images: imgs.map(toImageDTO) });
+        .innerJoin(media, eq(media.id, productImages.mediaId))
+        .where(eq(productImages.productId, row.product.id))
+        .orderBy(asc(productImages.sortOrder));
+      return reply.send({ ...toProductDTO(row.product, row.post), images: imgs.map(toImageDTO) });
     },
   );
 
@@ -330,8 +479,33 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/products",
     { schema: { body: productInput, response: { 200: productDTO } } },
     async (req, reply) => {
-      const [row] = await db.insert(products).values({ ...req.body, tenantId: tid(req) }).returning();
-      return reply.send(toProductDTO(row!));
+      const { title, slug, description, priceNormal, priceWeb, productType, ...rest } = req.body;
+      const [post] = await db
+        .insert(posts)
+        .values({
+          tenantId: tid(req),
+          postType: "page",
+          title,
+          slug,
+          content: description ?? null,
+          status: "publish",
+        })
+        .returning();
+      const [row] = await db
+        .insert(products)
+        .values({
+          tenantId: tid(req),
+          postId: post!.id,
+          sku: rest.sku,
+          barcode: rest.barcode ?? null,
+          regularPrice: priceNormal != null ? String(priceNormal) : null,
+          salePrice: priceWeb != null ? String(priceWeb) : null,
+          type: productType ?? "physical",
+          status: rest.status ?? "draft",
+          featured: rest.featured ?? false,
+        })
+        .returning();
+      return reply.send(toProductDTO(row!, post!));
     },
   );
 
@@ -339,13 +513,35 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/products/:id",
     { schema: { params: idParam, body: productInput.partial(), response: { 200: productDTO } } },
     async (req, reply) => {
+      const { title, slug, description, priceNormal, priceWeb, productType, ...rest } = req.body;
       const [row] = await db
         .update(products)
-        .set({ ...req.body, updatedAt: new Date() })
+        .set({
+          ...(rest.sku !== undefined && { sku: rest.sku }),
+          ...(rest.barcode !== undefined && { barcode: rest.barcode }),
+          ...(priceNormal !== undefined && { regularPrice: String(priceNormal) }),
+          ...(priceWeb !== undefined && { salePrice: String(priceWeb) }),
+          ...(productType !== undefined && { type: productType }),
+          ...(rest.status !== undefined && { status: rest.status }),
+          ...(rest.featured !== undefined && { featured: rest.featured }),
+          updatedAt: new Date(),
+        })
         .where(and(eq(products.tenantId, tid(req)), eq(products.id, req.params.id)))
         .returning();
       if (!row) return reply.notFound();
-      return reply.send(toProductDTO(row));
+      if (title || slug || description !== undefined) {
+        const postUpdate: Record<string, unknown> = { updatedAt: new Date() };
+        if (title) postUpdate.title = title;
+        if (slug) postUpdate.slug = slug;
+        if (description !== undefined) postUpdate.content = description;
+        if (row.postId) {
+          await db.update(posts).set(postUpdate).where(eq(posts.id, row.postId));
+        }
+      }
+      const [post] = row.postId
+        ? await db.select().from(posts).where(eq(posts.id, row.postId)).limit(1)
+        : [null];
+      return reply.send(toProductDTO(row, post));
     },
   );
 
@@ -353,77 +549,88 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/products/:id",
     { schema: { params: idParam } },
     async (req, reply) => {
-      await db.delete(products).where(and(eq(products.tenantId, tid(req)), eq(products.id, req.params.id)));
+      await db
+        .delete(products)
+        .where(and(eq(products.tenantId, tid(req)), eq(products.id, req.params.id)));
       return reply.send({ ok: true });
     },
   );
 }
 
 // ---------- mappers ----------
-function toCategoryDTO(r: typeof categories.$inferSelect) {
+function toCategoryDTO(r: {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  parentId: string | null;
+}) {
   return {
     id: r.id,
     slug: r.slug,
     name: r.name,
     parentId: r.parentId ?? null,
-    position: r.position,
-    fliaCodigo: r.fliaCodigo ?? null,
-    icon: r.icon ?? null,
+    position: 0,
+    fliaCodigo: null,
+    icon: null,
     description: r.description ?? null,
-    seo: r.seo ?? null,
-    active: r.active,
-    custom: r.custom ?? null,
+    seo: null,
+    active: true,
+    custom: null,
   };
 }
-function toBrandDTO(r: typeof brands.$inferSelect) {
+function toBrandDTO(r: { id: string; name: string; slug: string; description: string | null }) {
   return {
     id: r.id,
     slug: r.slug,
     name: r.name,
-    logoUrl: r.logoUrl ?? null,
+    logoUrl: null,
     description: r.description ?? null,
-    active: r.active,
+    active: true,
   };
 }
-function toProductDTO(r: typeof products.$inferSelect) {
+function toProductDTO(
+  r: typeof products.$inferSelect,
+  p: typeof posts.$inferSelect | null,
+) {
   return {
     id: r.id,
-    sku: r.sku,
-    codInterno: r.codInterno ?? null,
+    sku: r.sku ?? "",
+    codInterno: null,
     barcode: r.barcode ?? null,
-    slug: r.slug,
-    title: r.title,
-    description: r.description ?? null,
-    brandId: r.brandId ?? null,
-    categoryId: r.categoryId ?? null,
-    priceNormal: r.priceNormal,
-    priceWeb: r.priceWeb,
-    unit: r.unit,
-    unitStep: r.unitStep,
-    onPromo: r.onPromo,
-    promoCode: r.promoCode ?? null,
-    controlled: r.controlled,
+    slug: p?.slug ?? "",
+    title: p?.title ?? "",
+    description: p?.content ?? null,
+    brandId: null,
+    categoryId: null,
+    priceNormal: Number(r.regularPrice ?? 0),
+    priceWeb: Number(r.salePrice ?? 0),
+    unit: "unidad",
+    unitStep: 1,
+    onPromo: false,
+    promoCode: null,
+    controlled: false,
     featured: r.featured,
-    status: r.status,
-    productType: r.productType,
-    attributes: r.attributes ?? null,
-    stockCached: r.stockCached,
-    custom: r.custom ?? null,
-    seo: r.seo ?? null,
-    erpSourced: r.erpSourced,
-    sourceSystem: r.sourceSystem ?? null,
-    sourceId: r.sourceId ?? null,
-    syncedAt: r.syncedAt ? r.syncedAt.toISOString() : null,
+    status: r.status as "draft" | "published" | "archived",
+    productType: r.type as "physical" | "digital" | "service",
+    attributes: null,
+    stockCached: 0,
+    custom: null,
+    seo: null,
+    erpSourced: !!r.erpId,
+    sourceSystem: null,
+    sourceId: null,
+    syncedAt: r.erpSyncedAt ? r.erpSyncedAt.toISOString() : null,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
   };
 }
-function toImageDTO(r: typeof productImages.$inferSelect) {
+function toImageDTO(r: { id: string; url: string | null; altText: string; sortOrder: number }) {
   return {
     id: r.id,
-    url: r.url,
-    alt: r.alt ?? null,
-    position: r.position,
-    isPrimary: r.isPrimary,
+    url: r.url ?? "",
+    alt: r.altText || null,
+    position: r.sortOrder,
+    isPrimary: r.sortOrder === 0,
   };
 }

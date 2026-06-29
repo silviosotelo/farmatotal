@@ -16,7 +16,7 @@ import { tenants } from "./globals";
 import { users } from "./identity";
 import { customers } from "./customers";
 import { branches } from "./branches";
-import { products } from "./products";
+import { products } from "./catalog";
 import { productVariants } from "./variants";
 import { coupons } from "./coupons";
 

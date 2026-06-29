@@ -1,10 +1,10 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { settings } from "../db/schema/index.js";
+import { options } from "../db/schema/index.js";
 
 /**
  * Envío per-tenant. Fuente única de la lógica de costos (la usan shipping.routes Y
- * el checkout). Config en settings `mod_shipping`: zonas (por ciudad) con métodos.
+  * el checkout). Config en options `mod_shipping`: zonas (por ciudad) con métodos.
  */
 export const SHIPPING_SETTINGS_KEY = "mod_shipping";
 
@@ -23,8 +23,8 @@ export type ShippingConfig = { zones: ShippingZone[] };
 export async function readShippingConfig(tenantId: string): Promise<ShippingConfig> {
   const [row] = await db
     .select()
-    .from(settings)
-    .where(and(eq(settings.tenantId, tenantId), eq(settings.key, SHIPPING_SETTINGS_KEY)))
+    .from(options)
+    .where(and(eq(options.tenantId, tenantId), eq(options.name, SHIPPING_SETTINGS_KEY)))
     .limit(1);
   return (row?.value as ShippingConfig) ?? { zones: [] };
 }

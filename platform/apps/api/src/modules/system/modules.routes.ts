@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
-import { settings, tenants } from "../../db/schema";
+import { options, tenants } from "../../db/schema";
 import { tid } from "../../plugins/tenant";
 import { MODULES } from "./registry.js";
 
@@ -23,18 +23,18 @@ async function syncTenantFlags(tenantId: string, moduleKey: string, enabled: boo
 async function readState(req: FastifyRequest): Promise<Record<string, boolean>> {
   const [row] = await db
     .select()
-    .from(settings)
-    .where(and(eq(settings.tenantId, tid(req)), eq(settings.key, STATE_KEY)))
+    .from(options)
+    .where(and(eq(options.tenantId, tid(req)), eq(options.name, STATE_KEY)))
     .limit(1);
   return (row?.value as Record<string, boolean>) ?? {};
 }
 
 async function writeState(req: FastifyRequest, state: Record<string, boolean>) {
   await db
-    .insert(settings)
-    .values({ tenantId: tid(req), key: STATE_KEY, value: state })
+    .insert(options)
+    .values({ tenantId: tid(req), name: STATE_KEY, value: state })
     .onConflictDoUpdate({
-      target: [settings.tenantId, settings.key],
+      target: [options.tenantId, options.name],
       set: { value: state, updatedAt: new Date() },
     });
 }

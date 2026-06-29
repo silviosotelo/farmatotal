@@ -230,10 +230,10 @@ export async function runFullWooImport(opts: {
 async function upsertProduct(p: WooProduct, catMap: Map<number, string>, tenantId: string) {
   const sku = p.sku?.trim() || `woo-${p.id}`;
   const slug = p.slug || slugify(p.name);
-  const priceNormal = parsePrice(p.prices.regular_price, p.prices.currency_minor_unit);
+  const regularPrice = parsePrice(p.prices.regular_price, p.prices.currency_minor_unit);
   const priceSale = parsePrice(p.prices.sale_price, p.prices.currency_minor_unit);
-  const priceWeb = priceSale > 0 ? priceSale : priceNormal;
-  const onPromo = p.on_sale && priceSale > 0 && priceSale < priceNormal;
+  const salePrice = priceSale > 0 ? priceSale : regularPrice;
+  const onPromo = p.on_sale && priceSale > 0 && priceSale < regularPrice;
 
   const categoryId = p.categories?.[0] ? catMap.get(p.categories[0].id) ?? null : null;
 
@@ -254,11 +254,11 @@ async function upsertProduct(p: WooProduct, catMap: Map<number, string>, tenantI
     title: p.name,
     description: stripHtml(p.description),
     categoryId: categoryId ?? null,
-    priceNormal,
-    priceWeb,
+    regularPrice,
+    salePrice,
     onPromo,
     status: "published" as const,
-    stockCached: p.is_in_stock ? 1 : 0,
+    totalSales: p.is_in_stock ? 1 : 0,
     custom,
     erpSourced: false,
     sourceSystem: SOURCE,
@@ -277,10 +277,10 @@ async function upsertProduct(p: WooProduct, catMap: Map<number, string>, tenantI
         title: values.title,
         description: values.description,
         categoryId: values.categoryId,
-        priceNormal: values.priceNormal,
-        priceWeb: values.priceWeb,
+        regularPrice: values.regularPrice,
+        salePrice: values.salePrice,
         onPromo: values.onPromo,
-        stockCached: values.stockCached,
+        totalSales: values.totalSales,
         custom: values.custom,
         syncedAt: values.syncedAt,
         updatedAt: new Date(),

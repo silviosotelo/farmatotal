@@ -31,12 +31,13 @@ export async function authRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const { email, password } = req.body;
       const user = await findUserByEmail(email.toLowerCase().trim());
-      if (!user || !user.active) return reply.unauthorized("Credenciales invalidas");
+      if (!user || user.status !== "active") return reply.unauthorized("Credenciales invalidas");
       const ok = await verifyPassword(password, user.passwordHash);
       if (!ok) return reply.unauthorized("Credenciales invalidas");
 
+      const role = "customer";
       const access = await reply.jwtSign(
-        { sub: user.id, role: user.role },
+        { sub: user.id, role },
         { expiresIn: env.JWT_ACCESS_TTL },
       );
       const refresh = await reply.jwtSign(
@@ -64,7 +65,7 @@ export async function authRoutes(app: FastifyInstance) {
         })
         .send({
           accessToken: access,
-          user: { id: user.id, email: user.email, name: user.name, role: user.role },
+          user: { id: user.id, email: user.email, name: user.displayName ?? user.email, role },
         });
     },
   );
@@ -84,15 +85,16 @@ export async function authRoutes(app: FastifyInstance) {
       const stored = await findValidRefreshToken(payload.sub, token);
       if (!stored) return reply.unauthorized("Refresh expirado o revocado");
       const user = await findUserById(payload.sub);
-      if (!user || !user.active) return reply.unauthorized("Usuario inactivo");
+      if (!user || user.status !== "active") return reply.unauthorized("Usuario inactivo");
 
+      const role = "customer";
       const access = await reply.jwtSign(
-        { sub: user.id, role: user.role },
+        { sub: user.id, role },
         { expiresIn: env.JWT_ACCESS_TTL },
       );
       return reply.send({
         accessToken: access,
-        user: { id: user.id, email: user.email, name: user.name, role: user.role },
+        user: { id: user.id, email: user.email, name: user.displayName ?? user.email, role },
       });
     },
   );
@@ -117,18 +119,19 @@ export async function authRoutes(app: FastifyInstance) {
     { schema: { body: registerInput, response: { 200: sessionUser } } },
     async (req, reply) => {
       const { db } = await import("../../db/client.js");
-      const { users } = await import("../../db/schema/users.js");
+      const { users } = await import("../../db/schema/index.js");
       const existing = await db.select({ id: users.id }).from(users).limit(1);
       if (existing.length > 0) return reply.conflict("Ya existen usuarios — usa /auth/login");
 
-      const u = await createUser({ ...req.body, role: "admin" });
+      const role = "admin";
+      const u = await createUser({ ...req.body, role });
       const access = await reply.jwtSign(
-        { sub: u.id, role: u.role },
+        { sub: u.id, role },
         { expiresIn: env.JWT_ACCESS_TTL },
       );
       return reply.send({
         accessToken: access,
-        user: { id: u.id, email: u.email, name: u.name, role: u.role },
+        user: { id: u.id, email: u.email, name: u.displayName ?? u.email, role },
       });
     },
   );
@@ -143,8 +146,9 @@ export async function authRoutes(app: FastifyInstance) {
       const existing = await findUserByEmail(email);
       if (existing) return reply.conflict("Ya existe una cuenta con ese email");
 
-      const u = await createUser({ ...req.body, email, role: "customer" });
-      const access = await reply.jwtSign({ sub: u.id, role: u.role }, { expiresIn: env.JWT_ACCESS_TTL });
+      const role = "customer";
+      const u = await createUser({ ...req.body, email, role });
+      const access = await reply.jwtSign({ sub: u.id, role }, { expiresIn: env.JWT_ACCESS_TTL });
       const refresh = await reply.jwtSign(
         { sub: u.id, typ: "refresh" },
         { key: env.JWT_REFRESH_SECRET, expiresIn: env.JWT_REFRESH_TTL },
@@ -167,7 +171,7 @@ export async function authRoutes(app: FastifyInstance) {
         })
         .send({
           accessToken: access,
-          user: { id: u.id, email: u.email, name: u.name, role: u.role },
+          user: { id: u.id, email: u.email, name: u.displayName ?? u.email, role },
         });
     },
   );
@@ -188,10 +192,11 @@ export async function authRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const sub = (req.user as { sub?: string })?.sub;
       const user = sub ? await findUserById(sub) : null;
-      if (!user || !user.active) return reply.unauthorized("Usuario no encontrado");
+      if (!user || user.status !== "active") return reply.unauthorized("Usuario no encontrado");
+      const role = "customer";
       return reply.send({
         accessToken: "",
-        user: { id: user.id, email: user.email, name: user.name, role: user.role },
+        user: { id: user.id, email: user.email, name: user.displayName ?? user.email, role },
       });
     },
   );

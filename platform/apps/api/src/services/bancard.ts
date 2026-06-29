@@ -1,7 +1,7 @@
 import { createHash } from "crypto"
 import { and, eq } from "drizzle-orm"
 import { db } from "../db/client.js"
-import { settings } from "../db/schema/index.js"
+import { options } from "../db/schema/index.js"
 
 const PLUGIN_KEY = "gw_bancard"
 const STORE_KEY = `plugin_${PLUGIN_KEY}`
@@ -15,12 +15,12 @@ type BancardConfig = {
   storeUrl?: string
 }
 
-/** Lee la config de Bancard desde el plugin settings en la DB */
+/** Lee la config de Bancard desde el plugin options en la DB */
 export async function getConfig(tenantId: string): Promise<BancardConfig> {
   const [row] = await db
     .select()
-    .from(settings)
-    .where(and(eq(settings.tenantId, tenantId), eq(settings.key, STORE_KEY)))
+    .from(options)
+    .where(and(eq(options.tenantId, tenantId), eq(options.name, STORE_KEY)))
     .limit(1)
   return (row?.value as BancardConfig) ?? {}
 }

@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
-import { settings } from "../../db/schema";
+import { options } from "../../db/schema";
 import { tid } from "../../plugins/tenant";
 
 const SETTINGS_KEY = "mod_attributes";
@@ -20,8 +20,8 @@ type AttributesConfig = z.infer<typeof configSchema>;
 async function readConfig(req: FastifyRequest): Promise<AttributesConfig> {
   const [row] = await db
     .select()
-    .from(settings)
-    .where(and(eq(settings.tenantId, tid(req)), eq(settings.key, SETTINGS_KEY)))
+    .from(options)
+    .where(and(eq(options.tenantId, tid(req)), eq(options.name, SETTINGS_KEY)))
     .limit(1);
   return (row?.value as AttributesConfig) ?? { attributes: [] };
 }
@@ -31,10 +31,10 @@ export async function attributesRoutes(app: FastifyInstance) {
 
   app.put("/attributes", { schema: { body: configSchema } }, async (req, reply) => {
     await db
-      .insert(settings)
-      .values({ tenantId: tid(req), key: SETTINGS_KEY, value: req.body })
+      .insert(options)
+      .values({ tenantId: tid(req), name: SETTINGS_KEY, value: req.body })
       .onConflictDoUpdate({
-        target: [settings.tenantId, settings.key],
+        target: [options.tenantId, options.name],
         set: { value: req.body, updatedAt: new Date() },
       });
     return reply.send({ ok: true });

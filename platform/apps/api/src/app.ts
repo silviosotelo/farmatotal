@@ -25,7 +25,6 @@ import { couponRoutes } from "./modules/coupons/coupons.routes.js";
 import { customerRoutes } from "./modules/customers/customers.routes.js";
 import { paymentRoutes } from "./modules/payments/payments.routes.js";
 import { reviewRoutes } from "./modules/reviews/reviews.routes.js";
-import { wishlistRoutes } from "./modules/wishlist/wishlist.routes.js";
 import { variantRoutes } from "./modules/variants/variants.routes.js";
 import { mediaRoutes } from "./modules/media/media.routes.js";
 import { notificationRoutes } from "./modules/notifications/notifications.routes.js";
@@ -41,8 +40,6 @@ import { taxRoutes } from "./modules/tax/tax.routes.js";
 import { usersRoutes } from "./modules/users/users.routes.js";
 import { attributesRoutes } from "./modules/attributes/attributes.routes.js";
 import { statsRoutes } from "./modules/stats/stats.routes.js";
-import { stockRoutes } from "./modules/stock/stock.routes.js";
-import { slidesRoutes } from "./modules/slides/slides.routes.js";
 import { healthRoutes } from "./modules/health/health.routes.js";
 
 export async function buildApp() {
@@ -141,7 +138,6 @@ export async function buildApp() {
   await app.register(customerRoutes);
   await app.register(paymentRoutes);
   await app.register(reviewRoutes);
-  await app.register(wishlistRoutes);
   await app.register(variantRoutes);
   await app.register(mediaRoutes);
   await app.register(notificationRoutes);
@@ -163,8 +159,6 @@ export async function buildApp() {
       processQueue(25).catch((e) => app.log.warn({ e: String(e) }, "mailer worker"));
     }, 30_000).unref();
   }
-  await app.register(stockRoutes);
-  await app.register(slidesRoutes);
 
   return app;
 }

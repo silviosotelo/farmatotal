@@ -8,8 +8,8 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 import { appSchema } from "./_pgSchema";
-import { tenants } from "./tenants";
-import { users } from "./users";
+import { tenants } from "./globals";
+import { users } from "./identity";
 
 /** Biblioteca de medios: imágenes/archivos usables en logo, banners, slides,
  * productos, posts y CMS. Soporta múltiples storage drivers (local, s3, etc.)

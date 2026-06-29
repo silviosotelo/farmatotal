@@ -11,7 +11,7 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 import { appSchema } from "./_pgSchema";
-import { products } from "./products";
+import { products } from "./catalog";
 
 /** Atributos genéricos de la variante (white-label: talle/color, mg/cantidad, etc.). */
 export type VariantAttributes = Record<string, string>;

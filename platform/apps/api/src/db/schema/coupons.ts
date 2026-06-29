@@ -9,7 +9,7 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 import { appSchema } from "./_pgSchema";
-import { tenants } from "./tenants";
+import { tenants } from "./globals";
 
 export const couponType = ["percent", "fixed"] as const;
 export type CouponType = (typeof couponType)[number];

@@ -10,7 +10,7 @@ import {
 import { appSchema } from "./_pgSchema";
 import { tenants } from "./globals";
 import { customers } from "./customers";
-import { products } from "./products";
+import { products } from "./catalog";
 
 export const productReviewStatus = [
   "pending",

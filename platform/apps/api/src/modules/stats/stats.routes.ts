@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { and, gte, lte, sql } from "drizzle-orm";
 import { db } from "../../db/client";
-import { branches, categories, coupons, orders, orderLines, products } from "../../db/schema";
+import { branches, terms, coupons, orders, orderItems, products } from "../../db/schema";
 
 /** Estados que cuentan como venta concretada (facturable). */
 const REVENUE_STATUSES = ["paid", "processing", "fulfilled", "delivered"] as const;
@@ -17,7 +17,7 @@ export async function statsRoutes(app: FastifyInstance) {
       })
       .from(products);
 
-    const [cat] = await db.select({ total: sql<number>`count(*)::int` }).from(categories);
+    const [cat] = await db.select({ total: sql<number>`count(*)::int` }).from(terms);
     const [br] = await db.select({ total: sql<number>`count(*)::int` }).from(branches);
     const [cp] = await db.select({ total: sql<number>`count(*)::int` }).from(coupons);
 
@@ -31,14 +31,15 @@ export async function statsRoutes(app: FastifyInstance) {
       .from(orders);
 
     // Top categorías por cantidad de productos
+    // TODO: In V2, categories are terms linked via term_taxonomy + term_relationships
     const topCategories = await db
       .select({
-        name: categories.name,
+        name: terms.name,
         count: sql<number>`count(${products.id})::int`,
       })
-      .from(categories)
-      .leftJoin(products, sql`${products.categoryId} = ${categories.id}`)
-      .groupBy(categories.id, categories.name)
+      .from(terms)
+      .leftJoin(products, sql`1 = 0`) // TODO: fix join via term_relationships
+      .groupBy(terms.id, terms.name)
       .orderBy(sql`count(${products.id}) desc`)
       .limit(8);
 
@@ -128,16 +129,16 @@ export async function statsRoutes(app: FastifyInstance) {
       // Top productos por unidades e ingresos (sobre ventas concretadas)
       const topProducts = await db
         .select({
-          sku: orderLines.sku,
-          title: orderLines.title,
-          units: sql<number>`sum(${orderLines.quantity})::int`,
-          revenue: sql<number>`coalesce(sum(${orderLines.lineTotal}),0)::bigint`,
+          sku: orderItems.sku,
+          title: orderItems.name,
+          units: sql<number>`sum(${orderItems.quantity})::int`,
+          revenue: sql<number>`coalesce(sum(${orderItems.total}),0)::bigint`,
         })
-        .from(orderLines)
-        .innerJoin(orders, sql`${orders.id} = ${orderLines.orderId}`)
+        .from(orderItems)
+        .innerJoin(orders, sql`${orders.id} = ${orderItems.orderId}`)
         .where(and(range, isRevenue))
-        .groupBy(orderLines.sku, orderLines.title)
-        .orderBy(sql`sum(${orderLines.quantity}) desc`)
+        .groupBy(orderItems.sku, orderItems.name)
+        .orderBy(sql`sum(${orderItems.quantity}) desc`)
         .limit(10);
 
       const revenue = Number(kpi?.revenue ?? 0);

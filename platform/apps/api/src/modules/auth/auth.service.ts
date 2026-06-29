@@ -2,7 +2,7 @@ import argon2 from "argon2";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import crypto from "node:crypto";
 import { db } from "../../db/client.js";
-import { refreshTokens, users, type Role } from "../../db/schema/users.js";
+import { refreshTokens, users } from "../../db/schema/index.js";
 
 export async function findUserByEmail(email: string) {
   const [u] = await db.select().from(users).where(eq(users.email, email)).limit(1);
@@ -26,7 +26,7 @@ export async function createUser(input: {
   email: string;
   password: string;
   name?: string;
-  role?: Role;
+  role?: string;
 }) {
   const passwordHash = await hashPassword(input.password);
   const [u] = await db
@@ -34,8 +34,7 @@ export async function createUser(input: {
     .values({
       email: input.email.toLowerCase().trim(),
       passwordHash,
-      name: input.name ?? null,
-      role: input.role ?? "viewer",
+      displayName: input.name ?? null,
     })
     .returning();
   return u!;

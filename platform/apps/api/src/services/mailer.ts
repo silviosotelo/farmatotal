@@ -1,11 +1,11 @@
 import { and, eq, lte, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { emailLog, emailQueue, emailTemplates, settings, tenants } from "../db/schema/index.js";
+import { emailLog, emailQueue, emailTemplates, options, tenants } from "../db/schema/index.js";
 
 const SETTINGS_KEY = "mod_mailer";
 
 /**
- * NOTA multitenant: la config `mod_mailer` vive en `settings` (scopeada por tenant),
+ * NOTA multitenant: la config `mod_mailer` vive en `options` (scopeada por tenant),
  * pero las tablas `email_queue` / `email_templates` / `email_log` son GLOBALES (no
  * tienen tenant_id todavía). Por eso el worker procesa una cola única y usa la config
  * del tenant por defecto. Hacer la cola multitenant requiere migración de schema
@@ -31,8 +31,8 @@ const DEFAULTS: MailerConfig = { provider: "log", fromName: "Tienda", fromEmail:
 export async function getMailerConfig(tenantId: string): Promise<MailerConfig> {
   const [row] = await db
     .select()
-    .from(settings)
-    .where(and(eq(settings.tenantId, tenantId), eq(settings.key, SETTINGS_KEY)))
+    .from(options)
+    .where(and(eq(options.tenantId, tenantId), eq(options.name, SETTINGS_KEY)))
     .limit(1);
   return { ...DEFAULTS, ...((row?.value as Partial<MailerConfig>) ?? {}) };
 }
@@ -62,7 +62,7 @@ export async function enqueueEmail(input: EnqueueInput) {
     const [tpl] = await db
       .select()
       .from(emailTemplates)
-      .where(eq(emailTemplates.key, input.templateKey))
+      .where(eq(emailTemplates.type, input.templateKey))
       .limit(1);
     if (tpl) {
       subject = render(tpl.subject, input.data);

@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { db } from "../../db/client";
-import { settings } from "../../db/schema";
+import { options } from "../../db/schema";
 import { tid } from "../../plugins/tenant";
 import { SHIPPING_SETTINGS_KEY, readShippingConfig, quoteOptions } from "../../services/shipping.js";
 
@@ -33,10 +33,10 @@ export async function shippingRoutes(app: FastifyInstance) {
 
   app.put("/shipping/config", { schema: { body: configSchema } }, async (req, reply) => {
     await db
-      .insert(settings)
-      .values({ tenantId: tid(req), key: SHIPPING_SETTINGS_KEY, value: req.body })
+      .insert(options)
+      .values({ tenantId: tid(req), name: SHIPPING_SETTINGS_KEY, value: req.body })
       .onConflictDoUpdate({
-        target: [settings.tenantId, settings.key],
+        target: [options.tenantId, options.name],
         set: { value: req.body, updatedAt: new Date() },
       });
     return reply.send({ ok: true });

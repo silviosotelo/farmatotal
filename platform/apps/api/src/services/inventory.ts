@@ -1,6 +1,6 @@
 /**
  * Descuento de stock por sucursal al confirmar una orden (multi-inventory).
- * Fuente de verdad: tabla `inventory` (producto, sucursal). `products.stockCached`
+ * Fuente de verdad: tabla `inventory` (producto, sucursal). `products.totalSales`
  * se recalcula como la suma por producto. Idempotente vía un evento en la orden.
  *
  * Selección de la sucursal que descuenta:
@@ -63,13 +63,13 @@ export async function decrementOrderStock(orderId: string): Promise<{ ok: boolea
     const qty = Math.ceil(l.quantity);
     await db
       .update(inventory)
-      .set({ stock: sql`GREATEST(0, ${inventory.stock} - ${qty})`, updatedAt: new Date() })
+      .set({ onHand: sql`GREATEST(0, ${inventory.onHand} - ${qty})`, updatedAt: new Date() })
       .where(and(eq(inventory.productId, pid), eq(inventory.branchId, branchId)));
     const [{ total } = { total: 0 }] = await db
-      .select({ total: sql<number>`coalesce(sum(${inventory.stock}),0)::int` })
+      .select({ total: sql<number>`coalesce(sum(${inventory.onHand}),0)::int` })
       .from(inventory)
       .where(and(eq(inventory.tenantId, order.tenantId), eq(inventory.productId, pid)));
-    await db.update(products).set({ stockCached: total }).where(eq(products.id, pid));
+    await db.update(products).set({ totalSales: total }).where(eq(products.id, pid));
     detail.push(`${l.sku}-${qty}`);
   }
   await markDone(order, branchId, detail.join(", "));
@@ -108,7 +108,7 @@ export async function restoreOrderStockById(orderId: string, reason: 'cancel' | 
     const qty = Math.ceil(l.quantity);
     await db
       .update(inventory)
-      .set({ stock: sql`${inventory.stock} + ${qty}`, updatedAt: new Date() })
+      .set({ onHand: sql`${inventory.onHand} + ${qty}`, updatedAt: new Date() })
       .where(and(eq(inventory.productId, pid), eq(inventory.branchId, branchId)));
     // Registrar movimiento de stock
     await db.insert(stockMovements).values({
@@ -119,12 +119,12 @@ export async function restoreOrderStockById(orderId: string, reason: 'cancel' | 
       reason,
       referenceId: orderId,
     });
-    // Recalc stockCached
+    // Recalc totalSales
     const [{ total } = { total: 0 }] = await db
-      .select({ total: sql<number>`coalesce(sum(${inventory.stock}),0)::int` })
+      .select({ total: sql<number>`coalesce(sum(${inventory.onHand}),0)::int` })
       .from(inventory)
       .where(and(eq(inventory.tenantId, order.tenantId), eq(inventory.productId, pid)));
-    await db.update(products).set({ stockCached: total }).where(eq(products.id, pid));
+    await db.update(products).set({ totalSales: total }).where(eq(products.id, pid));
     detail.push(`${l.sku}+${qty}`);
   }
   await markRestore(order, `${reason}: ${detail.join(", ")}`);
@@ -170,7 +170,7 @@ async function resolveSourceBranch(order: typeof orders.$inferSelect, productIds
   }
   // Sin ubicación: la sucursal con más stock total de los productos del pedido.
   const stocks = await db
-    .select({ branchId: inventory.branchId, total: sql<number>`coalesce(sum(${inventory.stock}),0)::int` })
+    .select({ branchId: inventory.branchId, total: sql<number>`coalesce(sum(${inventory.onHand}),0)::int` })
     .from(inventory)
     .where(and(eq(inventory.tenantId, order.tenantId), inArray(inventory.productId, productIds)))
     .groupBy(inventory.branchId);
@@ -212,9 +212,9 @@ export async function restoreOrderStock(order: {
       .limit(1)
 
     if (row) {
-      const newStock = (row.stock || 0) + line.quantity
+      const newStock = (row.onHand || 0) + line.quantity
       await db.update(inventory)
-        .set({ stock: newStock, updatedAt: new Date() })
+        .set({ onHand: newStock, updatedAt: new Date() })
         .where(and(
           eq(inventory.tenantId, order.tenantId),
           eq(inventory.productId, line.productId),
@@ -248,16 +248,16 @@ export async function logStockMovement(data: {
   await db.insert(stockMovements).values(data)
 }
 
-/** Helper: recalcular stockCached de un producto = suma de todos los branches */
+/** Helper: recalcular totalSales de un producto = suma de todos los branches */
 async function updateProductCachedStock(tenantId: string, productId: string) {
-  const rows = await db.select({ stock: inventory.stock })
+  const rows = await db.select({ onHand: inventory.onHand })
     .from(inventory)
     .where(and(
       eq(inventory.tenantId, tenantId),
       eq(inventory.productId, productId),
     ))
-  const totalStock = rows.reduce((sum, r) => sum + (r.stock || 0), 0)
-  await db.update(products).set({ stockCached: totalStock }).where(and(
+  const totalStock = rows.reduce((sum, r) => sum + (Number(r.onHand) || 0), 0)
+  await db.update(products).set({ totalSales: totalStock }).where(and(
     eq(products.tenantId, tenantId),
     eq(products.id, productId),
   ))

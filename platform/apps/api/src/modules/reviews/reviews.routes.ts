@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { and, avg, count, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
-import { reviews, reviewStatus } from "../../db/schema";
+import { productReviews, productReviewStatus } from "../../db/schema";
 
 const submitInput = z.object({
   productId: z.string().uuid(),
@@ -19,26 +19,26 @@ export async function reviewRoutes(app: FastifyInstance) {
   // Público: lista valoraciones aprobadas de un producto + resumen (promedio/conteo).
   app.get(
     "/reviews",
-    { schema: { querystring: z.object({ productId: z.string().uuid().optional(), status: z.enum(reviewStatus).optional(), page: z.coerce.number().int().min(1).optional(), perPage: z.coerce.number().int().min(1).max(100).optional() }) } },
+    { schema: { querystring: z.object({ productId: z.string().uuid().optional(), status: z.enum(productReviewStatus).optional(), page: z.coerce.number().int().min(1).optional(), perPage: z.coerce.number().int().min(1).max(100).optional() }) } },
     async (req) => {
       const q = req.query;
       const where = and(
-        q.productId ? eq(reviews.productId, q.productId) : undefined,
+        q.productId ? eq(productReviews.productId, q.productId) : undefined,
         // Por defecto sólo aprobadas (vista pública). Admin pasa status explícito.
-        eq(reviews.status, q.status ?? "approved"),
+        eq(productReviews.status, q.status ?? "approved"),
       );
       const page = q.page ?? 1;
       const perPage = q.perPage ?? 20;
       const rows = await db
         .select()
-        .from(reviews)
+        .from(productReviews)
         .where(where)
-        .orderBy(desc(reviews.createdAt))
+        .orderBy(desc(productReviews.createdAt))
         .limit(perPage)
         .offset((page - 1) * perPage);
       const [agg = { c: 0, a: null }] = await db
-        .select({ c: count(), a: avg(reviews.rating) })
-        .from(reviews)
+        .select({ c: count(), a: avg(productReviews.rating) })
+        .from(productReviews)
         .where(where);
       return {
         data: rows,
@@ -53,21 +53,21 @@ export async function reviewRoutes(app: FastifyInstance) {
   // Admin: lista todas (cualquier estado) — sin filtro de status por defecto.
   app.get(
     "/reviews/all",
-    { schema: { querystring: z.object({ status: z.enum(reviewStatus).optional(), page: z.coerce.number().int().min(1).optional(), perPage: z.coerce.number().int().min(1).max(100).optional() }) } },
+    { schema: { querystring: z.object({ status: z.enum(productReviewStatus).optional(), page: z.coerce.number().int().min(1).optional(), perPage: z.coerce.number().int().min(1).max(100).optional() }) } },
     async (req) => {
       const q = req.query;
-      const where = q.status ? eq(reviews.status, q.status) : undefined;
+      const where = q.status ? eq(productReviews.status, q.status) : undefined;
       const page = q.page ?? 1;
       const perPage = q.perPage ?? 50;
       const [{ c } = { c: 0 }] = await db
         .select({ c: sql<number>`count(*)::int` })
-        .from(reviews)
+        .from(productReviews)
         .where(where);
       const rows = await db
         .select()
-        .from(reviews)
+        .from(productReviews)
         .where(where)
-        .orderBy(desc(reviews.createdAt))
+        .orderBy(desc(productReviews.createdAt))
         .limit(perPage)
         .offset((page - 1) * perPage);
       return { data: rows, total: c, page, perPage, totalPages: Math.ceil(c / perPage) };
@@ -77,7 +77,7 @@ export async function reviewRoutes(app: FastifyInstance) {
   // Público: enviar una valoración (queda pendiente de moderación).
   app.post("/reviews", { schema: { body: submitInput } }, async (req, reply) => {
     const [row] = await db
-      .insert(reviews)
+      .insert(productReviews)
       .values({ ...req.body, status: "pending" })
       .returning();
     return reply.send({ id: row!.id, status: row!.status });
@@ -86,12 +86,12 @@ export async function reviewRoutes(app: FastifyInstance) {
   // Admin: moderar (aprobar/rechazar).
   app.patch(
     "/reviews/:id",
-    { schema: { params: idParam, body: z.object({ status: z.enum(reviewStatus) }) } },
+    { schema: { params: idParam, body: z.object({ status: z.enum(productReviewStatus) }) } },
     async (req, reply) => {
       const [row] = await db
-        .update(reviews)
+        .update(productReviews)
         .set({ status: req.body.status, updatedAt: new Date() })
-        .where(eq(reviews.id, req.params.id))
+        .where(eq(productReviews.id, req.params.id))
         .returning();
       if (!row) return reply.notFound();
       return reply.send(row);
@@ -100,7 +100,7 @@ export async function reviewRoutes(app: FastifyInstance) {
 
   // Admin: borrar.
   app.delete("/reviews/:id", { schema: { params: idParam } }, async (req, reply) => {
-    const [row] = await db.delete(reviews).where(eq(reviews.id, req.params.id)).returning();
+    const [row] = await db.delete(productReviews).where(eq(productReviews.id, req.params.id)).returning();
     if (!row) return reply.notFound();
     return reply.send({ ok: true });
   });

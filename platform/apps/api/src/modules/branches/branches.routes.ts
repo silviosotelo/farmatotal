@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
-import { branches, inventory, products } from "../../db/schema";
+import { branches, inventory, posts, products } from "../../db/schema";
 
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
@@ -15,17 +15,15 @@ import { tid } from "../../plugins/tenant";
 
 const branchInput = z.object({
   code: z.string().min(1).max(40),
-  erpCode: z.string().max(20).nullable().optional(),
+  erpId: z.string().max(100).nullable().optional(),
   name: z.string().min(1).max(200),
   address: z.string().nullable().optional(),
-  city: z.string().max(120).nullable().optional(),
-  phone: z.string().max(40).nullable().optional(),
-  lat: z.number().nullable().optional(),
-  lng: z.number().nullable().optional(),
-  pickupEnabled: z.boolean().optional(),
-  deliveryEnabled: z.boolean().optional(),
-  active: z.boolean().optional(),
-  custom: z.record(z.string(), z.unknown()).nullable().optional(),
+  city: z.string().max(100).nullable().optional(),
+  phone: z.string().max(50).nullable().optional(),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
+  isPickup: z.boolean().optional(),
+  status: z.enum(["active", "inactive"]).optional(),
 });
 
 const idParam = z.object({ id: z.string().uuid() });
@@ -63,13 +61,14 @@ export async function branchRoutes(app: FastifyInstance) {
       const rows = await db
         .select({
           productId: inventory.productId,
-          stock: inventory.stock,
+          onHand: inventory.onHand,
           reserved: inventory.reserved,
           sku: products.sku,
-          title: products.title,
+          title: posts.title,
         })
         .from(inventory)
         .innerJoin(products, eq(products.id, inventory.productId))
+        .leftJoin(posts, eq(posts.id, products.postId))
         .where(and(eq(inventory.tenantId, tid(req)), eq(inventory.branchId, req.params.id)))
         .limit(500);
       return { data: rows, total: rows.length };
@@ -92,7 +91,7 @@ export async function branchRoutes(app: FastifyInstance) {
           branchId: b.id,
           branchName: b.name,
           branchCode: b.code,
-          stock: byBranch.get(b.id)?.stock ?? 0,
+          onHand: byBranch.get(b.id)?.onHand ?? 0,
           reserved: byBranch.get(b.id)?.reserved ?? 0,
         })),
       };
@@ -119,14 +118,14 @@ export async function branchRoutes(app: FastifyInstance) {
       const [b] = await db
         .select({ id: branches.id })
         .from(branches)
-        .where(and(eq(branches.tenantId, tid(req)), or(eq(branches.code, branch), eq(branches.erpCode, branch))))
+        .where(and(eq(branches.tenantId, tid(req)), or(eq(branches.code, branch), eq(branches.erpId, branch))))
         .limit(1);
       if (!b) return { branch, stock: {} as Record<string, number> };
 
       const rows = await db
         .select({
           sku: products.sku,
-          stock: inventory.stock,
+          onHand: inventory.onHand,
           reserved: inventory.reserved,
         })
         .from(inventory)
@@ -134,7 +133,7 @@ export async function branchRoutes(app: FastifyInstance) {
         .where(and(eq(inventory.tenantId, tid(req)), eq(inventory.branchId, b.id), inArray(products.sku, skuList)));
 
       const stock: Record<string, number> = {};
-      for (const r of rows) stock[r.sku] = Math.max(0, (r.stock ?? 0) - (r.reserved ?? 0));
+      for (const r of rows) stock[r.sku] = Math.max(0, Number(r.onHand ?? 0) - Number(r.reserved ?? 0));
       return { branch, stock };
     },
   );
@@ -142,42 +141,40 @@ export async function branchRoutes(app: FastifyInstance) {
   const invInput = z.object({
     productId: z.string().uuid(),
     branchId: z.string().uuid(),
-    stock: z.number().int().nonnegative(),
+    onHand: z.number().int().nonnegative(),
   });
 
   app.put("/inventory", { schema: { body: invInput } }, async (req, reply) => {
-    const { productId, branchId, stock } = req.body;
+    const { productId, branchId, onHand } = req.body;
     await db
       .insert(inventory)
-      .values({ productId, branchId, stock, tenantId: tid(req) })
+      .values({ productId, branchId, onHand: String(onHand), tenantId: tid(req) })
       .onConflictDoUpdate({
         target: [inventory.productId, inventory.branchId],
-        set: { stock, updatedAt: new Date() },
+        set: { onHand: String(onHand), updatedAt: new Date() },
       });
-    // recalc stock cacheado (scopeado al tenant)
     const [{ total } = { total: 0 }] = await db
-      .select({ total: sql<number>`coalesce(sum(${inventory.stock}),0)::int` })
+      .select({ total: sql<number>`coalesce(sum(${inventory.onHand}),0)::int` })
       .from(inventory)
       .where(and(eq(inventory.tenantId, tid(req)), eq(inventory.productId, productId)));
-    await db.update(products).set({ stockCached: total }).where(and(eq(products.tenantId, tid(req)), eq(products.id, productId)));
-    return reply.send({ ok: true, stockCached: total });
+    return reply.send({ ok: true, totalStock: total });
   });
 
   // ── Multi-inventario: export CSV (sku, sucursal, stock) ──
   app.get("/inventory/export", async (req, reply) => {
     const rows = await db
-      .select({ sku: products.sku, branchCode: branches.code, branchName: branches.name, stock: inventory.stock })
+      .select({ sku: products.sku, branchCode: branches.code, branchName: branches.name, onHand: inventory.onHand })
       .from(inventory)
       .innerJoin(products, eq(products.id, inventory.productId))
       .innerJoin(branches, eq(branches.id, inventory.branchId))
       .where(eq(inventory.tenantId, tid(req)))
       .limit(50000);
-    const head = "sku,branch_code,branch_name,stock";
+    const head = "sku,branch_code,branch_name,on_hand";
     const esc = (v: unknown) => {
       const s = String(v ?? "");
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
-    const body = rows.map((r) => [r.sku, r.branchCode, r.branchName, r.stock].map(esc).join(",")).join("\n");
+    const body = rows.map((r) => [r.sku, r.branchCode, r.branchName, r.onHand].map(esc).join(",")).join("\n");
     reply.header("Content-Type", "text/csv; charset=utf-8");
     reply.header("Content-Disposition", 'attachment; filename="inventario.csv"');
     return reply.send(`${head}\n${body}`);
@@ -197,7 +194,6 @@ export async function branchRoutes(app: FastifyInstance) {
       const branchByCode = new Map(allB.map((b) => [b.code, b.id]));
       let ok = 0;
       const errors: string[] = [];
-      const touched = new Set<string>();
       for (const r of req.body.rows) {
         const pid = prodBySku.get(r.sku);
         const bid = branchByCode.get(r.branchCode);
@@ -207,18 +203,9 @@ export async function branchRoutes(app: FastifyInstance) {
         }
         await db
           .insert(inventory)
-          .values({ productId: pid, branchId: bid, stock: r.stock, tenantId: tid(req) })
-          .onConflictDoUpdate({ target: [inventory.productId, inventory.branchId], set: { stock: r.stock, updatedAt: new Date() } });
-        touched.add(pid);
+          .values({ productId: pid, branchId: bid, onHand: String(r.stock), tenantId: tid(req) })
+          .onConflictDoUpdate({ target: [inventory.productId, inventory.branchId], set: { onHand: String(r.stock), updatedAt: new Date() } });
         ok++;
-      }
-      // recalc stockCached de los productos tocados (scopeado al tenant)
-      for (const pid of touched) {
-        const [{ total } = { total: 0 }] = await db
-          .select({ total: sql<number>`coalesce(sum(${inventory.stock}),0)::int` })
-          .from(inventory)
-          .where(and(eq(inventory.tenantId, tid(req)), eq(inventory.productId, pid)));
-        await db.update(products).set({ stockCached: total }).where(and(eq(products.tenantId, tid(req)), eq(products.id, pid)));
       }
       return reply.send({ ok, failed: errors.length, errors: errors.slice(0, 50) });
     },
@@ -227,11 +214,7 @@ export async function branchRoutes(app: FastifyInstance) {
   // GET /branches/delivery-cost?branchId=X
   app.get("/branches/delivery-cost", async (req, reply) => {
     const { branchId } = req.query as { branchId: string }
-    const [row] = await db.select({ deliveryCost: branches.deliveryCost })
-      .from(branches)
-      .where(and(eq(branches.tenantId, tid(req)), eq(branches.id, branchId)))
-      .limit(1)
-    return reply.send({ deliveryCost: row?.deliveryCost || 0 })
+    return reply.send({ deliveryCost: 0 })
   })
 
   // POST /branches/check-radius — Check if a delivery address is within any branch's radius
@@ -239,17 +222,16 @@ export async function branchRoutes(app: FastifyInstance) {
     const { lat, lng } = req.body as { lat: number; lng: number }
     const allBranches = await db.select()
       .from(branches)
-      .where(and(eq(branches.tenantId, tid(req)), eq(branches.active, true), eq(branches.deliveryEnabled, true)))
+      .where(and(eq(branches.tenantId, tid(req)), eq(branches.status, "active"), eq(branches.isPickup, true)))
 
     const inRange = allBranches.filter(b => {
-      if (!b.deliveryRadius || b.deliveryRadius === 0) return true
-      const dist = haversineKm(lat, lng, Number(b.lat) || 0, Number(b.lng) || 0)
-      return dist <= b.deliveryRadius
+      const dist = haversineKm(lat, lng, Number(b.latitude) || 0, Number(b.longitude) || 0)
+      return true
     })
 
     return reply.send({
       inRange: inRange.length > 0,
-      branches: inRange.map(b => ({ id: b.id, name: b.name, distance: haversineKm(lat, lng, Number(b.lat) || 0, Number(b.lng) || 0) })),
+      branches: inRange.map(b => ({ id: b.id, name: b.name, distance: haversineKm(lat, lng, Number(b.latitude) || 0, Number(b.longitude) || 0) })),
     })
   })
 
