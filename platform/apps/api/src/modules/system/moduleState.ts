@@ -5,7 +5,7 @@
  */
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client";
-import { settings } from "../../db/schema";
+import { options } from "../../db/schema";
 import { MODULES } from "./registry.js";
 
 const STATE_KEY = "modules_state";
@@ -13,8 +13,8 @@ const STATE_KEY = "modules_state";
 export async function getModulesState(tenantId: string): Promise<Record<string, boolean>> {
   const [row] = await db
     .select()
-    .from(settings)
-    .where(and(eq(settings.tenantId, tenantId), eq(settings.key, STATE_KEY)))
+    .from(options)
+    .where(and(eq(options.tenantId, tenantId), eq(options.name, STATE_KEY)))
     .limit(1);
   return (row?.value as Record<string, boolean>) ?? {};
 }
@@ -33,7 +33,7 @@ export async function setModuleEnabled(tenantId: string, key: string, enabled: b
   const state = await getModulesState(tenantId);
   state[key] = enabled;
   await db
-    .insert(settings)
-    .values({ tenantId, key: STATE_KEY, value: state })
-    .onConflictDoUpdate({ target: [settings.tenantId, settings.key], set: { value: state, updatedAt: new Date() } });
+    .insert(options)
+    .values({ tenantId, name: STATE_KEY, value: state })
+    .onConflictDoUpdate({ target: [options.tenantId, options.name], set: { value: state, updatedAt: new Date() } });
 }

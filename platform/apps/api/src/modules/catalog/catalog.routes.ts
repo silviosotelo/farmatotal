@@ -97,7 +97,7 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/categories",
     { schema: { body: categoryInput, response: { 200: categoryDTO } } },
     async (req, reply) => {
-      const { name, slug, description, parentId } = req.body;
+      const { name, slug, description, parentId } = req.body as z.infer<typeof categoryInput>;
       const [term] = await db
         .insert(terms)
         .values({ tenantId: tid(req), name, slug })
@@ -128,22 +128,24 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/categories/:id",
     { schema: { params: idParam, body: categoryInput.partial(), response: { 200: categoryDTO } } },
     async (req, reply) => {
+      const params = req.params as { id: string };
+      const body = req.body as z.infer<typeof categoryInput>;
       const [tt] = await db
         .update(termTaxonomy)
         .set({
-          ...(req.body.description !== undefined && { description: req.body.description }),
-          ...(req.body.parentId !== undefined && { parentId: req.body.parentId }),
+          ...(body.description !== undefined && { description: body.description }),
+          ...(body.parentId !== undefined && { parentId: body.parentId }),
           updatedAt: new Date(),
         })
-        .where(and(eq(termTaxonomy.tenantId, tid(req)), eq(termTaxonomy.id, req.params.id)))
+        .where(and(eq(termTaxonomy.tenantId, tid(req)), eq(termTaxonomy.id, params.id)))
         .returning();
       if (!tt) return reply.notFound();
-      if (req.body.name || req.body.slug) {
+      if (body.name || body.slug) {
         await db
           .update(terms)
           .set({
-            ...(req.body.name && { name: req.body.name }),
-            ...(req.body.slug && { slug: req.body.slug }),
+            ...(body.name && { name: body.name }),
+            ...(body.slug && { slug: body.slug }),
             updatedAt: new Date(),
           })
           .where(eq(terms.id, tt.termId));
@@ -167,7 +169,7 @@ export async function catalogRoutes(app: FastifyInstance) {
     async (req, reply) => {
       await db
         .delete(termTaxonomy)
-        .where(and(eq(termTaxonomy.tenantId, tid(req)), eq(termTaxonomy.id, req.params.id)));
+        .where(and(eq(termTaxonomy.tenantId, tid(req)), eq(termTaxonomy.id, (req.params as { id: string }).id)));
       return reply.send({ ok: true });
     },
   );
@@ -202,7 +204,7 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/brands",
     { schema: { body: brandInput, response: { 200: brandDTO } } },
     async (req, reply) => {
-      const { name, slug, description } = req.body;
+      const { name, slug, description } = req.body as z.infer<typeof brandInput>;
       const [term] = await db
         .insert(terms)
         .values({ tenantId: tid(req), name, slug })
@@ -247,7 +249,7 @@ export async function catalogRoutes(app: FastifyInstance) {
         priceMin,
         priceMax,
         sort,
-      } = req.query;
+      } = req.query as z.infer<typeof productListQuery>;
 
       let catId = categoryId;
       if (!catId && category) {
@@ -427,7 +429,7 @@ export async function catalogRoutes(app: FastifyInstance) {
         .select({ product: products, post: posts })
         .from(products)
         .leftJoin(posts, eq(posts.id, products.postId))
-        .where(and(eq(products.tenantId, tid(req)), eq(products.id, req.params.id)))
+        .where(and(eq(products.tenantId, tid(req)), eq(products.id, (req.params as { id: string }).id)))
         .limit(1);
       if (!row?.product) return reply.notFound();
       const imgs = await db
@@ -456,7 +458,7 @@ export async function catalogRoutes(app: FastifyInstance) {
         .select({ product: products, post: posts })
         .from(products)
         .innerJoin(posts, eq(posts.id, products.postId))
-        .where(and(eq(products.tenantId, tid(req)), eq(posts.slug, req.params.slug)))
+        .where(and(eq(products.tenantId, tid(req)), eq(posts.slug, (req.params as { slug: string }).slug)))
         .limit(1);
       if (!row?.product) return reply.notFound();
       const imgs = await db
@@ -479,7 +481,7 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/products",
     { schema: { body: productInput, response: { 200: productDTO } } },
     async (req, reply) => {
-      const { title, slug, description, priceNormal, priceWeb, productType, ...rest } = req.body;
+      const { title, slug, description, priceNormal, priceWeb, productType, ...rest } = req.body as z.infer<typeof productInput>;
       const [post] = await db
         .insert(posts)
         .values({
@@ -513,7 +515,7 @@ export async function catalogRoutes(app: FastifyInstance) {
     "/catalog/products/:id",
     { schema: { params: idParam, body: productInput.partial(), response: { 200: productDTO } } },
     async (req, reply) => {
-      const { title, slug, description, priceNormal, priceWeb, productType, ...rest } = req.body;
+      const { title, slug, description, priceNormal, priceWeb, productType, ...rest } = req.body as z.infer<typeof productInput>;
       const [row] = await db
         .update(products)
         .set({
@@ -526,7 +528,7 @@ export async function catalogRoutes(app: FastifyInstance) {
           ...(rest.featured !== undefined && { featured: rest.featured }),
           updatedAt: new Date(),
         })
-        .where(and(eq(products.tenantId, tid(req)), eq(products.id, req.params.id)))
+        .where(and(eq(products.tenantId, tid(req)), eq(products.id, (req.params as { id: string }).id)))
         .returning();
       if (!row) return reply.notFound();
       if (title || slug || description !== undefined) {
@@ -551,7 +553,7 @@ export async function catalogRoutes(app: FastifyInstance) {
     async (req, reply) => {
       await db
         .delete(products)
-        .where(and(eq(products.tenantId, tid(req)), eq(products.id, req.params.id)));
+        .where(and(eq(products.tenantId, tid(req)), eq(products.id, (req.params as { id: string }).id)));
       return reply.send({ ok: true });
     },
   );

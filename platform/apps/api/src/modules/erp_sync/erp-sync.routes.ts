@@ -20,91 +20,85 @@ async function readConfig(req: FastifyRequest): Promise<Record<string, unknown>>
 }
 
 export async function erpSyncRoutes(app: FastifyInstance) {
-  // Adapters disponibles (para el selector del admin).
   app.get("/erp-sync/adapters", async () => ({ data: listAdapters() }));
 
-  // Últimas corridas de sincronización (auditoría).
   app.get("/erp-sync/runs", async () => {
     const rows = await db.select().from(syncRuns).orderBy(desc(syncRuns.createdAt)).limit(50);
     return { data: rows };
   });
 
-  // Mapeo de campos por entidad.
   app.get(
     "/erp-sync/mappings",
     { schema: { querystring: z.object({ entity: z.string() }) } },
     async (req) => {
+      const entity = (req.query as { entity: string }).entity;
       const rows = await db
         .select()
         .from(erpFieldMappings)
-        .where(and(eq(erpFieldMappings.tenantId, tid(req)), eq(erpFieldMappings.entity, req.query.entity)));
+        .where(and(eq(erpFieldMappings.tenantId, tid(req)), eq(erpFieldMappings.entityType, entity)));
       return { data: rows };
     },
   );
 
-  // Reemplaza el set de mapeos de una entidad.
   app.put(
     "/erp-sync/mappings",
-    { schema: { body: z.object({ entity: z.string(), mappings: z.array(z.object({ sourceName: z.string(), targetName: z.string(), transform: z.string().nullable().optional() })) }) } },
+    { schema: { body: z.object({ entity: z.string(), mappings: z.array(z.object({ erpField: z.string(), platformField: z.string(), transform: z.string().nullable().optional() })) }) } },
     async (req, reply) => {
       const t = tid(req);
-      await db.delete(erpFieldMappings).where(and(eq(erpFieldMappings.tenantId, t), eq(erpFieldMappings.entity, req.body.entity)));
-      if (req.body.mappings.length) {
+      const body = req.body as { entity: string; mappings: Array<{ erpField: string; platformField: string; transform?: string | null }> };
+      await db.delete(erpFieldMappings).where(and(eq(erpFieldMappings.tenantId, t), eq(erpFieldMappings.entityType, body.entity)));
+      if (body.mappings.length) {
         await db.insert(erpFieldMappings).values(
-          req.body.mappings.map((m: { sourceName: string; targetName: string; transform?: string | null }) => ({ tenantId: t, entity: req.body.entity, sourceName: m.sourceName, targetName: m.targetName, transform: m.transform ?? null })),
+          body.mappings.map((m) => ({ tenantId: t, entityType: body.entity, erpField: m.erpField, platformField: m.platformField, transform: m.transform ?? null })),
         );
       }
-      return reply.send({ ok: true, count: req.body.mappings.length });
+      return reply.send({ ok: true, count: body.mappings.length });
     },
   );
 
-  // Importar ahora (productos/categorías) con el adapter activo.
   app.post(
     "/erp-sync/import",
     { schema: { body: z.object({ entity: z.enum(["products", "categories"]).default("products"), maxProducts: z.number().int().positive().optional() }) } },
     async (req, reply) => {
       if (!(await isModuleEnabled(tid(req), "erp_sync"))) return reply.badRequest("Módulo erp_sync desactivado");
+      const body = req.body as { entity: string; maxProducts?: number };
       const config = await readConfig(req);
       const adapterKey = String(config.adapter ?? "");
       const adapter = getAdapter(adapterKey);
       if (!adapter) return reply.badRequest(`Adapter '${adapterKey}' no disponible`);
-      const ctx: AdapterCtx = { tenantId: tid(req), config: { ...config, maxProducts: req.body.maxProducts } };
-      const fn = req.body.entity === "categories" ? adapter.importCategories : adapter.importProducts;
-      if (!fn) return reply.badRequest(`El adapter '${adapterKey}' no soporta importar ${req.body.entity}`);
+      const ctx: AdapterCtx = { tenantId: tid(req), config: { ...config, maxProducts: body.maxProducts } };
+      const fn = body.entity === "categories" ? adapter.importCategories : adapter.importProducts;
+      if (!fn) return reply.badRequest(`El adapter '${adapterKey}' no soporta importar ${body.entity}`);
       const records = await fn.call(adapter, ctx);
-      // Adapters que upsertan internamente (ej. Woo) devuelven [] → ya quedó hecho.
-      // Adapters que devuelven RawRecord[] (ej. REST genérico) pasan por el mapper +
-      // upsert idempotente dirigido por erp_field_mappings.
       if (records.length > 0) {
-        const r = await importEntity(tid(req), req.body.entity, adapterKey, records, `erp_sync:${adapterKey}`);
-        return reply.send({ ok: true, adapter: adapterKey, entity: req.body.entity, fetched: records.length, imported: r.imported, errors: r.errors });
+        const r = await importEntity(tid(req), "products", adapterKey, records, `erp_sync:${adapterKey}`);
+        return reply.send({ ok: true, adapter: adapterKey, entity: body.entity, fetched: records.length, imported: r.imported, errors: r.errors });
       }
-      return reply.send({ ok: true, adapter: adapterKey, entity: req.body.entity, fetched: 0 });
+      return reply.send({ ok: true, adapter: adapterKey, entity: body.entity, fetched: 0 });
     },
   );
 
-  // Sincronizar stock de una sucursal contra el ERP (adapter.fetchStock). Acotado.
   app.post(
     "/erp-sync/sync-stock",
     { schema: { body: z.object({ branchId: z.string().uuid(), limit: z.number().int().positive().max(200).optional() }) } },
     async (req, reply) => {
       const t = tid(req);
+      const body = req.body as { branchId: string; limit?: number };
       if (!(await isModuleEnabled(t, "erp_sync"))) return reply.badRequest("Módulo erp_sync desactivado");
       const config = await readConfig(req);
       const adapter = getAdapter(String(config.adapter ?? ""));
       if (!adapter?.fetchStock) return reply.badRequest("El adapter activo no soporta sync de stock");
-      const [br] = await db.select().from(branches).where(and(eq(branches.tenantId, t), eq(branches.id, req.body.branchId))).limit(1);
+      const [br] = await db.select().from(branches).where(and(eq(branches.tenantId, t), eq(branches.id, body.branchId))).limit(1);
       if (!br) return reply.notFound("Sucursal no encontrada");
-      // SKUs con inventario en esa sucursal (acotado).
       const rows = await db
         .select({ productId: inventory.productId, sku: products.sku })
         .from(inventory)
         .innerJoin(products, eq(products.id, inventory.productId))
         .where(and(eq(inventory.tenantId, t), eq(inventory.branchId, br.id)))
-        .limit(req.body.limit ?? 100);
-      const bySku = new Map(rows.map((r) => [r.sku, r.productId]));
+        .limit(body.limit ?? 100);
+      const bySku = new Map(rows.filter((r) => r.sku).map((r) => [r.sku!, r.productId]));
       const ctx: AdapterCtx = { tenantId: t, config };
-      const stock = await adapter.fetchStock([...bySku.keys()], br.erpCode ?? null, ctx);
+      const stock = await adapter.fetchStock([...bySku.keys()], br.erpId ?? null, ctx);
       let updated = 0;
       for (const [sku, qty] of Object.entries(stock)) {
         const pid = bySku.get(sku);

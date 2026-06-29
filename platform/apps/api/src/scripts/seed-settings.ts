@@ -9,11 +9,11 @@
  * Uso: pnpm exec tsx src/scripts/seed-settings.ts
  */
 import { db, pool } from "../db/client";
-import { settings, tenants } from "../db/schema";
+import { options, tenants } from "../db/schema";
 
 // Agregá acá solo settings de infraestructura que no dependan de la marca.
 // Los datos de marca (nombre, colores, logo) van desde el admin, no desde acá.
-const DEFAULTS: Array<{ key: string; value: unknown }> = [];
+const DEFAULTS: Array<{ name: string; value: unknown }> = [];
 
 async function main() {
   if (DEFAULTS.length === 0) {
@@ -26,12 +26,12 @@ async function main() {
   console.log(`Tenants: ${allTenants.map((t) => t.slug).join(", ")}`);
 
   for (const tenant of allTenants) {
-    for (const { key, value } of DEFAULTS) {
+    for (const { name, value } of DEFAULTS) {
       await db
-        .insert(settings)
-        .values({ tenantId: tenant.id, key, value })
+        .insert(options)
+        .values({ tenantId: tenant.id, name, value })
         .onConflictDoNothing();
-      console.log(`  [${tenant.slug}] ${key} → OK`);
+      console.log(`  [${tenant.slug}] ${name} → OK`);
     }
   }
 

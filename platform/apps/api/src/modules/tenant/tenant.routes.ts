@@ -22,7 +22,7 @@ export async function tenantRoutes(app: FastifyInstance) {
       const [row] = await db
         .update(tenants)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .set({ config: req.body.config as any })
+        .set({ config: (req.body as { config: Record<string, unknown> }).config as any })
         .where(eq(tenants.id, tid(req)))
         .returning();
       if (!row) return reply.notFound();

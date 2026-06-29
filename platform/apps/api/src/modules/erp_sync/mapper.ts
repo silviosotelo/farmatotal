@@ -5,16 +5,21 @@
  */
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client";
-import { erpFieldMappings } from "../../db/schema/sync";
+import { erpFieldMappings } from "../../db/schema";
 import type { RawRecord } from "./adapters/types.js";
 
 export type FieldMapping = { sourceName: string; targetName: string; transform?: string | null };
 
 export async function loadMappings(tenantId: string, entity: string): Promise<FieldMapping[]> {
-  return db
-    .select({ sourceName: erpFieldMappings.sourceName, targetName: erpFieldMappings.targetName, transform: erpFieldMappings.transform })
+  const rows = await db
+    .select({ sourceName: erpFieldMappings.erpField, targetName: erpFieldMappings.platformField, transform: erpFieldMappings.transform })
     .from(erpFieldMappings)
-    .where(and(eq(erpFieldMappings.tenantId, tenantId), eq(erpFieldMappings.entity, entity)));
+    .where(and(eq(erpFieldMappings.tenantId, tenantId), eq(erpFieldMappings.entityType, entity)));
+  return rows.map((r) => ({
+    sourceName: r.sourceName,
+    targetName: r.targetName,
+    transform: r.transform as string | null,
+  }));
 }
 
 function applyTransform(value: unknown, transform?: string | null): unknown {

@@ -20,7 +20,7 @@ export async function stockRoutes(app: FastifyInstance) {
       },
     },
     async (req, reply) => {
-      const { sku, erpCode, quantity } = req.query;
+      const { sku, erpCode, quantity } = req.query as { sku: string; erpCode: string; quantity: number };
       const r = await queryErpStock(erpCode, sku, quantity);
       if (!r.success) return reply.code(502).send({ ok: false, error: "ERP no disponible" });
       const line = r.value?.[0];
@@ -41,11 +41,11 @@ export async function stockRoutes(app: FastifyInstance) {
     "/stock/live-by-sku/:sku",
     { schema: { params: z.object({ sku: z.string() }) } },
     async (req, reply) => {
-      const { sku } = req.params;
+      const { sku } = req.params as { sku: string };
       const withErp = await db
-        .select({ id: branches.id, name: branches.name, erpCode: branches.erpCode })
+        .select({ id: branches.id, name: branches.name, erpId: branches.erpId })
         .from(branches)
-        .where(and(eq(branches.tenantId, tid(req)), eq(branches.active, true), isNotNull(branches.erpCode)))
+        .where(and(eq(branches.tenantId, tid(req)), eq(branches.status, "active"), isNotNull(branches.erpId)))
         .limit(60);
 
       if (withErp.length === 0) {
@@ -59,12 +59,12 @@ export async function stockRoutes(app: FastifyInstance) {
 
       const results = await Promise.all(
         withErp.map(async (b) => {
-          const r = await queryErpStock(b.erpCode!, sku, 1);
+          const r = await queryErpStock(b.erpId!, sku, 1);
           const line = r.value?.[0];
           return {
             branchId: b.id,
             branchName: b.name,
-            erpCode: b.erpCode,
+            erpCode: b.erpId,
             stock: line?.stk_cant_act ?? 0,
             hasStock: line?.has_stock === "true",
           };
@@ -79,9 +79,9 @@ export async function stockRoutes(app: FastifyInstance) {
     "/stock/live-product/:id",
     { schema: { params: z.object({ id: z.string().uuid() }), querystring: z.object({ erpCode: z.string() }) } },
     async (req, reply) => {
-      const [p] = await db.select({ sku: products.sku }).from(products).where(eq(products.id, req.params.id)).limit(1);
+      const [p] = await db.select({ sku: products.sku }).from(products).where(eq(products.id, (req.params as { id: string }).id)).limit(1);
       if (!p) return reply.notFound();
-      const r = await queryErpStock(req.query.erpCode, p.sku, 1);
+      const r = await queryErpStock((req.query as { erpCode: string }).erpCode, p.sku!, 1);
       const line = r.value?.[0];
       return reply.send({
         ok: r.success,

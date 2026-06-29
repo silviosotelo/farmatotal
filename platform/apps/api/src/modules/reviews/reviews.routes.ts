@@ -3,6 +3,7 @@ import { and, avg, count, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
 import { productReviews, productReviewStatus } from "../../db/schema";
+import { tid } from "../../plugins/tenant";
 
 const submitInput = z.object({
   productId: z.string().uuid(),
@@ -21,7 +22,7 @@ export async function reviewRoutes(app: FastifyInstance) {
     "/reviews",
     { schema: { querystring: z.object({ productId: z.string().uuid().optional(), status: z.enum(productReviewStatus).optional(), page: z.coerce.number().int().min(1).optional(), perPage: z.coerce.number().int().min(1).max(100).optional() }) } },
     async (req) => {
-      const q = req.query;
+      const q = req.query as { productId?: string; status?: typeof productReviewStatus[number]; page?: number; perPage?: number };
       const where = and(
         q.productId ? eq(productReviews.productId, q.productId) : undefined,
         // Por defecto sólo aprobadas (vista pública). Admin pasa status explícito.
@@ -55,7 +56,7 @@ export async function reviewRoutes(app: FastifyInstance) {
     "/reviews/all",
     { schema: { querystring: z.object({ status: z.enum(productReviewStatus).optional(), page: z.coerce.number().int().min(1).optional(), perPage: z.coerce.number().int().min(1).max(100).optional() }) } },
     async (req) => {
-      const q = req.query;
+      const q = req.query as { status?: typeof productReviewStatus[number]; page?: number; perPage?: number };
       const where = q.status ? eq(productReviews.status, q.status) : undefined;
       const page = q.page ?? 1;
       const perPage = q.perPage ?? 50;
@@ -76,9 +77,17 @@ export async function reviewRoutes(app: FastifyInstance) {
 
   // Público: enviar una valoración (queda pendiente de moderación).
   app.post("/reviews", { schema: { body: submitInput } }, async (req, reply) => {
+    const b = req.body as z.infer<typeof submitInput>;
     const [row] = await db
       .insert(productReviews)
-      .values({ ...req.body, status: "pending" })
+      .values({
+        tenantId: tid(req),
+        productId: b.productId,
+        rating: b.rating,
+        title: b.title ?? null,
+        content: b.body,
+        status: "pending",
+      })
       .returning();
     return reply.send({ id: row!.id, status: row!.status });
   });
@@ -90,8 +99,8 @@ export async function reviewRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const [row] = await db
         .update(productReviews)
-        .set({ status: req.body.status, updatedAt: new Date() })
-        .where(eq(productReviews.id, req.params.id))
+        .set({ status: (req.body as { status: typeof productReviewStatus[number] }).status, updatedAt: new Date() })
+        .where(eq(productReviews.id, (req.params as { id: string }).id))
         .returning();
       if (!row) return reply.notFound();
       return reply.send(row);
@@ -100,7 +109,7 @@ export async function reviewRoutes(app: FastifyInstance) {
 
   // Admin: borrar.
   app.delete("/reviews/:id", { schema: { params: idParam } }, async (req, reply) => {
-    const [row] = await db.delete(productReviews).where(eq(productReviews.id, req.params.id)).returning();
+    const [row] = await db.delete(productReviews).where(eq(productReviews.id, (req.params as { id: string }).id)).returning();
     if (!row) return reply.notFound();
     return reply.send({ ok: true });
   });

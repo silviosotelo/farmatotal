@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
-import { settings, tenants } from "../../db/schema";
+import { options, tenants } from "../../db/schema";
 import { tid } from "../../plugins/tenant";
 import { MODULES } from "../system/registry.js";
 import { isModuleEnabled, setModuleEnabled } from "../system/moduleState.js";
@@ -35,15 +35,15 @@ async function syncTenantFlags(tenantId: string, pluginKey: string, enabled: boo
 async function readVals(req: FastifyRequest, key: string): Promise<Record<string, unknown>> {
   const [row] = await db
     .select()
-    .from(settings)
-    .where(and(eq(settings.tenantId, tid(req)), eq(settings.key, STORE_KEY(key))))
+    .from(options)
+    .where(and(eq(options.tenantId, tid(req)), eq(options.name, STORE_KEY(key))))
     .limit(1);
   return (row?.value as Record<string, unknown>) ?? {};
 }
 
 export async function pluginRoutes(app: FastifyInstance) {
   app.get("/plugins/:key", { schema: { params: z.object({ key: z.string() }) } }, async (req, reply) => {
-    const mod = MODULES.find((m) => m.key === req.params.key && m.kind === "plugin");
+    const mod = MODULES.find((m) => m.key === (req.params as { key: string }).key && m.kind === "plugin");
     if (!mod) return reply.notFound("Plugin no encontrado");
     const fields = mod.configSchema ?? [];
     const rawValues = await readVals(req, mod.key);
@@ -68,20 +68,21 @@ export async function pluginRoutes(app: FastifyInstance) {
 
   app.put(
     "/plugins/:key",
-    { schema: { params: z.object({ key: z.string() }), body: z.object({ enabled: z.boolean().optional(), values: z.record(z.unknown()) }) } },
+    { schema: { params: z.object({ key: z.string() }), body: z.object({ enabled: z.boolean().optional(), values: z.record(z.string(), z.unknown()) }) } },
     async (req, reply) => {
-      const mod = MODULES.find((m) => m.key === req.params.key && m.kind === "plugin");
+      const mod = MODULES.find((m) => m.key === (req.params as { key: string }).key && m.kind === "plugin");
       if (!mod) return reply.notFound("Plugin no encontrado");
+      const body = req.body as { enabled?: boolean; values?: Record<string, unknown> };
       await db
-        .insert(settings)
-        .values({ tenantId: tid(req), key: STORE_KEY(mod.key), value: req.body.values })
+        .insert(options)
+        .values({ tenantId: tid(req), name: STORE_KEY(mod.key), value: body.values })
         .onConflictDoUpdate({
-          target: [settings.tenantId, settings.key],
-          set: { value: req.body.values, updatedAt: new Date() },
+          target: [options.tenantId, options.name],
+          set: { value: body.values, updatedAt: new Date() },
         });
-      if (req.body.enabled !== undefined) {
-        await setModuleEnabled(tid(req), mod.key, req.body.enabled);
-        await syncTenantFlags(tid(req), mod.key, req.body.enabled);
+      if (body.enabled !== undefined) {
+        await setModuleEnabled(tid(req), mod.key, body.enabled);
+        await syncTenantFlags(tid(req), mod.key, body.enabled);
       }
       return reply.send({ ok: true, key: mod.key });
     },

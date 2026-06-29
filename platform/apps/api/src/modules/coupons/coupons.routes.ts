@@ -23,7 +23,7 @@ export async function couponRoutes(app: FastifyInstance) {
   });
 
   app.post("/coupons", { schema: { body: couponInput } }, async (req, reply) => {
-    const [row] = await db.insert(coupons).values({ ...req.body, tenantId: tid(req) }).returning();
+    const [row] = await db.insert(coupons).values({ ...(req.body as z.infer<typeof couponInput>), tenantId: tid(req) }).returning();
     return reply.send(row);
   });
 
@@ -33,8 +33,8 @@ export async function couponRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const [row] = await db
         .update(coupons)
-        .set({ ...req.body, updatedAt: new Date() })
-        .where(and(eq(coupons.tenantId, tid(req)), eq(coupons.id, req.params.id)))
+        .set({ ...(req.body as Record<string, unknown>), updatedAt: new Date() })
+        .where(and(eq(coupons.tenantId, tid(req)), eq(coupons.id, (req.params as { id: string }).id)))
         .returning();
       if (!row) return reply.notFound();
       return reply.send(row);
@@ -46,7 +46,7 @@ export async function couponRoutes(app: FastifyInstance) {
     const [c] = await db
       .select()
       .from(coupons)
-      .where(and(eq(coupons.tenantId, tid(req)), eq(coupons.code, req.params.code)))
+      .where(and(eq(coupons.tenantId, tid(req)), eq(coupons.code, (req.params as { code: string }).code)))
       .limit(1);
     if (!c || !c.active) return reply.send({ valid: false });
     if (c.maxUses && c.usedCount >= c.maxUses) return reply.send({ valid: false });

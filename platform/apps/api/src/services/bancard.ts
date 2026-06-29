@@ -62,7 +62,7 @@ export async function singleBuy(
 ) {
   const cfg = await getConfig(tenantId)
   const currency = params.currency ?? "PYG"
-  const token = md5(cfg.privateKey, params.shopProcessId, params.amount.toFixed(2), currency)
+  const token = md5(cfg.privateKey!, params.shopProcessId, params.amount.toFixed(2), currency)
 
   const operation: Record<string, unknown> = {
     token,
@@ -102,7 +102,7 @@ export async function cardsNew(
   },
 ) {
   const cfg = await getConfig(tenantId)
-  const token = md5(cfg.privateKey, params.cardId, params.userId, "request_new_card")
+  const token = md5(cfg.privateKey!, params.cardId, params.userId, "request_new_card")
 
   const body = {
     public_key: cfg.publicKey,
@@ -127,7 +127,7 @@ export async function cardsNew(
 /** 3. users_cards — Lista tarjetas catastradas de un usuario */
 export async function usersCards(tenantId: string, userId: number) {
   const cfg = await getConfig(tenantId)
-  const token = md5(cfg.privateKey, userId, "request_user_cards")
+  const token = md5(cfg.privateKey!, userId, "request_user_cards")
 
   const body = {
     public_key: cfg.publicKey,
@@ -162,7 +162,7 @@ export async function charge(
 ) {
   const cfg = await getConfig(tenantId)
   const currency = params.currency ?? "PYG"
-  const token = md5(cfg.privateKey, params.shopProcessId, "charge", params.amount.toFixed(2), currency, params.aliasToken)
+  const token = md5(cfg.privateKey!, params.shopProcessId, "charge", params.amount.toFixed(2), currency, params.aliasToken)
 
   const operation: Record<string, unknown> = {
     token,
@@ -191,7 +191,7 @@ export async function charge(
 /** 5. delete — Elimina tarjeta catastrada */
 export async function deleteCard(tenantId: string, userId: number, cardToken: string) {
   const cfg = await getConfig(tenantId)
-  const token = md5(cfg.privateKey, "delete_card", userId, cardToken)
+  const token = md5(cfg.privateKey!, "delete_card", userId, cardToken)
 
   const body = {
     public_key: cfg.publicKey,
@@ -209,7 +209,7 @@ export async function deleteCard(tenantId: string, userId: number, cardToken: st
 /** 6. single_buy_rollback — Reversa de transacción */
 export async function rollback(tenantId: string, shopProcessId: number) {
   const cfg = await getConfig(tenantId)
-  const token = md5(cfg.privateKey, shopProcessId, "rollback", "0.00")
+  const token = md5(cfg.privateKey!, shopProcessId, "rollback", "0.00")
 
   const body = {
     public_key: cfg.publicKey,
@@ -227,7 +227,7 @@ export async function rollback(tenantId: string, shopProcessId: number) {
 /** 7. get_single_buy_confirmation — Consulta estado de transacción */
 export async function getConfirmation(tenantId: string, shopProcessId: number) {
   const cfg = await getConfig(tenantId)
-  const token = md5(cfg.privateKey, shopProcessId, "get_confirmation")
+  const token = md5(cfg.privateKey!, shopProcessId, "get_confirmation")
 
   const body = {
     public_key: cfg.publicKey,
@@ -261,7 +261,7 @@ export async function verifyConfirmationToken(
 ): Promise<boolean> {
   const cfg = await getConfig(tenantId)
   const currency = params.currency ?? "PYG"
-  const expected = md5(cfg.privateKey, params.shopProcessId, "confirm", params.amount.toFixed(2), currency)
+  const expected = md5(cfg.privateKey!, params.shopProcessId, "confirm", params.amount.toFixed(2), currency)
   return expected === params.token
 }
 

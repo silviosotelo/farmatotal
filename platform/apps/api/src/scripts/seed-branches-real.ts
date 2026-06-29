@@ -26,15 +26,6 @@ type AslStore = {
   slug: string;
 };
 
-function parseHours(raw: string): unknown {
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return { raw };
-  }
-}
-
 async function main() {
   const tenantSlug = process.env.DEFAULT_TENANT ?? "default";
   const [tenant] = await db
@@ -61,31 +52,31 @@ async function main() {
     const code = `asl_${s.id}`;
     const lat = parseFloat(s.lat);
     const lng = parseFloat(s.lng);
+    const slug = code.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     await db
       .insert(branches)
       .values({
         tenantId,
         code,
+        slug,
         name: s.title,
         address: s.street || null,
         city: s.city || null,
         phone: s.phone || null,
-        lat: Number.isFinite(lat) ? lat : null,
-        lng: Number.isFinite(lng) ? lng : null,
-        schedule: parseHours(s.open_hours) as never,
-        pickupEnabled: true,
-        deliveryEnabled: false,
-        active: true,
+        latitude: Number.isFinite(lat) ? String(lat) : null,
+        longitude: Number.isFinite(lng) ? String(lng) : null,
+        isPickup: true,
+        status: "active",
       })
       .onConflictDoUpdate({
-        target: branches.code,
+        target: [branches.tenantId, branches.code],
         set: {
           name: s.title,
           address: s.street || null,
           city: s.city || null,
           phone: s.phone || null,
-          lat: Number.isFinite(lat) ? lat : null,
-          lng: Number.isFinite(lng) ? lng : null,
+          latitude: Number.isFinite(lat) ? String(lat) : null,
+          longitude: Number.isFinite(lng) ? String(lng) : null,
           updatedAt: new Date(),
         },
       });

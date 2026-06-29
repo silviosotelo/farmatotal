@@ -4,13 +4,6 @@ import { emailLog, emailQueue, emailTemplates, options, tenants } from "../db/sc
 
 const SETTINGS_KEY = "mod_mailer";
 
-/**
- * NOTA multitenant: la config `mod_mailer` vive en `options` (scopeada por tenant),
- * pero las tablas `email_queue` / `email_templates` / `email_log` son GLOBALES (no
- * tienen tenant_id todavía). Por eso el worker procesa una cola única y usa la config
- * del tenant por defecto. Hacer la cola multitenant requiere migración de schema
- * (agregar tenant_id a esas 3 tablas) y threadear el tenant en cada `enqueueEmail`.
- */
 async function defaultTenantId(): Promise<string> {
   const slug = process.env.DEFAULT_TENANT ?? "default";
   const [t] = await db.select({ id: tenants.id }).from(tenants).where(eq(tenants.slug, slug)).limit(1);
@@ -37,7 +30,6 @@ export async function getMailerConfig(tenantId: string): Promise<MailerConfig> {
   return { ...DEFAULTS, ...((row?.value as Partial<MailerConfig>) ?? {}) };
 }
 
-/** Reemplaza {{var}} por data[var]. */
 export function render(tpl: string, data: Record<string, unknown> = {}): string {
   return tpl.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, k: string) => {
     const v = data[k];
@@ -54,8 +46,8 @@ type EnqueueInput = {
   data?: Record<string, unknown>;
 };
 
-/** Encola un email. Si se pasa templateKey, renderiza desde la plantilla. */
 export async function enqueueEmail(input: EnqueueInput) {
+  const tenantId = await defaultTenantId();
   let subject = input.subject ?? "";
   let bodyHtml = input.bodyHtml ?? "";
   if (input.templateKey) {
@@ -72,12 +64,13 @@ export async function enqueueEmail(input: EnqueueInput) {
   const [row] = await db
     .insert(emailQueue)
     .values({
+      tenantId,
+      fromEmail: "no-reply@localhost",
+      fromName: "Tienda",
       toEmail: input.toEmail,
-      toName: input.toName ?? null,
+      toName: input.toName ?? "",
       subject,
       bodyHtml,
-      templateKey: input.templateKey ?? null,
-      data: input.data ?? null,
       status: "pending",
     })
     .returning();
@@ -88,7 +81,6 @@ type SendResult = { ok: boolean; error?: string };
 
 async function sendViaProvider(cfg: MailerConfig, msg: { to: string; subject: string; html: string }): Promise<SendResult> {
   if (cfg.provider === "log") {
-    // Dev: no envía de verdad, solo registra como enviado.
     return { ok: true };
   }
   if (cfg.provider === "sendgrid") {
@@ -112,8 +104,6 @@ async function sendViaProvider(cfg: MailerConfig, msg: { to: string; subject: st
   }
   if (cfg.provider === "smtp") {
     try {
-      // nodemailer es opcional: import dinámico (specifier por variable para que tsc
-      // no falle si el paquete no está instalado).
       const pkg = "nodemailer";
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const nm: any = await import(pkg).catch(() => null);
@@ -135,11 +125,8 @@ async function sendViaProvider(cfg: MailerConfig, msg: { to: string; subject: st
 
 const MAX_ATTEMPTS = 3;
 
-/** Procesa hasta `limit` emails pendientes. Devuelve cuántos envió/falló. */
 export async function processQueue(limit = 10): Promise<{ sent: number; failed: number }> {
-  // Cola global → usa la config del tenant por defecto (ver NOTA arriba).
   const cfg = await getMailerConfig(await defaultTenantId());
-  // Comparar contra now() de la DB (evita skew de reloj app↔DB).
   const pending = await db
     .select()
     .from(emailQueue)
@@ -162,23 +149,22 @@ export async function processQueue(limit = 10): Promise<{ sent: number; failed: 
       const giveUp = attempts >= MAX_ATTEMPTS;
       await db
         .update(emailQueue)
-        .set({ status: giveUp ? "failed" : "pending", attempts, lastError: result.error ?? "error" })
+        .set({ status: giveUp ? "failed" : "pending", attempts, error: result.error ?? "error" })
         .where(eq(emailQueue.id, job.id));
       failed++;
     }
     await db.insert(emailLog).values({
+      tenantId: await defaultTenantId(),
       queueId: job.id,
       toEmail: job.toEmail,
       subject: job.subject,
       status: result.ok ? "sent" : "failed",
-      provider: cfg.provider,
       error: result.ok ? null : (result.error ?? null),
     });
   }
   return { sent, failed };
 }
 
-/** Cuenta de pendientes (para badges). */
 export async function pendingCount(): Promise<number> {
   const [{ c } = { c: 0 }] = await db
     .select({ c: sql<number>`count(*)::int` })

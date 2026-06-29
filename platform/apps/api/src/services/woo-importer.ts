@@ -2,26 +2,17 @@
  * Importer de WooCommerce Store API → catalogo nativo.
  * No requiere auth (la Store API es publica para lectura).
  *
- * Idempotente: usa (source_system='woo', source_id=woo_id) como clave.
+ * Idempotente: usa erpId como clave de upsert.
  */
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/client";
-import { brands, categories, productImages, products, syncRuns, tenants } from "../db/schema";
+import { productImages, products, syncRuns, tenants } from "../db/schema";
 
 const SOURCE = "woo";
 const BASE = "https://www.farmatotal.com.py/wp-json/wc/store/v1";
 const UA = "FarmatotalImporter/0.1";
 
 type WooImage = { src: string; alt?: string };
-type WooCategory = {
-  id: number;
-  name: string;
-  slug: string;
-  description?: string;
-  parent: number;
-  count: number;
-  image: { src: string } | null;
-};
 type WooPrices = {
   price: string;
   regular_price: string;
@@ -64,7 +55,6 @@ async function http<T>(path: string, init?: RequestInit): Promise<{ data: T; hea
 }
 
 function parsePrice(raw: string | undefined, minorUnit: number): number {
-  // Store API devuelve strings de enteros en minor units; PYG = 0 decimales pero la API igual envia minor_unit=2.
   if (!raw) return 0;
   const n = parseInt(raw, 10);
   if (Number.isNaN(n)) return 0;
@@ -94,54 +84,6 @@ function stripHtml(s: string | undefined): string | null {
   return txt.length > 0 ? txt.slice(0, 5000) : null;
 }
 
-// ============ CATEGORIES ============
-async function importCategories(tenantId: string): Promise<{ ok: number; map: Map<number, string> }> {
-  const map = new Map<number, string>(); // wooId -> ourUuid
-  let page = 1;
-  const perPage = 100;
-  let totalPages = 1;
-  let ok = 0;
-
-  while (page <= totalPages) {
-    const { data, headers } = await http<WooCategory[]>(
-      `/products/categories?per_page=${perPage}&page=${page}`,
-    );
-    totalPages = Number(headers.get("x-wp-totalpages") ?? "1");
-
-    for (const c of data) {
-      const slug = c.slug || slugify(c.name);
-      const seo = { title: c.name, description: stripHtml(c.description) ?? undefined };
-      const [row] = await db
-        .insert(categories)
-        .values({
-          tenantId,
-          slug,
-          name: c.name,
-          description: stripHtml(c.description),
-          seo,
-          erpSourced: false,
-          active: true,
-        })
-        .onConflictDoUpdate({
-          target: [categories.tenantId, categories.slug],
-          set: { name: c.name, description: stripHtml(c.description), updatedAt: new Date() },
-        })
-        .returning({ id: categories.id });
-      if (row) {
-        map.set(c.id, row.id);
-        ok++;
-      }
-    }
-    page++;
-  }
-
-  // Segunda pasada: setear parentId (solo despues de tener todas las categorias).
-  // No hay column source_id en categories — lo hacemos via slug.
-  // Simplificacion: dejamos parentId null para la primera version. (TODO Fase 2.)
-  return { ok, map };
-}
-
-// ============ PRODUCTS ============
 export async function runFullWooImport(opts: {
   maxProducts?: number;
   perPage?: number;
@@ -164,22 +106,18 @@ export async function runFullWooImport(opts: {
   const [run] = await db
     .insert(syncRuns)
     .values({
-      kind: "wc.products.full",
+      tenantId,
+      type: "wc_products_full",
+      direction: "in",
       status: "running",
-      startedAt: new Date(),
-      triggeredBy,
+      metadata: { triggeredBy },
     })
     .returning({ id: syncRuns.id });
   const runId = run!.id;
 
-  const stats = { catsImported: 0, productsSeen: 0, productsUpserted: 0, imagesUpserted: 0, errors: 0 };
+  const stats = { productsSeen: 0, productsUpserted: 0, imagesUpserted: 0, errors: 0 };
 
   try {
-    console.log("[woo] importando categorias…");
-    const { ok: catsOk, map: catMap } = await importCategories(tenantId);
-    stats.catsImported = catsOk;
-    console.log(`[woo] categorias OK: ${catsOk}`);
-
     let page = opts.startPage ?? 1;
     while (stats.productsUpserted < max) {
       const { data, headers } = await http<WooProduct[]>(
@@ -194,7 +132,7 @@ export async function runFullWooImport(opts: {
       for (const p of data) {
         if (stats.productsUpserted >= max) break;
         try {
-          await upsertProduct(p, catMap, tenantId);
+          await upsertProduct(p, tenantId);
           stats.productsUpserted++;
           if (p.images?.length) stats.imagesUpserted += p.images.length;
         } catch (e) {
@@ -208,7 +146,7 @@ export async function runFullWooImport(opts: {
 
     await db
       .update(syncRuns)
-      .set({ status: "ok", finishedAt: new Date(), stats })
+      .set({ status: "ok", completedAt: new Date(), metadata: { ...stats, triggeredBy } })
       .where(eq(syncRuns.id, runId));
 
     console.log("[woo] DONE", stats);
@@ -218,75 +156,59 @@ export async function runFullWooImport(opts: {
       .update(syncRuns)
       .set({
         status: "failed",
-        finishedAt: new Date(),
-        stats,
-        errorMessage: (e as Error).message,
+        completedAt: new Date(),
+        metadata: { ...stats, error: (e as Error).message, triggeredBy },
       })
       .where(eq(syncRuns.id, runId));
     throw e;
   }
 }
 
-async function upsertProduct(p: WooProduct, catMap: Map<number, string>, tenantId: string) {
+async function upsertProduct(p: WooProduct, tenantId: string) {
   const sku = p.sku?.trim() || `woo-${p.id}`;
-  const slug = p.slug || slugify(p.name);
   const regularPrice = parsePrice(p.prices.regular_price, p.prices.currency_minor_unit);
   const priceSale = parsePrice(p.prices.sale_price, p.prices.currency_minor_unit);
   const salePrice = priceSale > 0 ? priceSale : regularPrice;
-  const onPromo = p.on_sale && priceSale > 0 && priceSale < regularPrice;
-
-  const categoryId = p.categories?.[0] ? catMap.get(p.categories[0].id) ?? null : null;
-
-  const custom: Record<string, unknown> = {
-    woo_id: p.id,
-    woo_permalink: p.permalink,
-    woo_type: p.type,
-    woo_in_stock: p.is_in_stock,
-    woo_on_backorder: p.is_on_backorder,
-    short_description: stripHtml(p.short_description),
-    tags: p.tags?.map((t) => ({ id: t.id, name: t.name, slug: t.slug })) ?? [],
-  };
 
   const values = {
     tenantId,
     sku,
-    slug,
-    title: p.name,
-    description: stripHtml(p.description),
-    categoryId: categoryId ?? null,
-    regularPrice,
-    salePrice,
-    onPromo,
+    barcode: null as string | null,
+    regularPrice: String(regularPrice),
+    salePrice: String(salePrice),
+    erpId: String(p.id),
+    erpSyncedAt: new Date(),
+    erpSyncVersion: 1,
     status: "published" as const,
-    totalSales: p.is_in_stock ? 1 : 0,
-    custom,
-    erpSourced: false,
-    sourceSystem: SOURCE,
-    sourceId: String(p.id),
-    syncedAt: new Date(),
   };
 
-  const [row] = await db
-    .insert(products)
-    .values(values)
-    .onConflictDoUpdate({
-      target: [products.tenantId, products.sourceSystem, products.sourceId],
-      set: {
+  const [existing] = await db
+    .select({ id: products.id })
+    .from(products)
+    .where(and(eq(products.tenantId, tenantId), eq(products.erpId, values.erpId)))
+    .limit(1);
+
+  let row: { id: string } | undefined;
+  if (existing) {
+    const [updated] = await db
+      .update(products)
+      .set({
         sku: values.sku,
-        slug: values.slug,
-        title: values.title,
-        description: values.description,
-        categoryId: values.categoryId,
         regularPrice: values.regularPrice,
         salePrice: values.salePrice,
-        onPromo: values.onPromo,
-        totalSales: values.totalSales,
-        custom: values.custom,
-        syncedAt: values.syncedAt,
+        erpSyncedAt: new Date(),
         updatedAt: new Date(),
-      },
-    })
-    .returning({ id: products.id });
+      })
+      .where(eq(products.id, existing.id))
+      .returning({ id: products.id });
+    row = updated;
+  } else {
+    const [inserted] = await db
+      .insert(products)
+      .values(values)
+      .returning({ id: products.id });
+    row = inserted;
+  }
   if (!row) return;
 
   // Imagenes — replace all
@@ -294,11 +216,11 @@ async function upsertProduct(p: WooProduct, catMap: Map<number, string>, tenantI
   if (p.images?.length) {
     await db.insert(productImages).values(
       p.images.slice(0, 10).map((img, i) => ({
+        tenantId,
         productId: row.id,
-        url: img.src,
-        alt: img.alt ?? null,
-        position: i,
-        isPrimary: i === 0,
+        mediaId: "00000000-0000-0000-0000-000000000000" as string,
+        altText: img.alt ?? "",
+        sortOrder: i,
       })),
     );
   }

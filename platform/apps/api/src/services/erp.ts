@@ -1,72 +1,88 @@
+import { eq } from "drizzle-orm";
 import { Agent } from "undici";
 import { env } from "../env.js";
-import type { orders, orderLines, branches } from "../db/schema";
+import { db } from "../db/client.js";
+import type { orders, orderItems, branches } from "../db/schema";
+import { orderAddresses, orderShippingLines } from "../db/schema";
 
 type OrderRow = typeof orders.$inferSelect;
-type LineRow = typeof orderLines.$inferSelect;
+type LineRow = typeof orderItems.$inferSelect;
 type BranchRow = typeof branches.$inferSelect;
 
 export function isErpPushEnabled(): boolean {
   return env.ERP_PUSH_ENABLED && !!env.ERP_SAVE_ORDER_URL;
 }
 
-/** Mapea customerDoc "CI:123" / "RUC:456" → {tipo, nro} en el formato del ERP. */
 function splitDoc(customerDoc: string | null): { tipo: string; nro: string } {
   if (!customerDoc) return { tipo: "1", nro: "0" };
   const [t, n] = customerDoc.split(":");
-  // ERP: 1 = CI, 2 = RUC (convención del save_order legado)
   const tipo = (t ?? "").toUpperCase() === "RUC" ? "2" : "1";
   return { tipo, nro: n || t || "0" };
 }
 
-/** Construye el body ECO_* idéntico al contrato save_order del ERP Farmatotal. */
-export function buildErpPayload(order: OrderRow, lines: LineRow[], branch?: BranchRow | null) {
-  const doc = splitDoc(order.customerDoc);
-  const addr = (order.shippingAddress ?? {}) as Record<string, unknown>;
+export async function buildErpPayload(order: OrderRow, lines: LineRow[], branch?: BranchRow | null) {
   const now = new Date(order.createdAt).toISOString().replace(/\.\d+Z$/, "Z");
 
+  const [shippingAddr] = await db
+    .select()
+    .from(orderAddresses)
+    .where(eq(orderAddresses.orderId, order.id))
+    .limit(1);
+
+  const [shippingLine] = await db
+    .select()
+    .from(orderShippingLines)
+    .where(eq(orderShippingLines.orderId, order.id))
+    .limit(1);
+
+  const phone = shippingAddr?.phone ?? "";
+  const address = shippingAddr?.address1 ?? "SIN DIRECCION";
+  const city = shippingAddr?.city ?? "SIN CIUDAD";
+  const state = shippingAddr?.state ?? "SIN DEPARTAMENTO";
+
+  const doc = splitDoc(null);
+
   return {
-    // ECO_PEDIDO en el legado = 400000 + post_id; acá usamos el number de la orden.
-    ECO_PEDIDO_ALF: order.number,
+    ECO_PEDIDO_ALF: order.orderNumber,
     ECO_VENTA: [
       {
         ECO_TIPO: "1",
         ECO_MON: "1",
         ECO_FEC_PED: now,
         ECO_ESTADO: order.status,
-        ECO_MET_PAGO: order.paymentMethod,
-        ECO_OPC_DELIVERY: order.shippingMethod,
-        ECO_DESCUENTO: order.discount,
-        ECO_CUPON: order.couponCode ? [order.couponCode] : [],
+        ECO_MET_PAGO: order.paymentMethod ?? "",
+        ECO_OPC_DELIVERY: shippingLine?.methodId ?? "",
+        ECO_DESCUENTO: order.discountTotal,
+        ECO_CUPON: [],
         ECO_TOTAL: order.total,
       },
     ],
     ECO_DETALLE: lines.map((l, i) => ({
       EDET_NRO_ITEM: i + 1,
       EDET_SKU: l.sku,
-      EDET_DESC: l.title,
+      EDET_DESC: l.name,
       EDET_CANT: l.quantity,
-      EDET_PRECIO: l.lineTotal,
+      EDET_PRECIO: l.total,
     })),
     ECO_CLIENTE: [
       {
-        CLI_RAZON_SOCIAL: order.customerName,
+        CLI_RAZON_SOCIAL: "",
         CLI_TIPO_DOC: doc.tipo,
         CLI_NRO_DOC: doc.nro,
-        CLI_TELEFONO: order.customerPhone ?? "",
+        CLI_TELEFONO: phone,
       },
     ],
     ECO_ENVIO: [
       {
-        ECO_ENV_TIPO: order.shippingMethod === "delivery" ? 1 : 2,
-        ECO_ENV_DIR: (addr.address as string) ?? "SIN DIRECCION",
-        ECO_ENV_CIUDAD: (addr.city as string) ?? "SIN CIUDAD",
-        ECO_ENV_DEP: (addr.state as string) ?? "SIN DEPARTAMENTO",
+        ECO_ENV_TIPO: shippingLine ? 1 : 2,
+        ECO_ENV_DIR: address,
+        ECO_ENV_CIUDAD: city,
+        ECO_ENV_DEP: state,
         ECO_ENV_SUC: branch?.code ?? "",
-        ECO_ENV_TEL: order.customerPhone ?? "",
-        ECO_LATITUD: branch?.lat ?? 0,
-        ECO_LONGITUD: branch?.lng ?? 0,
-        ECO_OBS: order.notes ?? "",
+        ECO_ENV_TEL: phone,
+        ECO_LATITUD: branch?.latitude ?? 0,
+        ECO_LONGITUD: branch?.longitude ?? 0,
+        ECO_OBS: order.customerNote ?? "",
       },
     ],
   };
@@ -74,10 +90,6 @@ export function buildErpPayload(order: OrderRow, lines: LineRow[], branch?: Bran
 
 export type ErpPushResult = { ok: boolean; status: number; body: string };
 
-/**
- * Envía la orden al ERP. A diferencia del legado (sslverify=false, sin auth),
- * acá: token propio (Authorization: Bearer) + validación de certificado por defecto.
- */
 export async function pushOrderToErp(
   order: OrderRow,
   lines: LineRow[],
@@ -86,11 +98,10 @@ export async function pushOrderToErp(
   if (!isErpPushEnabled()) {
     throw new Error("ERP push deshabilitado (ERP_PUSH_ENABLED/ERP_SAVE_ORDER_URL)");
   }
-  const payload = buildErpPayload(order, lines, branch);
+  const payload = await buildErpPayload(order, lines, branch);
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (env.ERP_AUTH_TOKEN) headers.Authorization = `Bearer ${env.ERP_AUTH_TOKEN}`;
 
-  // Validación de cert configurable (default ON). Sólo se relaja si lo piden explícito.
   const dispatcher = env.ERP_REJECT_UNAUTHORIZED
     ? undefined
     : new Agent({ connect: { rejectUnauthorized: false } });

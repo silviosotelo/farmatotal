@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
-import { branches, coupons, orderLines, orders, products } from "../../db/schema";
+import { branches, coupons, orderItems, orders, products } from "../../db/schema";
 import { isErpPushEnabled, pushOrderToErp } from "../../services/erp.js";
 import { tid } from "../../plugins/tenant";
 import { readTaxConfig, resolveRate, taxPortion } from "../../services/tax.js";
@@ -55,7 +55,7 @@ function genNumber(prefix: string) {
 export async function orderRoutes(app: FastifyInstance) {
   // Checkout publico (el store lo llama)
   app.post("/orders/checkout", { schema: { body: checkoutInput } }, async (req, reply) => {
-    const b = req.body;
+    const b = req.body as z.infer<typeof checkoutInput>;
     // Cantidad decimal: el total de cada línea se redondea a Gs entero y el
     // subtotal es la SUMA de las líneas (así la orden cuadra fila por fila).
     const lineTotals = b.lines.map((l) => Math.round(l.unitPrice * l.quantity));
@@ -105,43 +105,38 @@ export async function orderRoutes(app: FastifyInstance) {
     const [order] = await db
       .insert(orders)
       .values({
-        number,
+        orderNumber: number,
         tenantId: tid(req),
         currency: (req.tenant.config?.currency as string | undefined) ?? "PYG",
-        customerName: b.razonSocial || b.customerName,
-        customerEmail: b.customerEmail,
-        customerPhone: b.customerPhone ?? null,
-        customerDoc: b.docType && b.docNumber ? `${b.docType}:${b.docNumber}` : (b.customerDoc ?? null),
-        shippingMethod: b.shippingMethod,
-        branchId: b.branchId ?? null,
-        shippingAddress: b.shippingAddress ?? null,
+        customerId: null,
+        guestEmail: b.customerEmail,
         paymentMethod: b.paymentMethod,
+        branchId: b.branchId ?? null,
         status: "pending",
-        subtotal,
-        discount,
-        shippingCost,
-        shippingMethodName,
-        taxTotal,
-        taxRateName: rate.name,
-        taxRatePercent: rate.percent,
-        total,
-        couponCode: b.couponCode ?? null,
-        notes: b.notes ?? null,
-        events: [{ at: new Date().toISOString(), type: "created" }],
+        subtotal: String(subtotal),
+        discountTotal: String(discount),
+        shippingTotal: String(shippingCost),
+        taxTotal: String(taxTotal),
+        total: String(total),
+        customerNote: b.notes ?? null,
       })
       .returning();
 
     const insertedLines = await db
-      .insert(orderLines)
+      .insert(orderItems)
       .values(
         b.lines.map((l, i) => ({
           orderId: order!.id,
+          tenantId: tid(req),
+          itemType: "line_item" as const,
           productId: l.productId ?? null,
           sku: l.sku,
-          title: l.title,
-          unitPrice: l.unitPrice,
-          quantity: l.quantity,
-          lineTotal: lineTotals[i]!,
+          name: l.title,
+          quantity: Math.round(l.quantity),
+          subtotal: String(lineTotals[i]!),
+          subtotalTax: "0",
+          total: String(lineTotals[i]!),
+          totalTax: "0",
         })),
       )
       .returning();
@@ -158,7 +153,7 @@ export async function orderRoutes(app: FastifyInstance) {
   app.post("/orders/:id/erp-push", { schema: { params: idParam } }, async (req, reply) => {
     if (!isErpPushEnabled())
       return reply.serviceUnavailable("ERP push deshabilitado (ERP_PUSH_ENABLED)");
-    const result = await safeErpPush(req.params.id);
+    const result = await safeErpPush((req.params as { id: string }).id);
     if (!result) return reply.notFound();
     return reply.send(result);
   });
@@ -167,26 +162,16 @@ export async function orderRoutes(app: FastifyInstance) {
   async function safeErpPush(orderId: string) {
     const [o] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
     if (!o) return null;
-    const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, o.id));
+    const lines = await db.select().from(orderItems).where(eq(orderItems.orderId, o.id));
     const branch = o.branchId
       ? (await db.select().from(branches).where(eq(branches.id, o.branchId)).limit(1))[0]
       : null;
-    let event: { at: string; type: string; note?: string };
     try {
-      const res = await pushOrderToErp(o, lines, branch ?? null);
-      event = {
-        at: new Date().toISOString(),
-        type: res.ok ? "erp:sent" : "erp:error",
-        note: `HTTP ${res.status}: ${res.body.slice(0, 200)}`,
-      };
+      const res = await pushOrderToErp(o as any, lines as any, branch ?? null);
+      return { ok: res.ok, status: res.status };
     } catch (e) {
-      event = { at: new Date().toISOString(), type: "erp:error", note: String(e).slice(0, 200) };
+      return { ok: false, error: String(e).slice(0, 200) };
     }
-    await db
-      .update(orders)
-      .set({ events: [...(o.events ?? []), event], updatedAt: new Date() })
-      .where(eq(orders.id, o.id));
-    return { ok: event.type === "erp:sent", event };
   }
 
   // Admin: listado
@@ -216,30 +201,29 @@ export async function orderRoutes(app: FastifyInstance) {
       const [o] = await db
         .select()
         .from(orders)
-        .where(and(eq(orders.tenantId, tid(req)), eq(orders.number, req.params.number)))
+        .where(and(eq(orders.tenantId, tid(req)), eq(orders.orderNumber, (req.params as { number: string }).number)))
         .limit(1);
       if (!o) return reply.notFound();
-      const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, o.id));
+      const lines = await db.select().from(orderItems).where(eq(orderItems.orderId, o.id));
       return reply.send({ ...o, lines });
     },
   );
 
   app.get("/orders/:id", { schema: { params: idParam } }, async (req, reply) => {
-    const [o] = await db.select().from(orders).where(eq(orders.id, req.params.id)).limit(1);
+    const [o] = await db.select().from(orders).where(eq(orders.id, (req.params as { id: string }).id)).limit(1);
     if (!o) return reply.notFound();
-    const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, o.id));
+    const lines = await db.select().from(orderItems).where(eq(orderItems.orderId, o.id));
     return reply.send({ ...o, lines });
   });
 
   const statusInput = z.object({
     status: z.enum([
       "pending",
-      "paid",
+      "confirmed",
       "processing",
-      "fulfilled",
-      "delivered",
+      "completed",
       "cancelled",
-      "refunded",
+      "closed",
     ]),
     note: z.string().optional(),
   });
@@ -248,26 +232,24 @@ export async function orderRoutes(app: FastifyInstance) {
     "/orders/:id/status",
     { schema: { params: idParam, body: statusInput } },
     async (req, reply) => {
+      const params = req.params as { id: string };
+      const body = req.body as z.infer<typeof statusInput>;
       const [o] = await db
         .select()
         .from(orders)
-        .where(and(eq(orders.tenantId, tid(req)), eq(orders.id, req.params.id)))
+        .where(and(eq(orders.tenantId, tid(req)), eq(orders.id, params.id)))
         .limit(1);
       if (!o) return reply.notFound();
-      const events = [
-        ...(o.events ?? []),
-        { at: new Date().toISOString(), type: `status:${req.body.status}`, note: req.body.note },
-      ];
       const [row] = await db
         .update(orders)
-        .set({ status: req.body.status, events, updatedAt: new Date() })
+        .set({ status: body.status, updatedAt: new Date() })
         .where(eq(orders.id, o.id))
         .returning();
 
       // Fire stock restore hooks on cancellation or refund
-      if (req.body.status === "cancelled") {
+      if (body.status === "cancelled") {
         await doAction("order.cancelled", { tenantId: tid(req), orderId: o.id });
-      } else if (req.body.status === "refunded") {
+      } else if (body.status === "closed") {
         await doAction("order.refunded", { tenantId: tid(req), orderId: o.id });
       }
 
@@ -285,22 +267,20 @@ export async function orderRoutes(app: FastifyInstance) {
     "/orders/:id/refund",
     { schema: { params: idParam, body: refundInput } },
     async (req, reply) => {
+      const params = req.params as { id: string };
+      const body = req.body as z.infer<typeof refundInput>;
       const [o] = await db
         .select()
         .from(orders)
-        .where(and(eq(orders.tenantId, tid(req)), eq(orders.id, req.params.id)))
+        .where(and(eq(orders.tenantId, tid(req)), eq(orders.id, params.id)))
         .limit(1);
       if (!o) return reply.notFound();
-      const amount = req.body.amount && req.body.amount > 0 ? req.body.amount : o.total;
-      const isFull = amount >= o.total;
-      const note = `Reembolso ${isFull ? "total" : "parcial"}${req.body.reason ? ` — ${req.body.reason}` : ""}`;
-      const events = [
-        ...(o.events ?? []),
-        { at: new Date().toISOString(), type: "refund", note, amount },
-      ];
+      const amount = body.amount && body.amount > 0 ? body.amount : Number(o.total);
+      const isFull = amount >= Number(o.total);
+      const note = `Reembolso ${isFull ? "total" : "parcial"}${body.reason ? ` — ${body.reason}` : ""}`;
       const [row] = await db
         .update(orders)
-        .set({ status: isFull ? "refunded" : o.status, events, updatedAt: new Date() })
+        .set({ status: isFull ? "closed" : o.status, updatedAt: new Date() })
         .where(eq(orders.id, o.id))
         .returning();
 

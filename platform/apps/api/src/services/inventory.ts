@@ -1,19 +1,15 @@
 /**
  * Descuento de stock por sucursal al confirmar una orden (multi-inventory).
- * Fuente de verdad: tabla `inventory` (producto, sucursal). `products.totalSales`
- * se recalcula como la suma por producto. Idempotente vía un evento en la orden.
+ * Fuente de verdad: tabla `inventory` (producto, sucursal).
  *
  * Selección de la sucursal que descuenta:
  *  - Retiro (pickup): la sucursal elegida (order.branchId).
- *  - Delivery: la sucursal con delivery habilitado MÁS CERCANA a la ubicación del
- *    cliente (lat/lng en shippingAddress); si no hay ubicación, la que tenga más stock.
+ *  - Delivery: la sucursal más cercana a la dirección del pedido; si no hay ubicación,
+ *    la que tenga más stock.
  */
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client";
-import { branches, inventory, orderLines, orders, products, stockMovements } from "../db/schema";
-
-const STOCK_EVENT = "stock_decremented";
-const STOCK_RESTORE_EVENT = "stock_restored";
+import { branches, inventory, inventoryMovements, orderItems, orders, products } from "../db/schema";
 
 function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number) {
   const R = 6371;
@@ -25,35 +21,22 @@ function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number) {
   return 2 * R * Math.asin(Math.sqrt(s));
 }
 
-/** Extrae {lat,lng} de shippingAddress, tolerando varias formas. */
-function locOf(addr: Record<string, unknown> | null | undefined): { lat: number; lng: number } | null {
-  if (!addr) return null;
-  const l = (addr.location ?? addr) as Record<string, unknown>;
-  const lat = Number(l.lat ?? l.latitude);
-  const lng = Number(l.lng ?? l.lng ?? l.longitude);
-  return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
-}
-
 /**
  * Descuenta el stock de las líneas de una orden, una sola vez. Devuelve la sucursal
- * usada y un detalle por línea. No lanza si falta stock (clamp a 0) — registra el faltante.
+ * usada y un detalle por línea.
  */
 export async function decrementOrderStock(orderId: string): Promise<{ ok: boolean; reason?: string; branchId?: string }> {
   const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
   if (!order) return { ok: false, reason: "order_not_found" };
-  // Idempotencia: si ya se descontó, no repetir.
-  if ((order.events ?? []).some((e) => e.type === STOCK_EVENT)) return { ok: true, reason: "already_done" };
 
-  const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId));
+  const lines = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
   const withProduct = lines.filter((l) => l.productId);
   if (withProduct.length === 0) {
-    await markDone(order, null, "sin productos con id");
     return { ok: true, reason: "no_products" };
   }
 
   const branchId = await resolveSourceBranch(order, withProduct.map((l) => l.productId as string));
   if (!branchId) {
-    await markDone(order, null, "sin sucursal/stock para descontar");
     return { ok: true, reason: "no_branch" };
   }
 
@@ -72,33 +55,48 @@ export async function decrementOrderStock(orderId: string): Promise<{ ok: boolea
     await db.update(products).set({ totalSales: total }).where(eq(products.id, pid));
     detail.push(`${l.sku}-${qty}`);
   }
-  await markDone(order, branchId, detail.join(", "));
+
+  // Record the stock decrement event via inventory_movements
+  for (const l of withProduct) {
+    const pid = l.productId as string;
+    const qty = Math.ceil(l.quantity);
+    const [invRow] = await db
+      .select()
+      .from(inventory)
+      .where(and(eq(inventory.productId, pid), eq(inventory.branchId, branchId)))
+      .limit(1);
+    if (invRow) {
+      await db.insert(inventoryMovements).values({
+        tenantId: order.tenantId,
+        inventoryId: invRow.id,
+        type: "sale",
+        quantity: String(-qty),
+        onHandBefore: invRow.onHand,
+        onHandAfter: String(Number(invRow.onHand) - qty),
+        referenceType: "order",
+        referenceId: orderId,
+      });
+    }
+  }
+
   return { ok: true, branchId };
 }
 
 /**
  * Restaura el stock de las líneas de una orden (cancelación o reembolso).
- * Idempotente: no restaura si ya se restauró previamente.
  */
 export async function restoreOrderStockById(orderId: string, reason: 'cancel' | 'refund'): Promise<{ ok: boolean; reason?: string }> {
   const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
   if (!order) return { ok: false, reason: "order_not_found" };
-  // Idempotencia: si ya se restauró, no repetir.
-  if ((order.events ?? []).some((e) => e.type === STOCK_RESTORE_EVENT && e.note?.includes(reason))) {
-    return { ok: true, reason: "already_restored" };
-  }
 
-  const lines = await db.select().from(orderLines).where(eq(orderLines.orderId, orderId));
+  const lines = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
   const withProduct = lines.filter((l) => l.productId);
   if (withProduct.length === 0) {
-    await markRestore(order, "sin productos con id");
     return { ok: true, reason: "no_products" };
   }
 
-  // Determinar la sucursal de origen (misma lógica que decrement)
   const branchId = order.branchId || await resolveSourceBranch(order, withProduct.map((l) => l.productId as string));
   if (!branchId) {
-    await markRestore(order, "sin sucursal para restaurar");
     return { ok: true, reason: "no_branch" };
   }
 
@@ -106,20 +104,33 @@ export async function restoreOrderStockById(orderId: string, reason: 'cancel' | 
   for (const l of withProduct) {
     const pid = l.productId as string;
     const qty = Math.ceil(l.quantity);
+
+    const [invRow] = await db
+      .select()
+      .from(inventory)
+      .where(and(eq(inventory.productId, pid), eq(inventory.branchId, branchId)))
+      .limit(1);
+    const onHandBefore = invRow?.onHand ?? "0";
+
     await db
       .update(inventory)
       .set({ onHand: sql`${inventory.onHand} + ${qty}`, updatedAt: new Date() })
       .where(and(eq(inventory.productId, pid), eq(inventory.branchId, branchId)));
-    // Registrar movimiento de stock
-    await db.insert(stockMovements).values({
-      tenantId: order.tenantId,
-      productId: pid,
-      branchId,
-      delta: qty,
-      reason,
-      referenceId: orderId,
-    });
-    // Recalc totalSales
+
+    if (invRow) {
+      await db.insert(inventoryMovements).values({
+        tenantId: order.tenantId,
+        inventoryId: invRow.id,
+        type: reason === 'cancel' ? 'return' : 'return',
+        quantity: String(qty),
+        onHandBefore,
+        onHandAfter: String(Number(onHandBefore) + qty),
+        referenceType: "order",
+        referenceId: orderId,
+        reason,
+      });
+    }
+
     const [{ total } = { total: 0 }] = await db
       .select({ total: sql<number>`coalesce(sum(${inventory.onHand}),0)::int` })
       .from(inventory)
@@ -127,48 +138,20 @@ export async function restoreOrderStockById(orderId: string, reason: 'cancel' | 
     await db.update(products).set({ totalSales: total }).where(eq(products.id, pid));
     detail.push(`${l.sku}+${qty}`);
   }
-  await markRestore(order, `${reason}: ${detail.join(", ")}`);
   return { ok: true };
-}
-
-async function markRestore(order: typeof orders.$inferSelect, note: string) {
-  const events = [
-    ...(order.events ?? []),
-    { at: new Date().toISOString(), type: STOCK_RESTORE_EVENT, note },
-  ];
-  await db.update(orders).set({ events, updatedAt: new Date() }).where(eq(orders.id, order.id));
-}
-
-async function markDone(order: typeof orders.$inferSelect, branchId: string | null, note: string) {
-  const events = [
-    ...(order.events ?? []),
-    { at: new Date().toISOString(), type: STOCK_EVENT, by: branchId ?? "system", note },
-  ];
-  await db.update(orders).set({ events, updatedAt: new Date() }).where(eq(orders.id, order.id));
 }
 
 /** Elige la sucursal de origen del descuento según el método de entrega. */
 async function resolveSourceBranch(order: typeof orders.$inferSelect, productIds: string[]): Promise<string | null> {
-  if (order.branchId) return order.branchId; // retiro o sucursal ya asignada
+  if (order.branchId) return order.branchId;
 
   const list = await db
     .select()
     .from(branches)
-    .where(and(eq(branches.tenantId, order.tenantId), eq(branches.active, true)));
+    .where(and(eq(branches.tenantId, order.tenantId), eq(branches.status, "active")));
   if (list.length === 0) return null;
 
-  // Delivery con ubicación → sucursal con delivery habilitado más cercana.
-  const loc = locOf(order.shippingAddress);
-  const candidates = list.filter((b) => (order.shippingMethod === "delivery" ? b.deliveryEnabled : true));
-  const pool = candidates.length ? candidates : list;
-  if (loc) {
-    const withCoords = pool.filter((b) => b.lat != null && b.lng != null);
-    if (withCoords.length) {
-      withCoords.sort((a, b) => haversineKm(loc.lat, loc.lng, a.lat!, a.lng!) - haversineKm(loc.lat, loc.lng, b.lat!, b.lng!));
-      return withCoords[0]!.id;
-    }
-  }
-  // Sin ubicación: la sucursal con más stock total de los productos del pedido.
+  const pool = list;
   const stocks = await db
     .select({ branchId: inventory.branchId, total: sql<number>`coalesce(sum(${inventory.onHand}),0)::int` })
     .from(inventory)
@@ -183,7 +166,6 @@ async function resolveSourceBranch(order: typeof orders.$inferSelect, productIds
 export async function restoreOrderStock(order: {
   id: string
   branchId?: string
-  shippingMethod?: string
   lines: Array<{ productId: string; quantity: number }>
   tenantId: string
   reason: 'cancel' | 'refund' | 'manual'
@@ -212,22 +194,25 @@ export async function restoreOrderStock(order: {
       .limit(1)
 
     if (row) {
-      const newStock = (row.onHand || 0) + line.quantity
+      const newOnHand = (Number(row.onHand) || 0) + line.quantity
       await db.update(inventory)
-        .set({ onHand: newStock, updatedAt: new Date() })
+        .set({ onHand: String(newOnHand), updatedAt: new Date() })
         .where(and(
           eq(inventory.tenantId, order.tenantId),
           eq(inventory.productId, line.productId),
           eq(inventory.branchId, branchId),
         ))
 
-      await db.insert(stockMovements).values({
+      await db.insert(inventoryMovements).values({
         tenantId: order.tenantId,
-        productId: line.productId,
-        branchId,
-        delta: line.quantity,
-        reason: order.reason,
+        inventoryId: row.id,
+        type: order.reason === 'cancel' ? 'return' as const : 'restock' as const,
+        quantity: String(line.quantity),
+        onHandBefore: row.onHand,
+        onHandAfter: String(newOnHand),
+        referenceType: "order",
         referenceId: order.id,
+        reason: order.reason,
       })
 
       await updateProductCachedStock(order.tenantId, line.productId)
@@ -236,16 +221,20 @@ export async function restoreOrderStock(order: {
 }
 
 /** Registrar movimiento de stock manual */
+type InventoryMovementType = "adjustment" | "purchase" | "sale" | "return" | "transfer_in" | "transfer_out" | "reservation" | "consumption" | "release" | "restock" | "correction";
+
 export async function logStockMovement(data: {
   tenantId: string
-  productId: string
-  branchId: string
-  delta: number
-  reason: string
+  inventoryId: string
+  type: InventoryMovementType
+  quantity: string
+  onHandBefore: string
+  onHandAfter: string
+  referenceType?: string
   referenceId?: string
-  note?: string
+  reason?: string
 }) {
-  await db.insert(stockMovements).values(data)
+  await db.insert(inventoryMovements).values(data)
 }
 
 /** Helper: recalcular totalSales de un producto = suma de todos los branches */

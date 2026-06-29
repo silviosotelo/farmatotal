@@ -48,14 +48,10 @@ export async function persistRefreshToken(args: {
   userId: string;
   token: string;
   ttlMs: number;
-  userAgent?: string;
-  ip?: string;
 }) {
   await db.insert(refreshTokens).values({
     userId: args.userId,
     tokenHash: hashRefreshToken(args.token),
-    userAgent: args.userAgent ?? null,
-    ip: args.ip ?? null,
     expiresAt: new Date(Date.now() + args.ttlMs),
   });
 }

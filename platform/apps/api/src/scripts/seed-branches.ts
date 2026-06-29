@@ -39,8 +39,8 @@ async function main() {
   for (const s of SUCURSALES) {
     const [row] = await db
       .insert(branches)
-      .values({ ...s, tenantId, pickupEnabled: true, deliveryEnabled: s.city === "Asunción" })
-      .onConflictDoUpdate({ target: branches.code, set: { name: s.name, address: s.address, updatedAt: new Date() } })
+      .values({ ...s, slug: s.code.toLowerCase().replace(/[^a-z0-9]+/g, "-"), tenantId, isPickup: true, status: "active" })
+      .onConflictDoUpdate({ target: [branches.tenantId, branches.code], set: { name: s.name, address: s.address, updatedAt: new Date() } })
       .returning({ id: branches.id });
     if (row) branchIds.push(row.id);
   }
@@ -48,7 +48,10 @@ async function main() {
 
   console.log("[seed] cupones…");
   for (const c of CUPONES) {
-    await db.insert(coupons).values({ ...c, tenantId }).onConflictDoUpdate({ target: coupons.code, set: { value: c.value, updatedAt: new Date() } });
+    await db.insert(coupons).values({ ...c, tenantId }).onConflictDoUpdate({
+      target: [coupons.tenantId, coupons.code],
+      set: { value: c.value, updatedAt: new Date() },
+    });
   }
   console.log(`[seed] ${CUPONES.length} cupones`);
 
@@ -58,8 +61,8 @@ async function main() {
   let invRows = 0;
   for (let i = 0; i < prods.length; i++) {
     const p = prods[i]!;
-    // stock determinístico desde el sku (sin Math.random para reproducibilidad)
-    const seed = [...p.sku].reduce((a, ch) => a + ch.charCodeAt(0), 0);
+    const sku = p.sku ?? "";
+    const seed = [...sku].reduce((a, ch) => a + ch.charCodeAt(0), 0);
     const targets = [branchIds[0]!, branchIds[(i % 3) + 1]!, branchIds[(i % 4) + 4]!].filter(Boolean);
     let total = 0;
     for (let j = 0; j < targets.length; j++) {
@@ -67,14 +70,14 @@ async function main() {
       total += stock;
       await db
         .insert(inventory)
-        .values({ tenantId, productId: p.id, branchId: targets[j]!, stock })
+        .values({ tenantId, productId: p.id, branchId: targets[j]!, onHand: String(stock) })
         .onConflictDoUpdate({
           target: [inventory.productId, inventory.branchId],
-          set: { stock, updatedAt: new Date() },
+          set: { onHand: String(stock), updatedAt: new Date() },
         });
       invRows++;
     }
-    await db.update(products).set({ stockCached: total }).where(sql`${products.id} = ${p.id}`);
+    await db.update(products).set({ totalSales: total }).where(sql`${products.id} = ${p.id}`);
   }
   console.log(`[seed] ${invRows} filas de inventario`);
   await pool.end();

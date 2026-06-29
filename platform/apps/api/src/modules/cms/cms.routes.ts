@@ -37,7 +37,7 @@ export async function cmsRoutes(app: FastifyInstance) {
     const [p] = await db
       .select()
       .from(posts)
-      .where(and(eq(posts.tenantId, tid(req)), eq(posts.postType, CMS_POST_TYPE), eq(posts.slug, req.params.slug)))
+      .where(and(eq(posts.tenantId, tid(req)), eq(posts.postType, CMS_POST_TYPE), eq(posts.slug, (req.params as { slug: string }).slug)))
       .limit(1);
     if (!p) return reply.notFound();
     return reply.send(p);
@@ -46,7 +46,7 @@ export async function cmsRoutes(app: FastifyInstance) {
   app.post("/cms/pages", { schema: { body: pageInput } }, async (req, reply) => {
     const [row] = await db
       .insert(posts)
-      .values({ ...req.body, tenantId: tid(req), postType: CMS_POST_TYPE })
+      .values({ ...(req.body as z.infer<typeof pageInput>), tenantId: tid(req), postType: CMS_POST_TYPE })
       .returning();
     return reply.send(row);
   });
@@ -57,8 +57,8 @@ export async function cmsRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const [row] = await db
         .update(posts)
-        .set({ ...req.body, updatedAt: new Date() })
-        .where(and(eq(posts.tenantId, tid(req)), eq(posts.id, req.params.id)))
+        .set({ ...(req.body as Record<string, unknown>), updatedAt: new Date() })
+        .where(and(eq(posts.tenantId, tid(req)), eq(posts.id, (req.params as { id: string }).id)))
         .returning();
       if (!row) return reply.notFound();
       return reply.send(row);
@@ -68,7 +68,7 @@ export async function cmsRoutes(app: FastifyInstance) {
   app.delete("/cms/pages/:id", { schema: { params: idParam } }, async (req, reply) => {
     const [row] = await db
       .delete(posts)
-      .where(and(eq(posts.tenantId, tid(req)), eq(posts.id, req.params.id)))
+      .where(and(eq(posts.tenantId, tid(req)), eq(posts.id, (req.params as { id: string }).id)))
       .returning();
     if (!row) return reply.notFound();
     return reply.send({ ok: true, id: row.id });
@@ -79,9 +79,9 @@ export async function cmsRoutes(app: FastifyInstance) {
     const [s] = await db
       .select()
       .from(options)
-      .where(and(eq(options.tenantId, tid(req)), eq(options.name, req.params.key)))
+      .where(and(eq(options.tenantId, tid(req)), eq(options.name, (req.params as { key: string }).key)))
       .limit(1);
-    return reply.send(s ?? { name: req.params.key, value: null });
+    return reply.send(s ?? { name: (req.params as { key: string }).key, value: null });
   });
 
   app.put(
@@ -90,10 +90,10 @@ export async function cmsRoutes(app: FastifyInstance) {
     async (req, reply) => {
       await db
         .insert(options)
-        .values({ name: req.params.key, tenantId: tid(req), value: req.body.value })
+        .values({ name: (req.params as { key: string }).key, tenantId: tid(req), value: (req.body as { value: unknown }).value })
         .onConflictDoUpdate({
           target: [options.tenantId, options.name],
-          set: { value: req.body.value, updatedAt: new Date() },
+          set: { value: (req.body as { value: unknown }).value, updatedAt: new Date() },
         });
       return reply.send({ ok: true });
     },

@@ -55,20 +55,21 @@ export async function moduleRoutes(app: FastifyInstance) {
     "/modules/:key",
     { schema: { params: z.object({ key: z.string() }), body: z.object({ enabled: z.boolean() }) } },
     async (req, reply) => {
-      const mod = MODULES.find((m) => m.key === req.params.key);
+      const mod = MODULES.find((m) => m.key === (req.params as { key: string }).key);
       if (!mod) return reply.notFound("Módulo no encontrado");
       if (mod.kind === "native") return reply.badRequest("Un módulo nativo no se puede deshabilitar");
       const state = await readState(req);
-      state[mod.key] = req.body.enabled;
+      const body = req.body as { enabled: boolean };
+      state[mod.key] = body.enabled;
       await writeState(req, state);
-      await syncTenantFlags(tid(req), mod.key, req.body.enabled);
-      return reply.send({ key: mod.key, enabled: req.body.enabled });
+      await syncTenantFlags(tid(req), mod.key, body.enabled);
+      return reply.send({ key: mod.key, enabled: body.enabled });
     },
   );
 
   app.get("/modules/:key/status", { schema: { params: z.object({ key: z.string() }) } }, async (req) => {
-    const mod = MODULES.find((m) => m.key === req.params.key);
-    if (!mod) return { key: req.params.key, installed: false, enabled: false };
+    const mod = MODULES.find((m) => m.key === (req.params as { key: string }).key);
+    if (!mod) return { key: (req.params as { key: string }).key, installed: false, enabled: false };
     const state = await readState(req);
     return { key: mod.key, installed: true, enabled: mod.kind === "native" ? true : (state[mod.key] ?? true) };
   });

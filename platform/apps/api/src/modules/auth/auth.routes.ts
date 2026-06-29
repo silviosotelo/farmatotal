@@ -29,7 +29,7 @@ export async function authRoutes(app: FastifyInstance) {
     "/auth/login",
     { schema: { body: loginInput, response: { 200: sessionUser } } },
     async (req, reply) => {
-      const { email, password } = req.body;
+      const { email, password } = req.body as { email: string; password: string };
       const user = await findUserByEmail(email.toLowerCase().trim());
       if (!user || user.status !== "active") return reply.unauthorized("Credenciales invalidas");
       const ok = await verifyPassword(password, user.passwordHash);
@@ -49,8 +49,6 @@ export async function authRoutes(app: FastifyInstance) {
         userId: user.id,
         token: refresh,
         ttlMs: refreshTtlMs(env.JWT_REFRESH_TTL),
-        userAgent: req.headers["user-agent"] ?? undefined,
-        ip: req.ip,
       });
       await touchLastLogin(user.id);
 
@@ -124,7 +122,7 @@ export async function authRoutes(app: FastifyInstance) {
       if (existing.length > 0) return reply.conflict("Ya existen usuarios — usa /auth/login");
 
       const role = "admin";
-      const u = await createUser({ ...req.body, role });
+      const u = await createUser({ ...(req.body as Record<string, unknown>), role } as { email: string; password: string; name?: string; role?: string });
       const access = await reply.jwtSign(
         { sub: u.id, role },
         { expiresIn: env.JWT_ACCESS_TTL },
@@ -142,12 +140,12 @@ export async function authRoutes(app: FastifyInstance) {
     "/auth/register",
     { schema: { body: registerInput, response: { 200: sessionUser } } },
     async (req, reply) => {
-      const email = req.body.email.toLowerCase().trim();
+      const email = (req.body as { email: string }).email.toLowerCase().trim();
       const existing = await findUserByEmail(email);
       if (existing) return reply.conflict("Ya existe una cuenta con ese email");
 
       const role = "customer";
-      const u = await createUser({ ...req.body, email, role });
+      const u = await createUser({ ...(req.body as Record<string, unknown>), email, role } as { email: string; password: string; name?: string; role?: string });
       const access = await reply.jwtSign({ sub: u.id, role }, { expiresIn: env.JWT_ACCESS_TTL });
       const refresh = await reply.jwtSign(
         { sub: u.id, typ: "refresh" },
@@ -157,8 +155,6 @@ export async function authRoutes(app: FastifyInstance) {
         userId: u.id,
         token: refresh,
         ttlMs: refreshTtlMs(env.JWT_REFRESH_TTL),
-        userAgent: req.headers["user-agent"] ?? undefined,
-        ip: req.ip,
       });
       reply
         .setCookie(REFRESH_COOKIE, refresh, {

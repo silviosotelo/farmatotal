@@ -19,28 +19,35 @@ const idParam = z.object({ id: z.string().uuid() });
 export async function mailerRoutes(app: FastifyInstance) {
   // ── Plantillas ──
   app.get("/mailer/templates", async () => {
-    const rows = await db.select().from(emailTemplates).orderBy(emailTemplates.name);
+    const rows = await db.select().from(emailTemplates).orderBy(emailTemplates.type);
     return { data: rows, total: rows.length };
   });
   app.post("/mailer/templates", { schema: { body: tplInput } }, async (req, reply) => {
-    const [row] = await db.insert(emailTemplates).values(req.body).returning();
+    const b = req.body as z.infer<typeof tplInput>;
+    const [row] = await db.insert(emailTemplates).values({
+      tenantId: tid(req),
+      type: b.key,
+      subject: b.subject,
+      bodyHtml: b.bodyHtml,
+    }).returning();
     return reply.send(row);
   });
   app.patch(
     "/mailer/templates/:id",
     { schema: { params: idParam, body: tplInput.partial() } },
     async (req, reply) => {
+      const b = req.body as Record<string, unknown>;
       const [row] = await db
         .update(emailTemplates)
-        .set({ ...req.body, updatedAt: new Date() })
-        .where(eq(emailTemplates.id, req.params.id))
+        .set({ ...b, updatedAt: new Date() })
+        .where(eq(emailTemplates.id, (req.params as { id: string }).id))
         .returning();
       if (!row) return reply.notFound();
       return reply.send(row);
     },
   );
   app.delete("/mailer/templates/:id", { schema: { params: idParam } }, async (req, reply) => {
-    const [row] = await db.delete(emailTemplates).where(eq(emailTemplates.id, req.params.id)).returning();
+    const [row] = await db.delete(emailTemplates).where(eq(emailTemplates.id, (req.params as { id: string }).id)).returning();
     if (!row) return reply.notFound();
     return reply.send({ ok: true });
   });
@@ -50,7 +57,7 @@ export async function mailerRoutes(app: FastifyInstance) {
     "/mailer/queue",
     { schema: { querystring: z.object({ status: z.string().optional(), limit: z.coerce.number().optional() }) } },
     async (req) => {
-      const q = req.query;
+      const q = req.query as { status?: string; limit?: number };
       const rows = await db
         .select()
         .from(emailQueue)
@@ -64,8 +71,8 @@ export async function mailerRoutes(app: FastifyInstance) {
   app.post("/mailer/queue/:id/retry", { schema: { params: idParam } }, async (req, reply) => {
     const [row] = await db
       .update(emailQueue)
-      .set({ status: "pending", lastError: null })
-      .where(eq(emailQueue.id, req.params.id))
+      .set({ status: "pending", error: null })
+      .where(eq(emailQueue.id, (req.params as { id: string }).id))
       .returning();
     if (!row) return reply.notFound();
     return reply.send(row);
@@ -101,7 +108,7 @@ export async function mailerRoutes(app: FastifyInstance) {
     { schema: { body: z.object({ toEmail: z.string().email() }) } },
     async (req, reply) => {
       const job = await enqueueEmail({
-        toEmail: req.body.toEmail,
+        toEmail: (req.body as { toEmail: string }).toEmail,
         subject: "Email de prueba",
         bodyHtml: "<h2>Funciona ✔</h2><p>Este es un email de prueba de la plataforma.</p>",
       });

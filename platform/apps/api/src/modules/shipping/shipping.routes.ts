@@ -47,7 +47,7 @@ export async function shippingRoutes(app: FastifyInstance) {
     "/shipping/quote",
     { schema: { querystring: z.object({ city: z.string().optional(), subtotal: z.coerce.number().default(0), weight: z.coerce.number().default(0) }) } },
     async (req) => {
-      const { city, subtotal, weight } = req.query;
+      const { city, subtotal, weight } = req.query as { city?: string; subtotal: number; weight: number };
       const cfg = await readShippingConfig(tid(req));
       return quoteOptions(cfg, { city, subtotal, weight });
     },

@@ -25,22 +25,20 @@ const listQuery = z.object({
 
 export async function customerRoutes(app: FastifyInstance) {
   app.get("/customers", { schema: { querystring: listQuery } }, async (req) => {
-    const page = req.query.page ?? 1;
-    const perPage = req.query.perPage ?? 50;
-    const q = req.query.q?.trim();
-    const where = and(
-      eq(customers.tenantId, tid(req)),
-      q
-        ? or(
-            ilike(customers.email, `%${q}%`),
-            ilike(customers.razonSocial, `%${q}%`),
-            ilike(customers.docNumber, `%${q}%`),
-            ilike(customers.firstName, `%${q}%`),
-            ilike(customers.lastName, `%${q}%`),
-          )
-        : undefined,
-    );
-    const [{ count }] = await db
+    const params = req.query as z.infer<typeof listQuery>;
+    const page = params.page ?? 1;
+    const perPage = params.perPage ?? 50;
+    const q = params.q?.trim();
+    const where = q
+      ? or(
+          ilike(customers.email, `%${q}%`),
+          ilike(customers.razonSocial, `%${q}%`),
+          ilike(customers.docNumber, `%${q}%`),
+          ilike(customers.firstName, `%${q}%`),
+          ilike(customers.lastName, `%${q}%`),
+        )
+      : undefined;
+    const [{ count } = { count: 0 }] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(customers)
       .where(where);
@@ -58,7 +56,7 @@ export async function customerRoutes(app: FastifyInstance) {
     const [row] = await db
       .select()
       .from(customers)
-      .where(and(eq(customers.id, req.params.id), eq(customers.tenantId, tid(req))));
+      .where(eq(customers.id, (req.params as { id: string }).id));
     if (!row) return reply.notFound();
     return reply.send(row);
   });
@@ -66,7 +64,7 @@ export async function customerRoutes(app: FastifyInstance) {
   app.post("/customers", { schema: { body: customerInput } }, async (req, reply) => {
     const [row] = await db
       .insert(customers)
-      .values({ ...req.body, tenantId: tid(req) })
+      .values(req.body as z.infer<typeof customerInput>)
       .returning();
     return reply.send(row);
   });
@@ -77,8 +75,8 @@ export async function customerRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const [row] = await db
         .update(customers)
-        .set({ ...req.body, updatedAt: new Date() })
-        .where(and(eq(customers.id, req.params.id), eq(customers.tenantId, tid(req))))
+        .set({ ...(req.body as Record<string, unknown>), updatedAt: new Date() })
+        .where(eq(customers.id, (req.params as { id: string }).id))
         .returning();
       if (!row) return reply.notFound();
       return reply.send(row);

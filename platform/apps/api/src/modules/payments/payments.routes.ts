@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
-import { orders, payments, settings } from "../../db/schema";
+import { orders, payments, options } from "../../db/schema";
 import { tid } from "../../plugins/tenant";
 import { env } from "../../env.js";
 import { doAction } from "../system/hooks.js";
@@ -35,13 +35,7 @@ async function applyVerdict(pay: PaymentRow, approved: boolean, rawPayload?: str
   if (approved) {
     const [ord] = await db.select().from(orders).where(eq(orders.id, pay.orderId)).limit(1);
     if (ord && ord.status === "pending") {
-      const events = [
-        ...(ord.events ?? []),
-        { at: new Date().toISOString(), type: "payment_approved", note: `Bancard ref ${pay.providerRef}`, by: "bancard" },
-      ];
-      await db.update(orders).set({ status: "paid", events, updatedAt: new Date() }).where(eq(orders.id, ord.id));
-      // Hook de ciclo de vida: módulos activos reaccionan (multi_inventory descuenta
-      // stock, marketing/mailer notifican, etc.). Gating por tenant vía hooks.
+      await db.update(orders).set({ paymentStatus: "paid", datePaidGmt: new Date(), updatedAt: new Date() }).where(eq(orders.id, ord.id));
       await doAction("order.paid", { tenantId: ord.tenantId, orderId: ord.id });
     }
   }
@@ -78,7 +72,7 @@ export async function paymentRoutes(app: FastifyInstance) {
       const [order] = await db
         .select()
         .from(orders)
-        .where(and(eq(orders.tenantId, tid(req)), eq(orders.id, req.body.orderId)));
+        .where(and(eq(orders.tenantId, tid(req)), eq(orders.id, (req.body as { orderId: string }).orderId)));
       if (!order) return reply.notFound("Orden no encontrada");
 
       const shopProcessId = genShopProcessId();
@@ -86,14 +80,14 @@ export async function paymentRoutes(app: FastifyInstance) {
         orderId: order.id,
         provider: "bancard",
         status: "pending",
-        amount: order.total,
+        amount: Number(order.total),
         providerRef: String(shopProcessId),
       });
 
       const res = await singleBuy(tid(req), {
         shopProcessId,
-        amount: order.total,
-        description: `Orden ${order.number}`,
+        amount: Number(order.total),
+        description: `Orden ${order.orderNumber}`,
         returnUrl: `${storeUrl}/pago/retorno?order=${order.id}`,
         cancelUrl: `${storeUrl}/pago/retorno?order=${order.id}&cancel=1`,
       });
@@ -144,7 +138,7 @@ export async function paymentRoutes(app: FastifyInstance) {
       const [pay] = await db
         .select()
         .from(payments)
-        .where(eq(payments.orderId, req.params.orderId))
+        .where(eq(payments.orderId, (req.params as { orderId: string }).orderId))
         .orderBy(desc(payments.createdAt))
         .limit(1);
       if (!pay) return { status: "none", provider: "bancard" };
@@ -191,17 +185,17 @@ export async function paymentRoutes(app: FastifyInstance) {
   const readPayCfg = async (req: FastifyRequest): Promise<PayCfg> => {
     const [row] = await db
       .select()
-      .from(settings)
-      .where(and(eq(settings.tenantId, tid(req)), eq(settings.key, "mod_payments")))
+      .from(options)
+      .where(and(eq(options.tenantId, tid(req)), eq(options.name, "mod_payments")))
       .limit(1);
     return (row?.value as PayCfg) ?? {};
   };
   const writePayCfg = async (req: FastifyRequest, cfg: PayCfg) => {
     await db
-      .insert(settings)
-      .values({ tenantId: tid(req), key: "mod_payments", value: cfg })
+      .insert(options)
+      .values({ tenantId: tid(req), name: "mod_payments", value: cfg })
       .onConflictDoUpdate({
-        target: [settings.tenantId, settings.key],
+        target: [options.tenantId, options.name],
         set: { value: cfg, updatedAt: new Date() },
       });
   };
@@ -229,15 +223,17 @@ export async function paymentRoutes(app: FastifyInstance) {
 
   app.put(
     "/payments/methods/:key",
-    { schema: { params: z.object({ key: z.string() }), body: z.object({ enabled: z.boolean().optional(), values: z.record(z.unknown()) }) } },
+    { schema: { params: z.object({ key: z.string() }), body: z.object({ enabled: z.boolean().optional(), values: z.record(z.string(), z.unknown()) }) } },
     async (req, reply) => {
+      const params = req.params as { key: string };
+      const body = req.body as { enabled?: boolean; values?: Record<string, unknown> };
       const cfg = await readPayCfg(req);
-      const isFixed = PAYMENT_METHODS.some((x) => x.key === req.params.key);
-      const isCustom = (cfg.__custom ?? []).some((c) => c.key === req.params.key);
+      const isFixed = PAYMENT_METHODS.some((x) => x.key === params.key);
+      const isCustom = (cfg.__custom ?? []).some((c) => c.key === params.key);
       if (!isFixed && !isCustom) return reply.notFound("Método no encontrado");
-      cfg[req.params.key] = { enabled: req.body.enabled ?? false, ...req.body.values };
+      cfg[params.key] = { enabled: body.enabled ?? false, ...body.values };
       await writePayCfg(req, cfg);
-      return reply.send({ ok: true, key: req.params.key });
+      return reply.send({ ok: true, key: params.key });
     },
   );
 
@@ -246,26 +242,28 @@ export async function paymentRoutes(app: FastifyInstance) {
     "/payments/methods/custom",
     { schema: { body: z.object({ name: z.string().min(1).max(100), description: z.string().max(200).optional(), instructions: z.string().max(500).optional() }) } },
     async (req, reply) => {
+      const body = req.body as { name: string; description?: string; instructions?: string };
       const cfg = await readPayCfg(req);
       const list = cfg.__custom ?? [];
-      const base = req.body.name.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "_").replace(/(^_|_$)/g, "").slice(0, 30) || "metodo";
+      const base = body.name.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "_").replace(/(^_|_$)/g, "").slice(0, 30) || "metodo";
       let key = `custom_${base}`;
       let i = 1;
       while (list.some((c) => c.key === key) || PAYMENT_METHODS.some((m) => m.key === key)) key = `custom_${base}_${i++}`;
-      list.push({ key, name: req.body.name, description: req.body.description ?? "", instructions: req.body.instructions ?? "" });
+      list.push({ key, name: body.name, description: body.description ?? "", instructions: body.instructions ?? "" });
       cfg.__custom = list;
-      cfg[key] = { enabled: true, instructions: req.body.instructions ?? "" };
+      cfg[key] = { enabled: true, instructions: body.instructions ?? "" };
       await writePayCfg(req, cfg);
       return reply.send({ ok: true, key });
     },
   );
 
   app.delete("/payments/methods/custom/:key", { schema: { params: z.object({ key: z.string() }) } }, async (req, reply) => {
+    const params = req.params as { key: string };
     const cfg = await readPayCfg(req);
     const list = cfg.__custom ?? [];
-    if (!list.some((c) => c.key === req.params.key)) return reply.notFound("Método custom no encontrado");
-    cfg.__custom = list.filter((c) => c.key !== req.params.key);
-    delete cfg[req.params.key];
+    if (!list.some((c) => c.key === params.key)) return reply.notFound("Método custom no encontrado");
+    cfg.__custom = list.filter((c) => c.key !== params.key);
+    delete cfg[params.key];
     await writePayCfg(req, cfg);
     return reply.send({ ok: true });
   });
@@ -275,8 +273,9 @@ export async function paymentRoutes(app: FastifyInstance) {
     "/payments/transactions",
     { schema: { querystring: z.object({ page: z.coerce.number().optional(), perPage: z.coerce.number().optional() }) } },
     async (req) => {
-      const page = req.query.page ?? 1;
-      const perPage = Math.min(100, req.query.perPage ?? 50);
+      const q = req.query as { page?: number; perPage?: number };
+      const page = q.page ?? 1;
+      const perPage = Math.min(100, q.perPage ?? 50);
       const rows = await db
         .select({
           id: payments.id,
@@ -285,8 +284,8 @@ export async function paymentRoutes(app: FastifyInstance) {
           amount: payments.amount,
           providerRef: payments.providerRef,
           createdAt: payments.createdAt,
-          orderNumber: orders.number,
-          customerName: orders.customerName,
+          orderNumber: orders.orderNumber,
+          customerName: orders.guestEmail,
         })
         .from(payments)
         .leftJoin(orders, eq(orders.id, payments.orderId))

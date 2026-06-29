@@ -5,7 +5,7 @@ import { db } from "../../db/client";
 import { branches, terms, coupons, orders, orderItems, products } from "../../db/schema";
 
 /** Estados que cuentan como venta concretada (facturable). */
-const REVENUE_STATUSES = ["paid", "processing", "fulfilled", "delivered"] as const;
+const REVENUE_STATUSES = ["pending", "confirmed", "processing", "completed"] as const;
 
 export async function statsRoutes(app: FastifyInstance) {
   app.get("/stats/overview", async () => {
@@ -13,7 +13,7 @@ export async function statsRoutes(app: FastifyInstance) {
       .select({
         total: sql<number>`count(*)::int`,
         published: sql<number>`count(*) filter (where ${products.status} = 'published')::int`,
-        outOfStock: sql<number>`count(*) filter (where ${products.stockCached} = 0)::int`,
+        outOfStock: sql<number>`count(*) filter (where ${products.stockStatus} = 'outofstock')::int`,
       })
       .from(products);
 
@@ -25,8 +25,8 @@ export async function statsRoutes(app: FastifyInstance) {
       .select({
         total: sql<number>`count(*)::int`,
         pending: sql<number>`count(*) filter (where ${orders.status} = 'pending')::int`,
-        paid: sql<number>`count(*) filter (where ${orders.status} = 'paid')::int`,
-        revenue: sql<number>`coalesce(sum(${orders.total}) filter (where ${orders.status} in ('paid','processing','fulfilled','delivered')),0)::bigint`,
+        paid: sql<number>`count(*) filter (where ${orders.paymentStatus} = 'paid')::int`,
+        revenue: sql<number>`coalesce(sum(${orders.total}) filter (where ${orders.paymentStatus} in ('paid','partially_refunded')),0)::bigint`,
       })
       .from(orders);
 
@@ -78,7 +78,7 @@ export async function statsRoutes(app: FastifyInstance) {
       const to = q.to ? new Date(q.to) : new Date();
       const from = q.from ? new Date(q.from) : new Date(to.getTime() - 29 * 24 * 3600 * 1000);
       const range = and(gte(orders.createdAt, from), lte(orders.createdAt, to));
-      const isRevenue = sql`${orders.status} in ('paid','processing','fulfilled','delivered')`;
+      const isRevenue = sql`${orders.paymentStatus} in ('paid','partially_refunded')`;
 
       // KPIs (sólo ventas concretadas dentro del rango)
       const [kpi] = await db

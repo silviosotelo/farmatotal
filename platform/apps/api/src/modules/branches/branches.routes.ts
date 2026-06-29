@@ -35,7 +35,7 @@ export async function branchRoutes(app: FastifyInstance) {
   });
 
   app.post("/branches", { schema: { body: branchInput } }, async (req, reply) => {
-    const [row] = await db.insert(branches).values({ ...req.body, tenantId: tid(req) }).returning();
+    const [row] = await db.insert(branches).values({ ...(req.body as any), tenantId: tid(req) }).returning();
     return reply.send(row);
   });
 
@@ -45,8 +45,8 @@ export async function branchRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const [row] = await db
         .update(branches)
-        .set({ ...req.body, updatedAt: new Date() })
-        .where(and(eq(branches.tenantId, tid(req)), eq(branches.id, req.params.id)))
+        .set({ ...(req.body as Record<string, unknown>), updatedAt: new Date() })
+        .where(and(eq(branches.tenantId, tid(req)), eq(branches.id, (req.params as { id: string }).id)))
         .returning();
       if (!row) return reply.notFound();
       return reply.send(row);
@@ -69,7 +69,7 @@ export async function branchRoutes(app: FastifyInstance) {
         .from(inventory)
         .innerJoin(products, eq(products.id, inventory.productId))
         .leftJoin(posts, eq(posts.id, products.postId))
-        .where(and(eq(inventory.tenantId, tid(req)), eq(inventory.branchId, req.params.id)))
+        .where(and(eq(inventory.tenantId, tid(req)), eq(inventory.branchId, (req.params as { id: string }).id)))
         .limit(500);
       return { data: rows, total: rows.length };
     },
@@ -84,7 +84,7 @@ export async function branchRoutes(app: FastifyInstance) {
       const inv = await db
         .select()
         .from(inventory)
-        .where(and(eq(inventory.tenantId, tid(req)), eq(inventory.productId, req.params.productId)));
+        .where(and(eq(inventory.tenantId, tid(req)), eq(inventory.productId, (req.params as { productId: string }).productId)));
       const byBranch = new Map(inv.map((i) => [i.branchId, i]));
       return {
         data: all.map((b) => ({
@@ -133,7 +133,7 @@ export async function branchRoutes(app: FastifyInstance) {
         .where(and(eq(inventory.tenantId, tid(req)), eq(inventory.branchId, b.id), inArray(products.sku, skuList)));
 
       const stock: Record<string, number> = {};
-      for (const r of rows) stock[r.sku] = Math.max(0, Number(r.onHand ?? 0) - Number(r.reserved ?? 0));
+      for (const r of rows) if (r.sku) stock[r.sku] = Math.max(0, Number(r.onHand ?? 0) - Number(r.reserved ?? 0));
       return { branch, stock };
     },
   );
@@ -145,7 +145,7 @@ export async function branchRoutes(app: FastifyInstance) {
   });
 
   app.put("/inventory", { schema: { body: invInput } }, async (req, reply) => {
-    const { productId, branchId, onHand } = req.body;
+    const { productId, branchId, onHand } = req.body as z.infer<typeof invInput>;
     await db
       .insert(inventory)
       .values({ productId, branchId, onHand: String(onHand), tenantId: tid(req) })
@@ -194,7 +194,7 @@ export async function branchRoutes(app: FastifyInstance) {
       const branchByCode = new Map(allB.map((b) => [b.code, b.id]));
       let ok = 0;
       const errors: string[] = [];
-      for (const r of req.body.rows) {
+      for (const r of (req.body as { rows: Array<{ sku: string; branchCode: string; stock: number }> }).rows) {
         const pid = prodBySku.get(r.sku);
         const bid = branchByCode.get(r.branchCode);
         if (!pid || !bid) {
@@ -252,34 +252,40 @@ export async function branchRoutes(app: FastifyInstance) {
     if (search) {
       whereClause = and(
         eq(products.tenantId, tenantId),
-        or(ilike(products.title, `%${search}%`), ilike(products.sku, `%${search}%`)),
+        or(
+          ilike(posts.title, `%${search}%`),
+          ilike(products.sku, `%${search}%`),
+        ),
       )!
     }
 
-    const allProducts = await db.select().from(products)
+    const allProducts = await db
+      .select({ product: products, post: posts })
+      .from(products)
+      .leftJoin(posts, eq(posts.id, products.postId))
       .where(whereClause)
       .limit(parseInt(pageSize))
       .offset(offset)
 
     // Get inventory for all fetched products
-    const productIds = allProducts.map(p => p.id)
+    const productIds = allProducts.map(p => p.product.id)
     const allInventory = productIds.length > 0
       ? await db.select().from(inventory)
           .where(and(eq(inventory.tenantId, tenantId), inArray(inventory.productId, productIds)))
       : []
 
     // Build grid: products × branches
-    const grid = allProducts.map(product => {
+    const grid = allProducts.map(({ product, post }) => {
       const productInventory = allInventory.filter(i => i.productId === product.id)
       const stockByBranch: Record<string, number> = {}
       for (const inv of productInventory) {
-        stockByBranch[inv.branchId] = inv.stock || 0
+        stockByBranch[inv.branchId] = Number(inv.onHand) || 0
       }
       return {
         id: product.id,
-        title: product.title,
+        title: post?.title ?? "",
         sku: product.sku,
-        totalStock: product.stockCached || 0,
+        totalStock: product.totalSales || 0,
         branches: allBranches.map(b => ({
           branchId: b.id,
           branchName: b.name,

@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
  * Enricher de imágenes: para productos sin imagen, fetchea el detalle de la
- * WC Store API (/products/:id, donde woo_id está en custom.woo_id) y baja todas
+ * WC Store API (/products/:id, donde woo_id está en erp_id) y baja todas
  * sus imágenes a product_images. Idempotente (replace-all por producto).
  *
  * Uso: NODE_TLS_REJECT_UNAUTHORIZED=0 pnpm exec tsx src/scripts/enrich-images.ts [MAX]
@@ -27,13 +27,13 @@ async function fetchWoo(id: number): Promise<WooImage[]> {
 async function main() {
   const max = Number(process.argv[2] ?? 2000);
 
-  // Productos sin ninguna imagen, que tengan woo_id en custom
+  // Productos sin ninguna imagen, que tengan erp_id (woo_id) en la tabla products
   const rows = await db
-    .select({ id: products.id, custom: products.custom })
+    .select({ id: products.id, erpId: products.erpId, tenantId: products.tenantId })
     .from(products)
     .where(
       sql`not exists (select 1 from farmatotal_app.product_images pi where pi.product_id = ${products.id})
-          and ${products.custom} ->> 'woo_id' is not null`,
+          and ${products.erpId} is not null`,
     )
     .limit(max);
 
@@ -44,7 +44,7 @@ async function main() {
     errors = 0;
 
   for (const r of rows) {
-    const wooId = Number((r.custom as Record<string, unknown>)?.woo_id);
+    const wooId = Number(r.erpId);
     if (!wooId) continue;
     try {
       const images = await fetchWoo(wooId);
@@ -52,11 +52,11 @@ async function main() {
         await db.delete(productImages).where(eq(productImages.productId, r.id));
         await db.insert(productImages).values(
           images.slice(0, 10).map((img, i) => ({
+            tenantId: r.tenantId,
             productId: r.id,
-            url: img.src,
-            alt: img.alt ?? null,
-            position: i,
-            isPrimary: i === 0,
+            mediaId: "00000000-0000-0000-0000-000000000000" as string,
+            altText: img.alt ?? "",
+            sortOrder: i,
           })),
         );
         withImg++;

@@ -5,14 +5,13 @@
  * porc_dcto, cod_promocion, ind_ecommerce + precios normal/web reales.
  *
  * Claves read-only en FARMATOTAL/_recon/wc-rest-new.txt (formato `ck|cs`). ⚠️ rotar tras migrar.
- * Idempotente por (sourceSystem='woo', sourceId=woo_id).
+ * Idempotente por erpId (woo_id).
  * Uso: NODE_TLS_REJECT_UNAUTHORIZED=0 tsx src/scripts/import-wc-rest.ts [MAX]
  */
 import fs from "node:fs";
-import path from "node:path";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../db/client";
-import { categories, productImages, products, syncRuns, tenants } from "../db/schema";
+import { productImages, products, syncRuns, tenants } from "../db/schema";
 
 const KEYS_FILE = "C:/Users/sotelos/FARMATOTAL/_recon/wc-rest-new.txt";
 const BASE = "https://www.farmatotal.com.py/wp-json/wc/v3";
@@ -55,11 +54,6 @@ const metaOf = (p: WcProduct, k: string) => {
 };
 const toInt = (s?: string) => Math.round(parseFloat(s || "0")) || 0;
 
-async function catSlugMap(): Promise<Map<string, string>> {
-  const rows = await db.select({ id: categories.id, slug: categories.slug }).from(categories);
-  return new Map(rows.map((r) => [r.slug, r.id]));
-}
-
 async function main() {
   const MAX = Number(process.argv[2] || 2000);
   const tenantSlug = process.env.DEFAULT_TENANT ?? "default";
@@ -70,8 +64,7 @@ async function main() {
     .limit(1);
   if (!tenant) throw new Error(`Tenant '${tenantSlug}' no existe`);
   const tenantId = tenant.id;
-  const slugToCat = await catSlugMap();
-  const [run] = await db.insert(syncRuns).values({ kind: "wc-rest", status: "running", startedAt: new Date() }).returning({ id: syncRuns.id });
+  const [run] = await db.insert(syncRuns).values({ tenantId, type: "wc_rest", direction: "in", status: "running" }).returning({ id: syncRuns.id });
   let done = 0, withCod = 0, controlled = 0, featured = 0, page = 1;
   try {
     while (done < MAX) {
@@ -83,57 +76,56 @@ async function main() {
           const codInterno = metaOf(p, "cod_interno") || null;
           const isCtrl = metaOf(p, "ind_controlado").toUpperCase() === "S";
           const isFeat = metaOf(p, "ind_destacado").toUpperCase() === "S";
-          const promoCode = (metaOf(p, "cod_promocion") || "").replace(/^0$/, "") || null;
-          const priceNormal = toInt(p.regular_price) || toInt(p.price);
+          const regularPrice = toInt(p.regular_price) || toInt(p.price);
           const saleP = toInt(p.sale_price);
-          const priceWeb = p.on_sale && saleP > 0 && saleP < priceNormal ? saleP : priceNormal;
-          const catSlug = p.categories?.[0]?.slug;
-          const categoryId = (catSlug && slugToCat.get(catSlug)) || null;
-          const custom = {
-            porc_dcto: metaOf(p, "porc_dcto") || null,
-            ind_ecommerce: metaOf(p, "ind_ecommerce") || null,
-            fecha_sincronizacion: metaOf(p, "fecha_sincronizacion") || null,
-          };
-          const slug = (p.slug || `woo-${p.id}`).slice(0, 240);
+          const salePrice = p.on_sale && saleP > 0 && saleP < regularPrice ? saleP : regularPrice;
+
           const values = {
             tenantId,
             sku: (p.sku || `woo-${p.id}`).trim(),
-            codInterno,
-            slug,
-            title: p.name,
-            description: stripHtml(p.description || p.short_description),
-            categoryId,
-            priceNormal,
-            priceWeb,
-            onPromo: !!(p.on_sale && priceWeb < priceNormal),
-            promoCode,
-            controlled: isCtrl,
+            barcode: null as string | null,
+            regularPrice: String(regularPrice),
+            salePrice: String(salePrice),
             featured: isFeat,
             status: "published" as const,
-            stockCached: 0,
-            custom,
-            erpSourced: true,
-            sourceSystem: "woo",
-            sourceId: String(p.id),
-            syncedAt: new Date(),
+            erpId: String(p.id),
+            erpSyncedAt: new Date(),
+            erpSyncVersion: 1,
           };
-          const [row] = await db
-            .insert(products)
-            .values(values)
-            .onConflictDoUpdate({
-              target: [products.sourceSystem, products.sourceId],
-              set: {
-                sku: values.sku, codInterno, slug: values.slug, title: values.title,
-                description: values.description, categoryId, priceNormal, priceWeb,
-                onPromo: values.onPromo, promoCode, controlled: isCtrl, featured: isFeat,
-                custom, erpSourced: true, syncedAt: new Date(), updatedAt: new Date(),
-              },
-            })
-            .returning({ id: products.id });
+          const [existingProd] = await db
+            .select({ id: products.id })
+            .from(products)
+            .where(and(eq(products.tenantId, tenantId), eq(products.erpId, values.erpId)))
+            .limit(1);
+
+          let row: { id: string } | undefined;
+          if (existingProd) {
+            const [updated] = await db
+              .update(products)
+              .set({
+                sku: values.sku, regularPrice: values.regularPrice, salePrice: values.salePrice,
+                featured: values.featured, erpSyncedAt: new Date(), updatedAt: new Date(),
+              })
+              .where(eq(products.id, existingProd.id))
+              .returning({ id: products.id });
+            row = updated;
+          } else {
+            const [inserted] = await db
+              .insert(products)
+              .values(values)
+              .returning({ id: products.id });
+            row = inserted;
+          }
           if (row && p.images?.length) {
             await db.delete(productImages).where(eq(productImages.productId, row.id));
             await db.insert(productImages).values(
-              p.images.slice(0, 8).map((img, i) => ({ productId: row.id, url: img.src, alt: img.alt ?? null, position: i, isPrimary: i === 0 })),
+              p.images.slice(0, 8).map((img, i) => ({
+                tenantId,
+                productId: row.id,
+                mediaId: "00000000-0000-0000-0000-000000000000" as string,
+                altText: img.alt ?? "",
+                sortOrder: i,
+              })),
             );
           }
           done++;
@@ -147,10 +139,10 @@ async function main() {
       console.log(`[wc] pág ${page} — ${done} prods (cod_interno: ${withCod}, receta: ${controlled}, destacados: ${featured})`);
       page++;
     }
-    await db.update(syncRuns).set({ status: "ok", finishedAt: new Date(), stats: { done, withCod, controlled, featured } }).where(eq(syncRuns.id, run!.id));
+    await db.update(syncRuns).set({ status: "ok", completedAt: new Date(), metadata: { done, withCod, controlled, featured } }).where(eq(syncRuns.id, run!.id));
     console.log(`[wc] DONE: ${done} productos, cod_interno ${withCod}, receta ${controlled}, destacados ${featured}`);
   } catch (e) {
-    await db.update(syncRuns).set({ status: "failed", finishedAt: new Date(), stats: { error: (e as Error).message } }).where(eq(syncRuns.id, run!.id));
+    await db.update(syncRuns).set({ status: "failed", completedAt: new Date(), metadata: { error: (e as Error).message } }).where(eq(syncRuns.id, run!.id));
     throw e;
   }
   process.exit(0);
