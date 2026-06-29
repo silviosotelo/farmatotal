@@ -8,7 +8,7 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
-  schemaFilter: ["app"],
+  schemaFilter: ["public", "app"],
   verbose: true,
   strict: true,
 });
