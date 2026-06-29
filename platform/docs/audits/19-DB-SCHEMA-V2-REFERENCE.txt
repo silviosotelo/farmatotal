@@ -1,0 +1,33 @@
+﻿-- =============================================================================
+-- FARMATOTAL — Complete Database Schema v2.0
+-- 84 tablas (11 public.* + 73 app.*)
+-- Inspiracion: WordPress 7.0 + WooCommerce 10.9.1 (HPOS)
+-- Pais target: Paraguay (PYG, IVA 10%/5%/exento)
+-- Multi-tenancy: Header x-tenant -> app.* schema
+-- =============================================================================
+-- Convenciones:
+--   IDs: UUID con gen_random_uuid()
+--   Dinero: DECIMAL(26,8)
+--   Moneda: VARCHAR(3) ISO 4217
+--   Fechas: TIMESTAMPTZ
+--   JSON: Solo en *_meta tables
+--   Soft delete: deleted_at TIMESTAMPTZ
+--   Tenant: Toda tabla de negocio tiene tenant_id
+--   Indices: Todo FK indexado, compuestos (tenant_id, campo), business keys UNIQUE
+--
+-- ESTRUCTURA:
+--   public.* (11 tablas): tenants, countries, currencies, users, user_meta,
+--                         tenant_memberships, roles, permissions, role_permissions,
+--                         sessions, refresh_tokens
+--   app.* (73 tablas):
+--     CMS(2), Taxonomy(4), Catalog(8), Tax(3), Shipping(4), Branches(2),
+--     Inventory(4), Customers(3), Carts(3), Coupons(3), Orders(10),
+--     Payments(5), Refunds(2), Reviews(1), Outbox(2), Webhooks(3),
+--     Jobs(1), ERP(4), Email(3), WhatsApp(3), Config(1), Downloads(3),
+--     RateLimits(1), Media(1)
+--
+-- TOTAL: 84 tablas
+--
+-- Schema completo en: mensaje del usuario (27 de junio 2026)
+-- Guardar como: docs/audits/19-DB-SCHEMA-V2-FINAL.sql
+-- =============================================================================
