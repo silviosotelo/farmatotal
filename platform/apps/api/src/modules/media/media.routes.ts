@@ -2,11 +2,12 @@ import { createReadStream } from "node:fs";
 import { mkdir, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client";
 import { media } from "../../db/schema";
 import { env } from "../../env.js";
+import { tid } from "../../plugins/tenant";
 
 const UPLOAD_DIR = path.resolve(process.cwd(), "uploads");
 
@@ -20,18 +21,16 @@ const MIME_EXT: Record<string, string> = {
 };
 
 const registerInput = z.object({
-  // Registrar una URL externa ya existente (CDN, etc.).
   url: z.string().url(),
   filename: z.string().max(300).optional(),
-  alt: z.string().max(300).optional(),
+  altText: z.string().max(300).optional(),
 });
 
 const uploadInput = z.object({
-  // Subir bytes en base64 (sin multipart; el admin manda data URL o base64 puro).
   filename: z.string().min(1).max(300),
-  mime: z.string().min(1).max(120),
+  mimeType: z.string().min(1).max(120),
   dataBase64: z.string().min(1),
-  alt: z.string().max(300).optional(),
+  altText: z.string().max(300).optional(),
 });
 
 const idParam = z.object({ id: z.string().uuid() });
@@ -41,18 +40,21 @@ function safeName(name: string): string {
 }
 
 export async function mediaRoutes(app: FastifyInstance) {
-  // Listado (más recientes primero).
   app.get(
     "/media",
     { schema: { querystring: z.object({ page: z.coerce.number().int().min(1).optional(), perPage: z.coerce.number().int().min(1).max(100).optional() }) } },
     async (req) => {
-      const q = req.query;
+      const q = req.query as { page?: number; perPage?: number };
       const page = q.page ?? 1;
       const perPage = q.perPage ?? 40;
-      const [{ c } = { c: 0 }] = await db.select({ c: sql<number>`count(*)::int` }).from(media);
+      const [{ c } = { c: 0 }] = await db
+        .select({ c: sql<number>`count(*)::int` })
+        .from(media)
+        .where(eq(media.tenantId, tid(req)));
       const rows = await db
         .select()
         .from(media)
+        .where(eq(media.tenantId, tid(req)))
         .orderBy(desc(media.createdAt))
         .limit(perPage)
         .offset((page - 1) * perPage);
@@ -60,29 +62,28 @@ export async function mediaRoutes(app: FastifyInstance) {
     },
   );
 
-  // Registrar URL externa.
   app.post("/media/register", { schema: { body: registerInput } }, async (req, reply) => {
-    const b = req.body;
+    const b = req.body as z.infer<typeof registerInput>;
     const [row] = await db
       .insert(media)
       .values({
+        tenantId: tid(req),
         url: b.url,
         filename: b.filename ?? b.url.split("/").pop() ?? "external",
-        kind: "external",
-        alt: b.alt ?? null,
+        storageDriver: "external",
+        altText: b.altText ?? null,
       })
       .returning();
     return reply.send(row);
   });
 
-  // Subir archivo en base64 → guardar en ./uploads y servir vía /media/file/:name.
   app.post(
     "/media/upload",
     { schema: { body: uploadInput }, bodyLimit: 20 * 1024 * 1024 },
     async (req, reply) => {
-      const b = req.body;
-      const ext = MIME_EXT[b.mime];
-      if (!ext) return reply.badRequest(`MIME no soportado: ${b.mime}`);
+      const b = req.body as z.infer<typeof uploadInput>;
+      const ext = MIME_EXT[b.mimeType];
+      if (!ext) return reply.badRequest(`MIME no soportado: ${b.mimeType}`);
       const raw = b.dataBase64.includes(",") ? b.dataBase64.split(",")[1]! : b.dataBase64;
       const buf = Buffer.from(raw, "base64");
       if (!buf.length) return reply.badRequest("base64 vacío o inválido");
@@ -95,15 +96,23 @@ export async function mediaRoutes(app: FastifyInstance) {
       const url = `${env.PUBLIC_API_URL}/media/file/${name}`;
       const [row] = await db
         .insert(media)
-        .values({ url, filename: b.filename, mime: b.mime, size: buf.length, kind: "upload", alt: b.alt ?? null })
+        .values({
+          tenantId: tid(req),
+          url,
+          filename: b.filename,
+          mimeType: b.mimeType,
+          size: buf.length,
+          storageDriver: "local",
+          storagePath: path.join(UPLOAD_DIR, name),
+          altText: b.altText ?? null,
+        })
         .returning();
       return reply.send(row);
     },
   );
 
-  // Servir un archivo subido.
   app.get("/media/file/:name", { schema: { params: z.object({ name: z.string() }) } }, async (req, reply) => {
-    const name = safeName(req.params.name);
+    const name = safeName((req.params as { name: string }).name);
     const full = path.join(UPLOAD_DIR, name);
     try {
       const s = await stat(full);
@@ -118,13 +127,15 @@ export async function mediaRoutes(app: FastifyInstance) {
     return reply.send(createReadStream(full));
   });
 
-  // Borrar (registro + archivo si es upload).
   app.delete("/media/:id", { schema: { params: idParam } }, async (req, reply) => {
-    const [row] = await db.delete(media).where(eq(media.id, req.params.id)).returning();
+    const id = (req.params as { id: string }).id;
+    const [row] = await db
+      .delete(media)
+      .where(and(eq(media.id, id), eq(media.tenantId, tid(req))))
+      .returning();
     if (!row) return reply.notFound();
-    if (row.kind === "upload") {
-      const name = row.url.split("/").pop();
-      if (name) await unlink(path.join(UPLOAD_DIR, safeName(name))).catch(() => {});
+    if (row.storageDriver === "local" && row.storagePath) {
+      await unlink(row.storagePath).catch(() => {});
     }
     return reply.send({ ok: true });
   });
