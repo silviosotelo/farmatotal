@@ -1,34 +1,53 @@
-import { sql } from "drizzle-orm";
-import { integer, text, timestamp, uuid, varchar, index } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  smallint,
+  text,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { appSchema } from "./_pgSchema";
+import { tenants } from "./globals";
+import { customers } from "./customers";
 import { products } from "./products";
 
-/** Estado de moderación de la valoración (igual a Woo: pending/approved/rejected). */
-export const reviewStatus = ["pending", "approved", "rejected"] as const;
-export type ReviewStatus = (typeof reviewStatus)[number];
+export const productReviewStatus = [
+  "pending",
+  "approved",
+  "spam",
+  "trash",
+] as const;
+export type ProductReviewStatus = (typeof productReviewStatus)[number];
 
-export const reviews = appSchema.table(
-  "reviews",
+export const productReviews = appSchema.table(
+  "product_reviews",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
     productId: uuid("product_id")
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
-    author: varchar("author", { length: 120 }).notNull(),
-    email: varchar("email", { length: 200 }),
-    rating: integer("rating").notNull().default(5),
-    title: varchar("title", { length: 200 }),
-    body: text("body").notNull(),
-    status: varchar("status", { length: 20, enum: reviewStatus })
+    customerId: uuid("customer_id").references(() => customers.id, {
+      onDelete: "set null",
+    }),
+    rating: smallint("rating").notNull().default(0),
+    title: varchar("title", { length: 255 }),
+    content: text("content").notNull(),
+    status: varchar("status", { length: 20, enum: productReviewStatus })
       .notNull()
       .default("pending"),
+    verified: boolean("verified").notNull().default(false),
+    ipAddress: varchar("ip_address", { length: 45 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .default(sql`now()`),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
-    productIdx: index("reviews_product_idx").on(t.productId),
-    statusIdx: index("reviews_status_idx").on(t.status),
+    tenantIdx: index("product_reviews_tenant_idx").on(t.tenantId),
+    productIdx: index("product_reviews_product_idx").on(t.productId),
+    customerIdx: index("product_reviews_customer_idx").on(t.customerId),
+    statusIdx: index("product_reviews_status_idx").on(t.status),
   }),
 );
