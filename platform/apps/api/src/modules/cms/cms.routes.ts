@@ -37,10 +37,20 @@ export async function cmsRoutes(app: FastifyInstance) {
     const [p] = await db
       .select()
       .from(posts)
-      .where(and(eq(posts.tenantId, tid(req)), eq(posts.postType, CMS_POST_TYPE), eq(posts.slug, (req.params as { slug: string }).slug)))
+      .where(and(eq(posts.tenantId, tid(req)), eq(posts.slug, (req.params as { slug: string }).slug)))
       .limit(1);
     if (!p) return reply.notFound();
-    return reply.send(p);
+    // Map V2 posts schema to BackendPage shape expected by the store
+    let blocks: unknown = [];
+    try { blocks = JSON.parse(p.content || "[]"); } catch { blocks = []; }
+    return reply.send({
+      id: p.id,
+      slug: p.slug,
+      title: p.title,
+      blocks,
+      published: p.status === "publish",
+      seo: null,
+    });
   });
 
   app.post("/cms/pages", { schema: { body: pageInput } }, async (req, reply) => {

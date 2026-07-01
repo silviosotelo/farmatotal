@@ -9,6 +9,19 @@ function hasChaiBlocks(blocks: unknown): blocks is ChaiBlock[] {
   return Array.isArray(blocks) && blocks.length > 0;
 }
 
+function HomeFallback() {
+  return (
+    <main className="flex-1 pb-14">
+      <div className="ft-container py-10">
+        <div className="text-center mb-12">
+          <h1 className="font-heading text-3xl text-brand-text mb-2">Tu tienda online</h1>
+          <p className="text-sm text-brand-muted">Configura tu homepage desde el CMS del admin.</p>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 export default async function Home() {
   const theme = await getActiveTheme();
 
@@ -19,8 +32,6 @@ export default async function Home() {
     return <AnvogueHome />;
   }
 
-  // Farmatotal: home construido en el builder (editable, bloques data-bound que
-  // consumen el backend). El doc "home" debe estar publicado con bloques.
   const page = await getPage("home").catch(() => null);
   if (page?.published && hasChaiBlocks(page.blocks)) {
     return (
@@ -30,5 +41,6 @@ export default async function Home() {
       </main>
     );
   }
-  notFound();
+
+  return <HomeFallback />;
 }
